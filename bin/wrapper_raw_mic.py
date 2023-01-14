@@ -9,7 +9,7 @@ from pathlib import Path
 from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
 from rhasspy3.event import write_event, read_event
 
-_LOGGER = logging.getLogger("wrapper_raw_audio")
+_LOGGER = logging.getLogger("wrapper_raw_mic")
 
 
 def main():
@@ -18,6 +18,7 @@ def main():
         "command",
         help="Command to run",
     )
+    parser.add_argument("--shell", action="store_true", help="Run command with shell")
     parser.add_argument(
         "--samples-per-chunk",
         type=int,
@@ -43,7 +44,11 @@ def main():
 
     bytes_per_chunk = args.samples_per_chunk * args.width * args.channels
 
-    command = shlex.split(args.command)
+    if args.shell:
+        command = args.command
+    else:
+        command = shlex.split(args.command)
+
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
     assert proc.stdout is not None
 

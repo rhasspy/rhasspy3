@@ -12,7 +12,7 @@ from rhasspy3.service import create_process
 from rhasspy3.audio import AudioChunk, AudioStop, AudioStart
 from rhasspy3.tts import DOMAIN, Synthesize
 
-_LOGGER = logging.getLogger("tts_text2wav")
+_LOGGER = logging.getLogger("speak_text")
 
 
 async def main() -> None:

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import sys
 import re
 from collections import defaultdict
 from typing import Dict, List, Optional
@@ -32,7 +31,7 @@ def main() -> None:
 
     try:
         while True:
-            event = read_event(sys.stdin.buffer)
+            event = read_event()
             if event is None:
                 break
 
@@ -41,9 +40,9 @@ def main() -> None:
                 text = _clean(transcript.text)
                 intent = _recognize(text, patterns)
                 if intent is None:
-                    write_event(NotRecognized().event(), sys.stdout.buffer)
+                    write_event(NotRecognized().event())
                 else:
-                    write_event(intent.event(), sys.stdout.buffer)
+                    write_event(intent.event())
     except KeyboardInterrupt:
         pass
 

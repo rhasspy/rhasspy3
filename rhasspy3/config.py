@@ -12,12 +12,27 @@ from yaml import safe_load
 class ProgramConfig(DataClassJsonMixin):
     command: str
     wrapper: Optional[str] = None
+    shell: bool = False
+
+
+@dataclass
+class FlowConfig(DataClassJsonMixin):
+    mic: str
+    wake: str
+    vad: str
+    asr: str
+    intent: str
+    handle: str
+    tts: str
+    snd: str
 
 
 @dataclass
 class Config(DataClassJsonMixin):
-    programs: Dict[str, Dict[str, ProgramConfig]] = field(default_factory=dict)
+    programs: Dict[str, Dict[str, ProgramConfig]]
     """domain -> name -> program"""
+
+    flows: Dict[str, FlowConfig] = field(default_factory=dict)
 
 
 # -----------------------------------------------------------------------------
