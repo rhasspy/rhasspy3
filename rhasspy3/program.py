@@ -7,7 +7,7 @@ from asyncio import subprocess
 from typing import Optional, Union
 
 from .core import Rhasspy
-from .config import ProgramConfig, FlowProgramConfig
+from .config import ProgramConfig, PipelineProgramConfig
 from .util import merge_dict
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,26 +18,26 @@ class MissingProgramConfigError(Exception):
 
 
 async def create_process(
-    rhasspy: Rhasspy, domain: str, name: Union[str, FlowProgramConfig]
+    rhasspy: Rhasspy, domain: str, name: Union[str, PipelineProgramConfig]
 ) -> subprocess.Process:
-    flow_config: Optional[FlowProgramConfig] = None
-    if isinstance(name, FlowProgramConfig):
-        flow_config = name
-        name = flow_config.name
+    pipeline_config: Optional[PipelineProgramConfig] = None
+    if isinstance(name, PipelineProgramConfig):
+        pipeline_config = name
+        name = pipeline_config.name
 
     program_config = rhasspy.config.programs.get(domain, {}).get(name, {})
     assert program_config is not None, f"No config for program {domain}/{name}"
     assert isinstance(program_config, ProgramConfig)
 
     command_str = program_config.command.strip()
-    if flow_config is not None:
-        if flow_config.template_args:
+    if pipeline_config is not None:
+        if pipeline_config.template_args:
             command_template = string.Template(command_str)
             if program_config.template_args:
                 mapping = dict(program_config.template_args)
-                merge_dict(mapping, flow_config.template_args)
+                merge_dict(mapping, pipeline_config.template_args)
             else:
-                mapping = flow_config.template_args
+                mapping = pipeline_config.template_args
 
             command_str = command_template.safe_substitute(mapping)
 

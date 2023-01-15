@@ -50,23 +50,29 @@ def main():
         command = shlex.split(args.command)
 
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    assert proc.stdout is not None
+    try:
+        assert proc.stdout is not None
 
-    write_event(AudioStart(timestamp=time.monotonic_ns()).event())
-    while True:
-        audio_bytes = proc.stdout.read(bytes_per_chunk)
-        if not audio_bytes:
-            break
+        write_event(AudioStart(timestamp=time.monotonic_ns()).event())
+        while True:
+            audio_bytes = proc.stdout.read(bytes_per_chunk)
+            if not audio_bytes:
+                break
 
-        write_event(
-            AudioChunk(
-                args.rate,
-                args.width,
-                args.channels,
-                audio_bytes,
-                timestamp=time.monotonic_ns(),
-            ).event()
-        )
+            write_event(
+                AudioChunk(
+                    args.rate,
+                    args.width,
+                    args.channels,
+                    audio_bytes,
+                    timestamp=time.monotonic_ns(),
+                ).event()
+            )
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if proc.poll() is None:
+            proc.terminate()
 
 
 if __name__ == "__main__":

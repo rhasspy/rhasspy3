@@ -16,21 +16,21 @@ class ProgramConfig(DataClassJsonMixin):
 
 
 @dataclass
-class FlowProgramConfig(DataClassJsonMixin):
+class PipelineProgramConfig(DataClassJsonMixin):
     name: str
     template_args: Optional[Dict[str, Any]] = None
 
 
 @dataclass
-class FlowConfig(DataClassJsonMixin):
-    mic: FlowProgramConfig
-    wake: FlowProgramConfig
-    vad: FlowProgramConfig
-    asr: FlowProgramConfig
-    intent: FlowProgramConfig
-    handle: FlowProgramConfig
-    tts: FlowProgramConfig
-    snd: FlowProgramConfig
+class PipelineConfig(DataClassJsonMixin):
+    mic: PipelineProgramConfig
+    wake: PipelineProgramConfig
+    vad: PipelineProgramConfig
+    asr: PipelineProgramConfig
+    intent: PipelineProgramConfig
+    handle: PipelineProgramConfig
+    tts: PipelineProgramConfig
+    snd: PipelineProgramConfig
 
 
 @dataclass
@@ -38,7 +38,7 @@ class Config(DataClassJsonMixin):
     programs: Dict[str, Dict[str, ProgramConfig]]
     """domain -> name -> program"""
 
-    flows: Dict[str, FlowConfig] = field(default_factory=dict)
+    pipelines: Dict[str, PipelineConfig] = field(default_factory=dict)
 
 
 # -----------------------------------------------------------------------------

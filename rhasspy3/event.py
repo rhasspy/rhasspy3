@@ -30,18 +30,25 @@ class Eventable(ABC):
 
 
 async def async_read_event(reader: asyncio.StreamReader) -> Optional[Event]:
-    json_line = await reader.readline()
-    if not json_line:
-        return None
+    try:
+        json_line = await reader.readline()
+        if not json_line:
+            return None
 
-    event_dict = json.loads(json_line)
-    payload_length = event_dict.get(_PAYLOAD_LENGTH)
+        event_dict = json.loads(json_line)
+        payload_length = event_dict.get(_PAYLOAD_LENGTH)
 
-    payload: Optional[bytes] = None
-    if payload_length is not None:
-        payload = await reader.readexactly(payload_length)
+        payload: Optional[bytes] = None
+        if payload_length is not None:
+            payload = await reader.readexactly(payload_length)
 
-    return Event(type=event_dict[_TYPE], data=event_dict.get(_DATA), payload=payload)
+        return Event(
+            type=event_dict[_TYPE], data=event_dict.get(_DATA), payload=payload
+        )
+    except KeyboardInterrupt:
+        pass
+
+    return None
 
 
 async def async_write_event(event: Event, writer: asyncio.StreamWriter):
@@ -50,31 +57,42 @@ async def async_write_event(event: Event, writer: asyncio.StreamWriter):
         event_dict[_PAYLOAD_LENGTH] = len(event.payload)
 
     json_line = json.dumps(event_dict, ensure_ascii=False)
-    writer.writelines((json_line.encode(), _NEWLINE))
 
-    if event.payload:
-        writer.write(event.payload)
+    try:
+        writer.writelines((json_line.encode(), _NEWLINE))
 
-    await writer.drain()
+        if event.payload:
+            writer.write(event.payload)
+
+        await writer.drain()
+    except KeyboardInterrupt:
+        pass
 
 
 def read_event(reader: Optional[IO[bytes]] = None) -> Optional[Event]:
     if reader is None:
         reader = sys.stdin.buffer
 
-    json_line = reader.readline()
+    try:
+        json_line = reader.readline()
 
-    if not json_line:
-        return None
+        if not json_line:
+            return None
 
-    event_dict = json.loads(json_line)
-    payload_length = event_dict.get(_PAYLOAD_LENGTH)
+        event_dict = json.loads(json_line)
+        payload_length = event_dict.get(_PAYLOAD_LENGTH)
 
-    payload: Optional[bytes] = None
-    if payload_length is not None:
-        payload = reader.read(payload_length)
+        payload: Optional[bytes] = None
+        if payload_length is not None:
+            payload = reader.read(payload_length)
 
-    return Event(type=event_dict[_TYPE], data=event_dict.get(_DATA), payload=payload)
+        return Event(
+            type=event_dict[_TYPE], data=event_dict.get(_DATA), payload=payload
+        )
+    except KeyboardInterrupt:
+        pass
+
+    return None
 
 
 def write_event(event: Event, writer: Optional[IO[bytes]] = None):
@@ -86,9 +104,13 @@ def write_event(event: Event, writer: Optional[IO[bytes]] = None):
         event_dict[_PAYLOAD_LENGTH] = len(event.payload)
 
     json_line = json.dumps(event_dict, ensure_ascii=False)
-    writer.writelines((json_line.encode(), _NEWLINE))
 
-    if event.payload:
-        writer.write(event.payload)
+    try:
+        writer.writelines((json_line.encode(), _NEWLINE))
 
-    writer.flush()
+        if event.payload:
+            writer.write(event.payload)
+
+        writer.flush()
+    except KeyboardInterrupt:
+        pass
