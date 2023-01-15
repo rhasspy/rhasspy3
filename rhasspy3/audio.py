@@ -1,6 +1,7 @@
 """Audio input/output."""
+import wave
 from dataclasses import dataclass
-from typing import Optional
+from typing import Iterable, Optional
 
 from .event import Event, Eventable
 
@@ -99,3 +100,23 @@ class AudioStop(Eventable):
         return AudioStop(
             timestamp=None if event.data is None else event.data.get("timestamp")
         )
+
+
+def wav_to_chunks(
+    wav_file: wave.Wave_read, samples_per_chunk: int, timestamp: int = 0
+) -> Iterable[AudioChunk]:
+    rate = wav_file.getframerate()
+    width = wav_file.getsampwidth()
+    channels = wav_file.getnchannels()
+    audio_bytes = wav_file.readframes(samples_per_chunk)
+    while audio_bytes:
+        chunk = AudioChunk(
+            rate=rate,
+            width=width,
+            channels=channels,
+            audio=audio_bytes,
+            timestamp=timestamp,
+        )
+        yield chunk
+        timestamp += chunk.milliseconds
+        audio_bytes = wav_file.readframes(samples_per_chunk)
