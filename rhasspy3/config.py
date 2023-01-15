@@ -1,8 +1,7 @@
 import argparse
 
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
 from yaml import safe_load
@@ -13,18 +12,25 @@ class ProgramConfig(DataClassJsonMixin):
     command: str
     wrapper: Optional[str] = None
     shell: bool = False
+    template_args: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class FlowProgramConfig(DataClassJsonMixin):
+    name: str
+    template_args: Optional[Dict[str, Any]] = None
 
 
 @dataclass
 class FlowConfig(DataClassJsonMixin):
-    mic: str
-    wake: str
-    vad: str
-    asr: str
-    intent: str
-    handle: str
-    tts: str
-    snd: str
+    mic: FlowProgramConfig
+    wake: FlowProgramConfig
+    vad: FlowProgramConfig
+    asr: FlowProgramConfig
+    intent: FlowProgramConfig
+    handle: FlowProgramConfig
+    tts: FlowProgramConfig
+    snd: FlowProgramConfig
 
 
 @dataclass
