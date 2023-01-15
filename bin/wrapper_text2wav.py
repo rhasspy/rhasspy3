@@ -4,6 +4,7 @@ import logging
 import io
 import shlex
 import tempfile
+import string
 import subprocess
 import wave
 from pathlib import Path
@@ -24,7 +25,7 @@ def main():
     parser.add_argument(
         "--temp_file",
         action="store_true",
-        help="Command has {temp_file} and will write output to it",
+        help="Command has ${temp_file} and will write output to it",
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
@@ -61,7 +62,8 @@ def main():
 def text_to_wav(args: argparse.Namespace, text: str) -> bytes:
     if args.temp_file:
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".wav") as wav_file:
-            command_str = args.command.format(temp_file=wav_file.name)
+            template = string.Template(args.command)
+            command_str = template.safe_substitute(temp_file=wav_file.name)
             command = shlex.split(command_str)
             subprocess.run(command, check=True, input=text.encode())
             wav_file.seek(0)

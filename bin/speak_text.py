@@ -8,7 +8,7 @@ import wave
 
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import async_read_event, async_write_event
-from rhasspy3.service import create_process
+from rhasspy3.program import create_process
 from rhasspy3.audio import AudioChunk, AudioStop, AudioStart
 from rhasspy3.tts import DOMAIN, Synthesize
 
@@ -23,13 +23,13 @@ async def main() -> None:
         required=True,
         help="Configuration directory",
     )
-    parser.add_argument("-s", "--service", required=True, help="TTS service name")
+    parser.add_argument("-p", "--program", required=True, help="TTS program name")
     parser.add_argument("-t", "--text", required=True, help="Text to speak")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
     rhasspy = Rhasspy.load(args.config)
-    proc = await create_process(rhasspy, DOMAIN, args.service)
+    proc = await create_process(rhasspy, DOMAIN, args.program)
     assert proc.stdin is not None
     assert proc.stdout is not None
 
