@@ -1,2 +1,3 @@
 quart
 Quart-CORS
+swagger-ui-py

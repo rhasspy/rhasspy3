@@ -1,0 +1,141 @@
+openapi: "3.0.0"
+info:
+  title: 'Rhasspy Voice Assistant'
+  version: '3.0.0'
+  description: 'API for Rhasspy Voice Assistant Toolkit'
+schemes:
+  - http
+servers:
+  - url: http://localhost:12101
+    description: Local development server
+paths:
+  /api/play-wav:
+    post:
+      summary: 'Play WAV data using configured audio output'
+      requestBody:
+        description: 'WAV data'
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/speech-to-text:
+    post:
+      summary: 'Transcribe WAV data to text'
+      requestBody:
+        description: 'WAV data (16-bit 16Khz mono required)'
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+  # /api/text-to-intent:
+  #   post:
+  #     summary: 'Extract intent from text and send to intent handler'
+  #     requestBody:
+  #       description: 'Text command'
+  #       required: true
+  #       content:
+  #         text/plain:
+  #           schema:
+  #             type: string
+  #     parameters:
+  #       - in: query
+  #         name: nohass
+  #         description: 'True if intent should NOT be sent to the intent handler'
+  #         schema:
+  #           type: boolean
+  #           default: false
+  #       - in: query
+  #         name: outputFormat
+  #         description: 'Format of response'
+  #         schema:
+  #           type: string
+  #           enum: [rhasspy, hermes]
+  #       - in: query
+  #         name: entity
+  #         description: 'User-defined entity to add to recognized intent'
+  #         schema:
+  #           type: string
+  #       - in: query
+  #         name: value
+  #         description: 'Value for user-defined entity'
+  #         schema:
+  #           type: string
+  #       - in: query
+  #         name: intentFilter
+  #         description: 'Comma-separated list of intent names'
+  #         schema:
+  #           type: string
+  #     responses:
+  #       '200':
+  #         description: 'Intent JSON'
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  /api/text-to-speech:
+    post:
+      summary: 'Synthesize WAV audio from text'
+      requestBody:
+        description: 'Text to speak'
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: WAV data
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+    get:
+      summary: 'Synthesize WAV audio from text'
+      produces:
+        - audio/wav
+      parameters:
+        - in: query
+          name: text
+          description: 'Text to speak'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: WAV data
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+  /api/version:
+    get:
+      summary: 'Get Rhasspy version'
+      produces:
+        - text/plain
+      responses:
+        '200':
+          description: 'Version string'
+          schema:
+            type: string

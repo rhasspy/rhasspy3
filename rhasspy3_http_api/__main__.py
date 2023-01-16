@@ -3,6 +3,7 @@ import argparse
 import logging
 import io
 import wave
+from pathlib import Path
 from typing import Optional, Tuple
 from uuid import uuid4
 
@@ -14,14 +15,17 @@ from quart import (
     jsonify,
     request,
 )
+from swagger_ui import api_doc
 
 from rhasspy3.asr import DOMAIN as ASR_DOMAIN, Transcript
 from rhasspy3.core import Rhasspy
-from rhasspy3.audio import wav_to_chunks, AudioStart, AudioStop
+from rhasspy3.audio import wav_to_chunks, AudioStart, AudioStop, AudioChunk
 from rhasspy3.snd import DOMAIN as SND_DOMAIN
+from rhasspy3.tts import DOMAIN as TTS_DOMAIN, Synthesize
 from rhasspy3.event import async_read_event, async_write_event
 from rhasspy3.program import create_process
 
+_DIR = Path(__file__).parent
 _LOGGER = logging.getLogger("rhasspy")
 
 
@@ -112,6 +116,53 @@ def main():
                     return transcript.text
 
         return ""
+
+    @app.route("/api/text-to-speech", methods=["GET", "POST"])
+    async def api_text_to_speech() -> Response:
+        if request.method == "GET":
+            text = request.args["text"]
+        else:
+            text = (await request.data).decode()
+
+        tts_proc = await create_process(rhasspy, TTS_DOMAIN, pipeline.tts)
+        assert tts_proc.stdin is not None
+        assert tts_proc.stdout is not None
+
+        await async_write_event(Synthesize(text=text).event(), tts_proc.stdin)
+
+        with io.BytesIO() as wav_io:
+            wav_file: wave.Wave_write = wave.open(wav_io, "wb")
+            with wav_file:
+                first_chunk = True
+                while True:
+                    event = await async_read_event(tts_proc.stdout)
+                    if event is None:
+                        break
+
+                    if AudioChunk.is_type(event.type):
+                        chunk = AudioChunk.from_event(event)
+                        if first_chunk:
+                            wav_file.setframerate(chunk.rate)
+                            wav_file.setsampwidth(chunk.width)
+                            wav_file.setnchannels(chunk.channels)
+                            first_chunk = False
+
+                        wav_file.writeframes(chunk.audio)
+                    elif AudioStop.is_type(event.type):
+                        break
+
+            return Response(wav_io.getvalue(), mimetype="audio/wav")
+
+    @app.route("/api/veresion", methods=["POST"])
+    async def api_version() -> str:
+        return "3.0.0"
+
+    api_doc(
+        app,
+        config_path=_DIR / "swagger.yaml",
+        url_prefix="/openapi",
+        title="Rhasspy",
+    )
 
     hyp_config = hypercorn.config.Config()
     hyp_config.bind = [f"{args.host}:{args.port}"]
