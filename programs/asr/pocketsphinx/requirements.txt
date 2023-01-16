@@ -1,0 +1,1 @@
+pocketsphinx @ https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz

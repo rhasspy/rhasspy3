@@ -30,16 +30,15 @@ async def create_process(
     assert isinstance(program_config, ProgramConfig)
 
     command_str = program_config.command.strip()
+    mapping = program_config.template_args or {}
+
     if pipeline_config is not None:
         if pipeline_config.template_args:
-            command_template = string.Template(command_str)
-            if program_config.template_args:
-                mapping = dict(program_config.template_args)
-                merge_dict(mapping, pipeline_config.template_args)
-            else:
-                mapping = pipeline_config.template_args
+            merge_dict(mapping, pipeline_config.template_args)
 
-            command_str = command_template.safe_substitute(mapping)
+    if mapping:
+        command_template = string.Template(command_str)
+        command_str = command_template.safe_substitute(mapping)
 
     working_dir = rhasspy.config_dir / "programs" / domain / name
     env = dict(os.environ)
