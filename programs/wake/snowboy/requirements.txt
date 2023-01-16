@@ -1,0 +1,1 @@
+snowboy @ https://github.com/Kitt-AI/snowboy/archive/v1.3.0.tar.gz
