@@ -10,7 +10,7 @@ from yaml import safe_load
 @dataclass
 class ProgramConfig(DataClassJsonMixin):
     command: str
-    wrapper: Optional[str] = None
+    adapter: Optional[str] = None
     shell: bool = False
     template_args: Optional[Dict[str, Any]] = None
 

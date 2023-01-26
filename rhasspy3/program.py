@@ -57,16 +57,16 @@ async def create_process(
     )
 
     if program_config.shell:
-        if program_config.wrapper:
-            program, *args = shlex.split(program_config.wrapper)
+        if program_config.adapter:
+            program, *args = shlex.split(program_config.adapter)
             args.append("--shell")
             args.append(command_str)
             proc = await asyncio.create_subprocess_exec(program, *args, **create_args)
         else:
             proc = await asyncio.create_subprocess_shell(command_str, **create_args)
     else:
-        if program_config.wrapper:
-            program, *args = shlex.split(program_config.wrapper)
+        if program_config.adapter:
+            program, *args = shlex.split(program_config.adapter)
             args.append(command_str)
         else:
             program, *args = shlex.split(command_str)

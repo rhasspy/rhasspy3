@@ -22,10 +22,13 @@ from swagger_ui import api_doc
 from rhasspy3.asr import transcribe
 from rhasspy3.core import Rhasspy
 from rhasspy3.audio import wav_to_chunks, AudioStart, AudioStop, AudioChunk
+from rhasspy3.intent import recognize, Intent
 from rhasspy3.snd import play
 from rhasspy3.tts import synthesize
 from rhasspy3.event import async_read_event, async_write_event
 from rhasspy3.program import create_process
+from rhasspy3.wake import detect
+from rhasspy3.mic import DOMAIN as MIC_DOMAIN
 
 _DIR = Path(__file__).parent
 _LOGGER = logging.getLogger("rhasspy")
@@ -116,6 +119,88 @@ def main():
         with io.BytesIO() as wav_out:
             await synthesize(rhasspy, program, text, wav_out)
             return Response(wav_out.getvalue(), mimetype="audio/wav")
+
+    @app.route("/api/speech-to-intent", methods=["GET", "POST"])
+    async def api_speech_to_intent() -> Response:
+        wav_bytes = await request.data
+        asr_program = request.args.get("asr_program", pipeline.asr)
+        intent_program = request.args.get("intent_program", pipeline.intent)
+        samples_per_chunk = int(
+            request.args.get("samples_per_chunk", args.samples_per_chunk)
+        )
+
+        with io.BytesIO(wav_bytes) as wav_in:
+            transcript = await transcribe(
+                rhasspy, asr_program, wav_in, samples_per_chunk
+            )
+
+        data = {}
+        if transcript is not None:
+            result = await recognize(rhasspy, intent_program, transcript.text)
+
+            # TODO: Post-process transcript
+            if isinstance(result, Intent):
+                data = result.to_rhasspy()
+
+        return jsonify(data)
+
+    @app.route("/api/text-to-intent", methods=["GET", "POST"])
+    async def api_text_to_intent() -> Response:
+        if request.method == "GET":
+            text = request.args["text"]
+        else:
+            text = (await request.data).decode()
+
+        program = request.args.get("program", pipeline.intent)
+        result = await recognize(rhasspy, program, text)
+
+        data = {}
+        if isinstance(result, Intent):
+            data = result.to_rhasspy()
+
+        return jsonify(data)
+
+    @app.route("/api/wait-for-wake", methods=["GET", "POST"])
+    async def api_wait_for_wake() -> str:
+        mic_program = request.args.get("mic_program", pipeline.mic)
+        wake_program = request.args.get("wake_program", pipeline.wake)
+
+        mic_proc = await create_process(rhasspy, MIC_DOMAIN, mic_program)
+        try:
+            assert mic_proc.stdout is not None
+            result = await detect(rhasspy, wake_program, mic_proc.stdout)
+            if result is not None:
+                return result.name or ""
+        finally:
+            mic_proc.terminate()
+            await mic_proc.wait()
+
+        return ""
+
+    # @app.route("/api/listen-for-command", methods=["GET", "POST"])
+    # async def api_speech_to_intent() -> Response:
+    #     wav_bytes = await request.data
+    #     asr_program = request.args.get("program", pipeline.asr)
+    #     intent_program = request.args.get("program", pipeline.intent)
+    #     samples_per_chunk = int(
+    #         request.args.get("samples_per_chunk", args.samples_per_chunk)
+    #     )
+
+    #     with io.BytesIO(wav_bytes) as wav_in:
+    #         transcript = await transcribe(
+    #             rhasspy, asr_program, wav_in, samples_per_chunk
+    #         )
+
+    #     data = {}
+    #     if transcript is not None:
+    #         result = await recognize(rhasspy, intent_program, transcript.text)
+
+    #         # TODO: Post-process transcript
+    #         if isinstance(result, Intent):
+    #             data = result.to_rhasspy()
+
+    #     return jsonify(data)
+
 
     @app.route("/api/version", methods=["POST"])
     async def api_version() -> str:

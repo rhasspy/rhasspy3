@@ -1,8 +1,10 @@
 """Intent recognition and handling."""
-from dataclasses import asdict, dataclass
-from typing import Any, Dict, Optional, List
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, Optional, List, Union
 
-from .event import Event, Eventable
+from .core import Rhasspy
+from .event import async_read_event, async_write_event, Event, Eventable
+from .program import create_process
 
 DOMAIN = "intent"
 _RECOGNIZE_TYPE = "recognize"
@@ -37,7 +39,7 @@ class Recognize(Eventable):
 @dataclass
 class Intent(Eventable):
     name: str
-    entities: Optional[List[Entity]] = None
+    entities: List[Entity] = field(default_factory=list)
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -53,12 +55,27 @@ class Intent(Eventable):
     @staticmethod
     def from_event(event: Event) -> "Intent":
         assert event.data is not None
-        entities: Optional[List[Entity]] = None
         entity_dicts = event.data.get("entities")
         if entity_dicts:
-            entities = [Entity(**entity_dict) for entity_dict in entity_dicts]
+            entities: List[Entity] = [
+                Entity(**entity_dict) for entity_dict in entity_dicts
+            ]
+        else:
+            entities = []
 
         return Intent(name=event.data["name"], entities=entities)
+
+    def to_rhasspy(self) -> Dict[str, Any]:
+        return {
+            "intent": {
+                "name": self.name,
+            },
+            "entities": [
+                {"entity": entity.name, "value": entity.value}
+                for entity in self.entities
+            ],
+            "slots": {entity.name: entity.value for entity in self.entities},
+        }
 
 
 @dataclass
@@ -80,3 +97,25 @@ class NotRecognized(Eventable):
     def from_event(event: Event) -> "NotRecognized":
         assert event.data is not None
         return NotRecognized(text=event.data.get("text"))
+
+
+async def recognize(
+    rhasspy: Rhasspy, program: str, text: str
+) -> Optional[Union[Intent, NotRecognized]]:
+    intent_proc = await create_process(rhasspy, DOMAIN, program)
+    assert intent_proc.stdin is not None
+    assert intent_proc.stdout is not None
+
+    await async_write_event(Recognize(text=text).event(), intent_proc.stdin)
+    while True:
+        intent_event = await async_read_event(intent_proc.stdout)
+        if intent_event is None:
+            break
+
+        if Intent.is_type(intent_event.type):
+            return Intent.from_event(intent_event)
+
+        if NotRecognized.is_type(intent_event.type):
+            return NotRecognized.from_event(intent_event)
+
+    return None

@@ -16,7 +16,11 @@ async def play(
     wav_file: wave.Wave_read = wave.open(wav_in, "rb")
     with wav_file:
         snd_proc = await create_process(rhasspy, DOMAIN, program)
-        assert snd_proc.stdin is not None
+        try:
+            assert snd_proc.stdin is not None
 
-        for chunk in wav_to_chunks(wav_file, samples_per_chunk=samples_per_chunk):
-            await async_write_event(chunk.event(), snd_proc.stdin)
+            for chunk in wav_to_chunks(wav_file, samples_per_chunk=samples_per_chunk):
+                await async_write_event(chunk.event(), snd_proc.stdin)
+        finally:
+            snd_proc.terminate()
+            await snd_proc.wait()

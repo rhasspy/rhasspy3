@@ -9,7 +9,7 @@ from rhasspy3.intent import Intent
 from rhasspy3.handle import Handled, NotHandled
 from rhasspy3.event import write_event, read_event
 
-_LOGGER = logging.getLogger("wrapper_handle_text")
+_LOGGER = logging.getLogger("handle_adapter_text")
 
 
 def main():

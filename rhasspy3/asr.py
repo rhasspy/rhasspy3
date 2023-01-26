@@ -39,30 +39,34 @@ async def transcribe(
         channels = wav_file.getnchannels()
 
         asr_proc = await create_process(rhasspy, DOMAIN, program)
-        assert asr_proc.stdin is not None
-        assert asr_proc.stdout is not None
+        try:
+            assert asr_proc.stdin is not None
+            assert asr_proc.stdout is not None
 
-        timestamp = 0
-        await async_write_event(
-            AudioStart(rate, width, channels, timestamp=timestamp).event(),
-            asr_proc.stdin,
-        )
+            timestamp = 0
+            await async_write_event(
+                AudioStart(rate, width, channels, timestamp=timestamp).event(),
+                asr_proc.stdin,
+            )
 
-        for chunk in wav_to_chunks(wav_file, samples_per_chunk=samples_per_chunk):
-            await async_write_event(chunk.event(), asr_proc.stdin)
-            if chunk.timestamp is not None:
-                timestamp = chunk.timestamp
-            else:
-                timestamp += chunk.milliseconds
+            for chunk in wav_to_chunks(wav_file, samples_per_chunk=samples_per_chunk):
+                await async_write_event(chunk.event(), asr_proc.stdin)
+                if chunk.timestamp is not None:
+                    timestamp = chunk.timestamp
+                else:
+                    timestamp += chunk.milliseconds
 
-        await async_write_event(AudioStop(timestamp=timestamp).event(), asr_proc.stdin)
+            await async_write_event(AudioStop(timestamp=timestamp).event(), asr_proc.stdin)
 
-        while True:
-            event = await async_read_event(asr_proc.stdout)
-            if event is None:
-                break
+            while True:
+                event = await async_read_event(asr_proc.stdout)
+                if event is None:
+                    break
 
-            if Transcript.is_type(event.type):
-                return Transcript.from_event(event)
+                if Transcript.is_type(event.type):
+                    return Transcript.from_event(event)
+        finally:
+            asr_proc.terminate()
+            await asr_proc.wait()
 
     return None

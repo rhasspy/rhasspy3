@@ -32,28 +32,32 @@ class Synthesize(Eventable):
 
 async def synthesize(rhasspy: Rhasspy, program: str, text: str, wav_out: IO[bytes]):
     tts_proc = await create_process(rhasspy, DOMAIN, program)
-    assert tts_proc.stdin is not None
-    assert tts_proc.stdout is not None
+    try:
+        assert tts_proc.stdin is not None
+        assert tts_proc.stdout is not None
 
-    await async_write_event(Synthesize(text=text).event(), tts_proc.stdin)
+        await async_write_event(Synthesize(text=text).event(), tts_proc.stdin)
 
-    wav_file: wave.Wave_write = wave.open(wav_out, "wb")
-    with wav_file:
-        audio_started = False
-        while True:
-            event = await async_read_event(tts_proc.stdout)
-            if event is None:
-                break
+        wav_file: wave.Wave_write = wave.open(wav_out, "wb")
+        with wav_file:
+            audio_started = False
+            while True:
+                event = await async_read_event(tts_proc.stdout)
+                if event is None:
+                    break
 
-            if AudioStart.is_type(event.type):
-                start = AudioStart.from_event(event)
-                wav_file.setframerate(start.rate)
-                wav_file.setsampwidth(start.width)
-                wav_file.setnchannels(start.channels)
-                audio_started = True
-            elif AudioChunk.is_type(event.type):
-                if audio_started:
-                    chunk = AudioChunk.from_event(event)
-                    wav_file.writeframes(chunk.audio)
-            elif AudioStop.is_type(event.type):
-                break
+                if AudioStart.is_type(event.type):
+                    start = AudioStart.from_event(event)
+                    wav_file.setframerate(start.rate)
+                    wav_file.setsampwidth(start.width)
+                    wav_file.setnchannels(start.channels)
+                    audio_started = True
+                elif AudioChunk.is_type(event.type):
+                    if audio_started:
+                        chunk = AudioChunk.from_event(event)
+                        wav_file.writeframes(chunk.audio)
+                elif AudioStop.is_type(event.type):
+                    break
+    finally:
+        tts_proc.terminate()
+        await tts_proc.wait()

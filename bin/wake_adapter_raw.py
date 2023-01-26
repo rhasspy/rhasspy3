@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Wake word detection with a command that accepts raw PCM audio and prints a line for each detection."""
 import argparse
 import logging
 import shlex
@@ -6,14 +7,13 @@ import subprocess
 import threading
 import time
 from dataclasses import dataclass
-from pathlib import Path
 from typing import IO
 
 from rhasspy3.audio import AudioChunk
 from rhasspy3.wake import Detection
 from rhasspy3.event import write_event, read_event
 
-_LOGGER = logging.getLogger("wrapper_wake_print")
+_LOGGER = logging.getLogger("wake_adapter_raw")
 
 
 @dataclass
@@ -40,16 +40,17 @@ def main():
         state = State()
         threading.Thread(target=write_proc, args=(proc.stdout, state)).start()
 
-        while True:
+        while not state.detected:
             event = read_event()
             if event is None:
                 break
 
-
             if AudioChunk.is_type(event.type):
                 chunk = AudioChunk.from_event(event)
                 state.timestamp = (
-                    chunk.timestamp if chunk.timestamp is not None else time.monotonic_ns()
+                    chunk.timestamp
+                    if chunk.timestamp is not None
+                    else time.monotonic_ns()
                 )
                 proc.stdin.write(chunk.audio)
                 proc.stdin.flush()
