@@ -14,14 +14,16 @@ from quart import (
     Response,
     jsonify,
     request,
+    render_template,
+    send_from_directory,
 )
 from swagger_ui import api_doc
 
-from rhasspy3.asr import DOMAIN as ASR_DOMAIN, Transcript
+from rhasspy3.asr import transcribe
 from rhasspy3.core import Rhasspy
 from rhasspy3.audio import wav_to_chunks, AudioStart, AudioStop, AudioChunk
-from rhasspy3.snd import DOMAIN as SND_DOMAIN
-from rhasspy3.tts import DOMAIN as TTS_DOMAIN, Synthesize
+from rhasspy3.snd import play
+from rhasspy3.tts import synthesize
 from rhasspy3.event import async_read_event, async_write_event
 from rhasspy3.program import create_process
 
@@ -46,13 +48,17 @@ def main():
     parser.add_argument(
         "--port", type=int, default=12101, help="Port of HTTP server (default: 12101)"
     )
+    parser.add_argument("--samples-per-chunk", type=int, default=1024)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
     rhasspy = Rhasspy.load(args.config)
     pipeline = rhasspy.config.pipelines[args.pipeline]
 
-    app = Quart("rhasspy3")
+    template_dir = _DIR / "templates"
+    img_dir = _DIR / "img"
+
+    app = Quart("rhasspy3", template_folder=str(template_dir))
     app.secret_key = str(uuid4())
     app = quart_cors.cors(app)
 
@@ -62,60 +68,41 @@ def main():
         _LOGGER.exception(err)
         return (f"{err.__class__.__name__}: {err}", 500)
 
+    @app.route("/", methods=["GET"])
+    async def page_index() -> str:
+        """Render main web page."""
+        return await render_template("index.html")
+
+    @app.route("/img/<path:filename>", methods=["GET"])
+    async def img(filename) -> Response:
+        """Image static endpoint."""
+        return await send_from_directory(img_dir, filename)
+
     @app.route("/api/play-wav", methods=["POST"])
     async def api_play_wav() -> str:
         wav_bytes = await request.data
-        with io.BytesIO(wav_bytes) as wav_io:
-            wav_file: wave.Wave_read = wave.open(wav_io, "rb")
-            with wav_file:
-                snd_proc = await create_process(rhasspy, SND_DOMAIN, pipeline.snd)
-                assert snd_proc.stdin is not None
+        program = request.args.get("program", pipeline.snd)
+        samples_per_chunk = int(
+            request.args.get("samples_per_chunk", args.samples_per_chunk)
+        )
 
-                for chunk in wav_to_chunks(wav_file, samples_per_chunk=1024):
-                    await async_write_event(chunk.event(), snd_proc.stdin)
+        with io.BytesIO(wav_bytes) as wav_in:
+            await play(rhasspy, program, wav_in, samples_per_chunk)
 
         return str(len(wav_bytes))
 
     @app.route("/api/speech-to-text", methods=["POST"])
     async def api_speech_to_text() -> str:
         wav_bytes = await request.data
-        with io.BytesIO(wav_bytes) as wav_io:
-            wav_file: wave.Wave_read = wave.open(wav_io, "rb")
-            with wav_file:
-                asr_proc = await create_process(rhasspy, ASR_DOMAIN, pipeline.asr)
-                assert asr_proc.stdin is not None
-                assert asr_proc.stdout is not None
+        program = request.args.get("program", pipeline.asr)
+        samples_per_chunk = int(
+            request.args.get("samples_per_chunk", args.samples_per_chunk)
+        )
 
-                timestamp = 0
-                await async_write_event(
-                    AudioStart(timestamp=timestamp).event(), asr_proc.stdin
-                )
+        with io.BytesIO(wav_bytes) as wav_in:
+            transcript = await transcribe(rhasspy, program, wav_in, samples_per_chunk)
 
-                for chunk in wav_to_chunks(wav_file, samples_per_chunk=1024):
-                    await async_write_event(chunk.event(), asr_proc.stdin)
-                    if chunk.timestamp is not None:
-                        timestamp = chunk.timestamp
-                    else:
-                        timestamp += chunk.milliseconds
-
-                await async_write_event(
-                    AudioStop(timestamp=timestamp).event(), asr_proc.stdin
-                )
-
-                transcript: Optional[Transcript] = None
-                while True:
-                    event = await async_read_event(asr_proc.stdout)
-                    if event is None:
-                        break
-
-                    if Transcript.is_type(event.type):
-                        transcript = Transcript.from_event(event)
-                        break
-
-                if transcript is not None:
-                    return transcript.text
-
-        return ""
+        return transcript.text if transcript is not None else ""
 
     @app.route("/api/text-to-speech", methods=["GET", "POST"])
     async def api_text_to_speech() -> Response:
@@ -124,36 +111,13 @@ def main():
         else:
             text = (await request.data).decode()
 
-        tts_proc = await create_process(rhasspy, TTS_DOMAIN, pipeline.tts)
-        assert tts_proc.stdin is not None
-        assert tts_proc.stdout is not None
+        program = request.args.get("program", pipeline.tts)
 
-        await async_write_event(Synthesize(text=text).event(), tts_proc.stdin)
+        with io.BytesIO() as wav_out:
+            await synthesize(rhasspy, program, text, wav_out)
+            return Response(wav_out.getvalue(), mimetype="audio/wav")
 
-        with io.BytesIO() as wav_io:
-            wav_file: wave.Wave_write = wave.open(wav_io, "wb")
-            with wav_file:
-                first_chunk = True
-                while True:
-                    event = await async_read_event(tts_proc.stdout)
-                    if event is None:
-                        break
-
-                    if AudioChunk.is_type(event.type):
-                        chunk = AudioChunk.from_event(event)
-                        if first_chunk:
-                            wav_file.setframerate(chunk.rate)
-                            wav_file.setsampwidth(chunk.width)
-                            wav_file.setnchannels(chunk.channels)
-                            first_chunk = False
-
-                        wav_file.writeframes(chunk.audio)
-                    elif AudioStop.is_type(event.type):
-                        break
-
-            return Response(wav_io.getvalue(), mimetype="audio/wav")
-
-    @app.route("/api/veresion", methods=["POST"])
+    @app.route("/api/version", methods=["POST"])
     async def api_version() -> str:
         return "3.0.0"
 

@@ -14,4 +14,4 @@ if [ -d "${venv}" ]; then
     source "${venv}/bin/activate"
 fi
 
-tts-server --model_name 'tts_models/en/ljspeech/vits' "@"
+tts-server --model_name 'tts_models/en/ljspeech/vits' "$@"

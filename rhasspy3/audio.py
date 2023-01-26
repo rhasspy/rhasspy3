@@ -62,6 +62,9 @@ class AudioChunk(Eventable):
 
 @dataclass
 class AudioStart(Eventable):
+    rate: int
+    width: int
+    channels: int
     timestamp: Optional[int] = None
 
     @staticmethod
@@ -69,15 +72,25 @@ class AudioStart(Eventable):
         return event_type == _START_TYPE
 
     def event(self) -> Event:
+
         return Event(
             type=_START_TYPE,
-            data=None if self.timestamp is None else {"timestamp": self.timestamp},
+            data={
+                "rate": self.rate,
+                "width": self.width,
+                "channels": self.channels,
+                "timestamp": self.timestamp,
+            },
         )
 
     @staticmethod
     def from_event(event: Event) -> "AudioStart":
+        assert event.data is not None
         return AudioStart(
-            timestamp=None if event.data is None else event.data.get("timestamp")
+            rate=event.data["rate"],
+            width=event.data["width"],
+            channels=event.data["channels"],
+            timestamp=event.data.get("timestamp"),
         )
 
 
@@ -92,14 +105,12 @@ class AudioStop(Eventable):
     def event(self) -> Event:
         return Event(
             type=_STOP_TYPE,
-            data=None if self.timestamp is None else {"timestamp": self.timestamp},
+            data={"timestamp": self.timestamp},
         )
 
     @staticmethod
     def from_event(event: Event) -> "AudioStop":
-        return AudioStop(
-            timestamp=None if event.data is None else event.data.get("timestamp")
-        )
+        return AudioStop(timestamp=event.data.get("timestamp"))
 
 
 def wav_to_chunks(

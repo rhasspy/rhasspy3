@@ -2,7 +2,7 @@ import asyncio
 import json
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, IO
 
 _TYPE = "type"
@@ -14,7 +14,7 @@ _NEWLINE = "\n".encode()
 @dataclass
 class Event:
     type: str
-    data: Optional[Dict[str, Any]] = None
+    data: Dict[str, Any] = field(default_factory=dict)
     payload: Optional[bytes] = None
 
 

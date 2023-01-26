@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
+"""Play audio through a command that accepts raw PCM."""
 import argparse
 import logging
 import shlex
 import subprocess
-import time
-from pathlib import Path
 
 from rhasspy3.audio import AudioChunk
-from rhasspy3.event import write_event, read_event
+from rhasspy3.event import read_event
 
 _LOGGER = logging.getLogger("wrapper_raw_snd")
 

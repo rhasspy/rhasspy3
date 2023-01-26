@@ -17,5 +17,6 @@ fi
 
 export PYTHONPATH="${base_dir}"
 export PYTHONUNBUFFERED='1'
+export PATH="${base_dir}/bin:${PATH}"
 
 "$@"

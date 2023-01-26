@@ -5,7 +5,7 @@ tmp/
 
 *.py[cod]
 *.egg
-build
+/build
 htmlcov
 
 .projectile
@@ -14,4 +14,4 @@ venv/
 .mypy_cache/
 *.egg-info/
 
-local/
+/local/

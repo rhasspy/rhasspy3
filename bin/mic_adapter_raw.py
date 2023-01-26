@@ -9,7 +9,7 @@ from pathlib import Path
 from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
 from rhasspy3.event import write_event, read_event
 
-_LOGGER = logging.getLogger("wrapper_raw_mic")
+_LOGGER = logging.getLogger("mic_adapter_raw")
 
 
 def main():
@@ -53,7 +53,11 @@ def main():
     try:
         assert proc.stdout is not None
 
-        write_event(AudioStart(timestamp=time.monotonic_ns()).event())
+        write_event(
+            AudioStart(
+                args.rate, args.width, args.channels, timestamp=time.monotonic_ns()
+            ).event()
+        )
         while True:
             audio_bytes = proc.stdout.read(bytes_per_chunk)
             if not audio_bytes:
