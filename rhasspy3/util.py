@@ -1,5 +1,6 @@
 import collections
 
+
 def merge_dict(base_dict, new_dict):
     """Merges new_dict into base_dict."""
     for key, value in new_dict.items():

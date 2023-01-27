@@ -3,18 +3,18 @@
 Runs a text to speech command that returns WAV audio on stdout or in a temp file.
 """
 import argparse
-import logging
 import io
+import logging
 import shlex
-import tempfile
 import string
 import subprocess
+import tempfile
 import wave
 from pathlib import Path
 
 from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
+from rhasspy3.event import read_event, write_event
 from rhasspy3.tts import Synthesize
-from rhasspy3.event import write_event, read_event
 
 _LOGGER = logging.getLogger("tts_adapter_text2wav")
 

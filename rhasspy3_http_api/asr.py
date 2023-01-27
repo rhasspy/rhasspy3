@@ -18,17 +18,19 @@ def add_asr(
     @app.route("/api/speech-to-text", methods=["POST"])
     async def api_speech_to_text() -> str:
         wav_bytes = await request.data
-        program = request.args.get("program", pipeline.asr)
+        asr_program = request.args.get("asr_program", pipeline.asr)
         samples_per_chunk = int(
             request.args.get("samples_per_chunk", args.samples_per_chunk)
         )
 
         _LOGGER.debug(
-            "speech-to-text: asr=%s, wav=%s byte(s)", program, len(wav_bytes)
+            "speech-to-text: asr=%s, wav=%s byte(s)", asr_program, len(wav_bytes)
         )
 
         with io.BytesIO(wav_bytes) as wav_in:
-            transcript = await transcribe(rhasspy, program, wav_in, samples_per_chunk)
+            transcript = await transcribe(
+                rhasspy, asr_program, wav_in, samples_per_chunk
+            )
 
         text = transcript.text if transcript is not None else ""
         _LOGGER.debug("speech-to-text: text='%s'", text)

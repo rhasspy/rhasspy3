@@ -3,12 +3,12 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass
-from typing import Optional, Iterable, Union
+from typing import Iterable, Optional, Union
 
 from .audio import AudioChunk, AudioStop
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import async_read_event, async_write_event, Event, Eventable
+from .event import Event, Eventable, async_read_event, async_write_event
 from .program import create_process
 
 DOMAIN = "vad"

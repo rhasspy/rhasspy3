@@ -15,8 +15,8 @@ if [ -d "${venv}" ]; then
 fi
 
 python_files=()
+python_files+=("${base_dir}/bin")
 python_files+=("${base_dir}/rhasspy3")
-python_files+=("${base_dir}/tests"/*.py)
 
 # Format code
 black "${python_files[@]}"

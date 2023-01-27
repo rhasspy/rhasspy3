@@ -2,13 +2,13 @@
 import argparse
 import logging
 import shlex
-import tempfile
 import subprocess
+import tempfile
 import wave
 
-from rhasspy3.audio import AudioChunk, AudioStop
 from rhasspy3.asr import Transcript
-from rhasspy3.event import write_event, read_event
+from rhasspy3.audio import AudioChunk, AudioStop
+from rhasspy3.event import read_event, write_event
 
 _LOGGER = logging.getLogger("asr_adapter_wav2text")
 
@@ -39,7 +39,8 @@ def main() -> None:
                 else:
                     command = shlex.split(args.command)
 
-                with wave.open(wav_io, "wb") as wav_file:
+                wav_file: wave.Wave_write = wave.open(wav_io, "wb")
+                with wav_file:
                     first_chunk = True
                     while True:
                         event = read_event()
@@ -77,11 +78,11 @@ def main() -> None:
                 if event is None:
                     break
 
-                if AudioChunk.is_type(event):
+                if AudioChunk.is_type(event.type):
                     chunk = AudioChunk.from_event(event)
                     proc.stdin.write(chunk.audio)
                     proc.stdin.flush()
-                elif AudioStop.is_type(event):
+                elif AudioStop.is_type(event.type):
                     break
 
             stdout, _stderr = proc.communicate()
@@ -94,7 +95,10 @@ def main() -> None:
                 filter_command = shlex.split(args.text_filter)
 
             text = subprocess.check_output(
-                filter_command, input=text, shell=args.text_filter_shell, universal_newlines=True
+                filter_command,
+                input=text,
+                shell=args.text_filter_shell,
+                universal_newlines=True,
             )
 
         write_event(Transcript(text=text.strip()).event())

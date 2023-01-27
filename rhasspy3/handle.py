@@ -1,6 +1,6 @@
 """Intent recognition and handling."""
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional
 
 from .event import Event, Eventable
 

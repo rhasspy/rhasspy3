@@ -1,13 +1,13 @@
 import asyncio
 import logging
-import shlex
 import os
+import shlex
 import string
 from asyncio import subprocess
 from typing import Optional, Union
 
+from .config import PipelineProgramConfig, ProgramConfig
 from .core import Rhasspy
-from .config import ProgramConfig, PipelineProgramConfig
 from .util import merge_dict
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,6 +17,7 @@ class MissingProgramConfigError(Exception):
     pass
 
 
+# pylint: disable=no-member
 async def create_process(
     rhasspy: Rhasspy, domain: str, name: Union[str, PipelineProgramConfig]
 ) -> subprocess.Process:
@@ -25,7 +26,9 @@ async def create_process(
         pipeline_config = name
         name = pipeline_config.name
 
-    program_config = rhasspy.config.programs.get(domain, {}).get(name, {})
+    program_config: Optional[ProgramConfig] = rhasspy.config.programs.get(
+        domain, {}
+    ).get(name)
     assert program_config is not None, f"No config for program {domain}/{name}"
     assert isinstance(program_config, ProgramConfig)
 
@@ -49,21 +52,30 @@ async def create_process(
     # Ensure stdout is flushed for Python programs
     env["PYTHONUNBUFFERED"] = "1"
 
-    create_args = dict(
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        cwd=working_dir if working_dir.is_dir() else None,
-        env=env,
-    )
+    cwd = working_dir if working_dir.is_dir() else None
 
     if program_config.shell:
         if program_config.adapter:
             program, *args = shlex.split(program_config.adapter)
             args.append("--shell")
             args.append(command_str)
-            proc = await asyncio.create_subprocess_exec(program, *args, **create_args)
+
+            proc = await asyncio.create_subprocess_exec(
+                program,
+                *args,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                cwd=cwd,
+                env=env,
+            )
         else:
-            proc = await asyncio.create_subprocess_shell(command_str, **create_args)
+            proc = await asyncio.create_subprocess_shell(
+                command_str,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                cwd=cwd,
+                env=env,
+            )
     else:
         if program_config.adapter:
             program, *args = shlex.split(program_config.adapter)
@@ -71,6 +83,13 @@ async def create_process(
         else:
             program, *args = shlex.split(command_str)
 
-        proc = await asyncio.create_subprocess_exec(program, *args, **create_args)
+        proc = await asyncio.create_subprocess_exec(
+            program,
+            *args,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            cwd=cwd,
+            env=env,
+        )
 
     return proc

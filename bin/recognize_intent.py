@@ -7,8 +7,8 @@ from typing import Iterable
 
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import async_read_event, async_write_event
-from rhasspy3.program import create_process
 from rhasspy3.intent import DOMAIN, Intent, NotRecognized, Recognize
+from rhasspy3.program import create_process
 
 _LOGGER = logging.getLogger("recognize_intent")
 

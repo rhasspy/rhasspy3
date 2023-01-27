@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 import argparse
 import asyncio
-import logging
 import io
+import logging
 import sys
 import wave
 from typing import Iterable, Optional
 
+from rhasspy3.asr import DOMAIN, Transcript
+from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import async_read_event, async_write_event
 from rhasspy3.program import create_process
-from rhasspy3.audio import AudioChunk, AudioStop, AudioStart
-from rhasspy3.asr import DOMAIN, Transcript
 
 _LOGGER = logging.getLogger("transcribe_wav")
 
@@ -47,7 +47,9 @@ async def main() -> None:
         assert proc.stdin is not None
         assert proc.stdout is not None
 
-        await async_write_event(AudioStart(timestamp=0).event(), proc.stdin)
+        await async_write_event(
+            AudioStart(rate, width, channels, timestamp=0).event(), proc.stdin
+        )
         await async_write_event(
             AudioChunk(rate, width, channels, audio_bytes, timestamp=0).event(),
             proc.stdin,

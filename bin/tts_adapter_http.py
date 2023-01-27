@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import io
-import shlex
-import tempfile
-import string
-import subprocess
 import wave
-from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
+from rhasspy3.event import read_event, write_event
 from rhasspy3.tts import Synthesize
-from rhasspy3.event import write_event, read_event
 
 _LOGGER = logging.getLogger("tts_adapter_http")
 

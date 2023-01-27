@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-import logging
 import json
+import logging
 import shlex
 import subprocess
 
-from rhasspy3.intent import Intent
+from rhasspy3.event import read_event, write_event
 from rhasspy3.handle import Handled, NotHandled
-from rhasspy3.event import write_event, read_event
+from rhasspy3.intent import Intent
 
 _LOGGER = logging.getLogger("handle_adapter_text")
 

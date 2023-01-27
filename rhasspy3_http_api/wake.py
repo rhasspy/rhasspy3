@@ -1,14 +1,18 @@
 import argparse
 import asyncio
+import io
 import logging
+import wave
 
 from quart import request, Quart
 
+from rhasspy3.audio import wav_to_chunks
 from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
+from rhasspy3.event import async_read_event, async_write_event
 from rhasspy3.mic import DOMAIN as MIC_DOMAIN
 from rhasspy3.program import create_process
-from rhasspy3.wake import detect
+from rhasspy3.wake import detect, DOMAIN as WAKE_DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 

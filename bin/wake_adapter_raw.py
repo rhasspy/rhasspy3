@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from typing import IO
 
 from rhasspy3.audio import AudioChunk
+from rhasspy3.event import read_event, write_event
 from rhasspy3.wake import Detection
-from rhasspy3.event import write_event, read_event
 
 _LOGGER = logging.getLogger("wake_adapter_raw")
 

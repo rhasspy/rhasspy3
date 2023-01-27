@@ -21,11 +21,11 @@ def add_tts(
         else:
             text = (await request.data).decode()
 
-        program = request.args.get("program", pipeline.tts)
-        _LOGGER.debug("text-to-speech: tts=%s, text='%s'", program, text)
+        tts_program = request.args.get("tts_program", pipeline.tts)
+        _LOGGER.debug("text-to-speech: tts=%s, text='%s'", tts_program, text)
 
         with io.BytesIO() as wav_out:
-            await synthesize(rhasspy, program, text, wav_out)
+            await synthesize(rhasspy, tts_program, text, wav_out)
             wav_bytes = wav_out.getvalue()
             _LOGGER.debug("text-to-speech: wav=%s byte(s)", len(wav_bytes))
 

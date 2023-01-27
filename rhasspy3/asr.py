@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from typing import IO, Optional, Union
 
 from .audio import AudioStart, AudioStop, wav_to_chunks
-from .core import Rhasspy
 from .config import PipelineProgramConfig
-from .event import async_read_event, async_write_event, Event, Eventable
+from .core import Rhasspy
+from .event import Event, Eventable, async_read_event, async_write_event
 from .program import create_process
 
 DOMAIN = "asr"

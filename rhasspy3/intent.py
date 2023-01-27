@@ -1,10 +1,10 @@
 """Intent recognition and handling."""
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Optional, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import async_read_event, async_write_event, Event, Eventable
+from .event import Event, Eventable, async_read_event, async_write_event
 from .program import create_process
 
 DOMAIN = "intent"

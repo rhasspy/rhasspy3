@@ -3,8 +3,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Union
 
-from .config import Config
 from yaml import safe_load
+
+from .config import Config
 
 _DIR = Path(__file__).parent
 

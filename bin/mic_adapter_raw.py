@@ -4,10 +4,9 @@ import logging
 import shlex
 import subprocess
 import time
-from pathlib import Path
 
-from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
-from rhasspy3.event import write_event, read_event
+from rhasspy3.audio import AudioChunk, AudioStart
+from rhasspy3.event import write_event
 
 _LOGGER = logging.getLogger("mic_adapter_raw")
 

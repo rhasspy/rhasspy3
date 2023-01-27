@@ -3,7 +3,7 @@ import json
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, IO
+from typing import IO, Any, Dict, Optional
 
 _TYPE = "type"
 _DATA = "data"

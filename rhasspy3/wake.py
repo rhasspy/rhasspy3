@@ -1,13 +1,12 @@
 """Wake word detection"""
 import asyncio
-import time
 from dataclasses import dataclass
-from typing import Optional, MutableSequence, Union
+from typing import MutableSequence, Optional, Union
 
 from .audio import AudioChunk
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import async_read_event, async_write_event, Event, Eventable
+from .event import Event, Eventable, async_read_event, async_write_event
 from .program import create_process
 
 DOMAIN = "wake"

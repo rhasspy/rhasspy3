@@ -4,21 +4,27 @@ import asyncio
 import logging
 import time
 from collections import deque
-from enum import auto, Enum
+from enum import Enum, auto
 from typing import Deque, Optional, Union
 
+from rhasspy3.asr import DOMAIN as ASR_DOMAIN
+from rhasspy3.asr import Transcript
+from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
 from rhasspy3.core import Rhasspy
-from rhasspy3.event import async_read_event, async_write_event, Event
-from rhasspy3.program import create_process
-from rhasspy3.audio import AudioChunk, AudioStop, AudioStart
-from rhasspy3.asr import DOMAIN as ASR_DOMAIN, Transcript
+from rhasspy3.event import Event, async_read_event, async_write_event
+from rhasspy3.handle import DOMAIN as HANDLE_DOMAIN
+from rhasspy3.handle import Handled, NotHandled
+from rhasspy3.intent import DOMAIN as INTENT_DOMAIN
+from rhasspy3.intent import Intent, NotRecognized, Recognize
 from rhasspy3.mic import DOMAIN as MIC_DOMAIN
-from rhasspy3.vad import DOMAIN as VAD_DOMAIN, VoiceStarted, VoiceStopped
-from rhasspy3.wake import DOMAIN as WAKE_DOMAIN, Detection
-from rhasspy3.intent import DOMAIN as INTENT_DOMAIN, Recognize, NotRecognized, Intent
-from rhasspy3.handle import DOMAIN as HANDLE_DOMAIN, Handled, NotHandled
-from rhasspy3.tts import DOMAIN as TTS_DOMAIN, Synthesize
+from rhasspy3.program import create_process
 from rhasspy3.snd import DOMAIN as SND_DOMAIN
+from rhasspy3.tts import DOMAIN as TTS_DOMAIN
+from rhasspy3.tts import Synthesize
+from rhasspy3.vad import DOMAIN as VAD_DOMAIN
+from rhasspy3.vad import VoiceStarted, VoiceStopped
+from rhasspy3.wake import DOMAIN as WAKE_DOMAIN
+from rhasspy3.wake import Detection
 
 _LOGGER = logging.getLogger("pipeline_run")
 
@@ -90,6 +96,9 @@ async def main() -> None:
             state = State.DETECT_WAKE
             stt_chunks: Deque[Event] = deque(maxlen=args.asr_buffer_chunks)
             timestamp = 0
+            rate = 16000
+            width = 2
+            channels = 1
 
             mic_task = asyncio.create_task(async_read_event(mic_proc.stdout))
             wake_task = asyncio.create_task(async_read_event(wake_proc.stdout))
@@ -109,6 +118,7 @@ async def main() -> None:
                     # Process chunk
                     if AudioChunk.is_type(mic_event.type):
                         chunk = AudioChunk.from_event(mic_event)
+                        rate, width, channels = chunk.rate, chunk.width, chunk.channels
                         timestamp = (
                             chunk.timestamp
                             if chunk.timestamp is not None
@@ -146,7 +156,10 @@ async def main() -> None:
                             detection = Detection.from_event(wake_event)
                             print(detection)
                             await async_write_event(
-                                AudioStart(timestamp=timestamp).event(), asr_proc.stdin
+                                AudioStart(
+                                    rate, width, channels, timestamp=timestamp
+                                ).event(),
+                                asr_proc.stdin,
                             )
                             # Drain chunk queue
                             write_coros = [
