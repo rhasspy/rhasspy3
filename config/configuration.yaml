@@ -1,0 +1,132 @@
+programs:
+  asr:
+    vosk:
+      command: |
+        client_unix_socket.py var/run/vosk.socket
+    coqui-stt:
+      command: |
+        client_unix_socket.py var/run/coqui-stt.socket
+    pocketsphinx:
+      command: |
+        client_unix_socket.py var/run/pocketsphinx.socket
+    whisper:
+      command: |
+        .venv/bin/whisper --language en --model tiny {temp_file}
+      adapter: |
+        asr_adapter_wav2text.py --temp_file --text-filter 'cut -d" "' --text-filter-shell
+  tts:
+    larynx2:
+      command: |
+        bin/larynx --model share/en-us-blizzard_lessac-medium.onnx --output_file -
+      adapter: |
+        tts_adapter_text2wav.py
+    espeak-ng:
+      command: |
+        espeak-ng -v en-us --stdin -w ${temp_file}
+      adapter: |
+        tts_adapter_text2wav.py --temp_file
+    flite:
+      command: |
+        flite -voice ${voice} -o ${temp_file}
+      template_args:
+        voice: "cmu_us_slt"
+      adapter: |
+        tts_adapter_text2wav.py --temp_file
+    festival:
+      command: |
+        text2wave -o ${temp_file} -eval (voice_${voice})
+      template_args:
+        voice: "cmu_us_slt_arctic_hts"
+      adapter: |
+        tts_adapter_text2wav.py --temp_file
+    coqui-tts:
+      command: |
+        tts_adapter_http.py '${url}' --param speaker_id '${speaker_id}'
+      template_args:
+        url: "http://localhost:5002/api/tts"
+        speaker_id: ""
+    marytts:
+      command: |
+        bin/marytts.py '${url}' '${voice}'
+      template_args:
+        url: "http://localhost:59125/process"
+        voice: "cmu-slt-hsmm"
+      adapter: |
+        tts_adapter_text2wav.py
+  vad:
+    silero:
+      command: |
+        .venv/bin/python3 bin/silero_stream.py share/silero_vad.onnx
+  mic:
+    arecord:
+      command: |
+        arecord -q -r 16000 -c 1 -f S16_LE -t raw -
+      adapter: |
+        mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
+    gstreamer_udp:
+      command: |
+        gst-launch-1.0 -v udpsrc address=${address} port=${port} ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=22050 num-channels=1 ! audioconvert ! audioresample ! audio/x-raw,rate=16000 ! volume volume=3.0 ! level ! fdsink fd=1 sync=false
+      template_args:
+        address: "0.0.0.0"
+      adapter: |
+        mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
+    udp_raw:
+      command: |
+        bin/udp_raw.py --port 5000
+
+  wake:
+    precise-lite:
+      command: |
+        .venv/bin/python3 bin/precise.py share/hey_mycroft.tflite
+      adapter: |
+        wake_adapter_raw.py
+    snowboy:
+      command: |
+        .venv/bin/python3 bin/snowboy_raw_text.py --model share/snowboy.umdl
+      adapter: |
+        wake_adapter_raw.py
+    porcupine1:
+      command: |
+        .venv/bin/python3 bin/porcupine_raw_text.py --model porcupine_linux.ppn
+      adapter: |
+        wake_adapter_raw.py
+
+  intent:
+    regex:
+      command: |
+        bin/regex.py -i TurnOn 'turn on (the )?(?P<name>.+)'
+
+  handle:
+    test:
+      command: |
+        name="$(jq -r .slots.name)"
+        echo "Turned on ${name}."
+      shell: true
+      adapter: |
+        wrapper_handle_text.py
+
+  snd:
+    aplay:
+      command: |
+        aplay -q -r 16000 -f S16_LE -c 1 -t raw
+      adapter: |
+        snd_adapter_raw.py
+
+pipelines:
+  en:
+    mic:
+      name: arecord
+    wake:
+      name: porcupine1
+    vad:
+      name: silero
+    asr:
+      name: vosk
+    intent:
+      name: regex
+    handle:
+      name: test
+    tts:
+      name: larynx2
+    snd:
+      name: aplay
