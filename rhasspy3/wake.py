@@ -2,9 +2,10 @@
 import asyncio
 import time
 from dataclasses import dataclass
-from typing import Optional, MutableSequence
+from typing import Optional, MutableSequence, Union
 
 from .audio import AudioChunk
+from .config import PipelineProgramConfig
 from .core import Rhasspy
 from .event import async_read_event, async_write_event, Event, Eventable
 from .program import create_process
@@ -32,7 +33,7 @@ class Detection(Eventable):
 
 async def detect(
     rhasspy: Rhasspy,
-    program: str,
+    program: Union[str, PipelineProgramConfig],
     mic_in: asyncio.StreamReader,
     chunk_buffer: Optional[MutableSequence[Event]] = None,
 ) -> Optional[Detection]:
@@ -60,9 +61,10 @@ async def detect(
                     if chunk_buffer is not None:
                         chunk_buffer.append(mic_event)
 
-                # Next chunk
-                mic_task = asyncio.create_task(async_read_event(mic_in))
-                pending.add(mic_task)
+                if detection is None:
+                    # Next chunk
+                    mic_task = asyncio.create_task(async_read_event(mic_in))
+                    pending.add(mic_task)
 
             if detection is not None:
                 # Ensure last mic task is finished
@@ -81,6 +83,6 @@ async def detect(
                     pending.add(wake_task)
     finally:
         wake_proc.terminate()
-        await wake_proc.wait()
+        asyncio.create_task(wake_proc.wait())
 
     return detection

@@ -1,7 +1,8 @@
 """Text to speech."""
+import asyncio
 import wave
 from dataclasses import dataclass
-from typing import IO
+from typing import IO, Union
 
 from .audio import AudioChunk, AudioStart, AudioStop
 from .core import Rhasspy
@@ -30,7 +31,12 @@ class Synthesize(Eventable):
         return Synthesize(text=event.data["text"])
 
 
-async def synthesize(rhasspy: Rhasspy, program: str, text: str, wav_out: IO[bytes]):
+async def synthesize(
+    rhasspy: Rhasspy,
+    program: Union[str, PipelineProgramConfig],
+    text: str,
+    wav_out: IO[bytes],
+):
     tts_proc = await create_process(rhasspy, DOMAIN, program)
     try:
         assert tts_proc.stdin is not None
@@ -60,4 +66,4 @@ async def synthesize(rhasspy: Rhasspy, program: str, text: str, wav_out: IO[byte
                     break
     finally:
         tts_proc.terminate()
-        await tts_proc.wait()
+        asyncio.create_task(tts_proc.wait())

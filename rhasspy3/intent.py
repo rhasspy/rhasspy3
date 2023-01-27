@@ -2,6 +2,7 @@
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Optional, List, Union
 
+from .config import PipelineProgramConfig
 from .core import Rhasspy
 from .event import async_read_event, async_write_event, Event, Eventable
 from .program import create_process
@@ -100,7 +101,7 @@ class NotRecognized(Eventable):
 
 
 async def recognize(
-    rhasspy: Rhasspy, program: str, text: str
+    rhasspy: Rhasspy, program: Union[str, PipelineProgramConfig], text: str
 ) -> Optional[Union[Intent, NotRecognized]]:
     intent_proc = await create_process(rhasspy, DOMAIN, program)
     assert intent_proc.stdin is not None

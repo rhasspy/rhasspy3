@@ -3,9 +3,10 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Union
 
 from .audio import AudioChunk, AudioStop
+from .config import PipelineProgramConfig
 from .core import Rhasspy
 from .event import async_read_event, async_write_event, Event, Eventable
 from .program import create_process
@@ -57,7 +58,7 @@ class VoiceStopped(Eventable):
 
 async def segment(
     rhasspy: Rhasspy,
-    program: str,
+    program: Union[str, PipelineProgramConfig],
     mic_in: asyncio.StreamReader,
     asr_out: asyncio.StreamWriter,
     chunk_buffer: Optional[Iterable[Event]] = None,
@@ -125,10 +126,10 @@ async def segment(
                     if not in_command:
                         # Start of voice command
                         in_command = True
-                        _LOGGER.debug("Voice command started")
+                        _LOGGER.debug("segment: started")
                 elif VoiceStopped.is_type(vad_event.type):
                     # End of voice command
-                    _LOGGER.debug("Voice command ended")
+                    _LOGGER.debug("segment: ended")
                     await async_write_event(
                         AudioStop(timestamp=timestamp).event(), asr_out
                     )
@@ -139,4 +140,4 @@ async def segment(
                 pending.add(vad_task)
     finally:
         vad_proc.terminate()
-        await vad_proc.wait()
+        asyncio.create_task(vad_proc.wait())

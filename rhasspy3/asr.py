@@ -1,10 +1,12 @@
 """Speech to text."""
+import asyncio
 import wave
 from dataclasses import dataclass
-from typing import IO, Optional
+from typing import IO, Optional, Union
 
 from .audio import AudioStart, AudioStop, wav_to_chunks
 from .core import Rhasspy
+from .config import PipelineProgramConfig
 from .event import async_read_event, async_write_event, Event, Eventable
 from .program import create_process
 
@@ -30,7 +32,10 @@ class Transcript(Eventable):
 
 
 async def transcribe(
-    rhasspy: Rhasspy, program: str, wav_in: IO[bytes], samples_per_chunk: int
+    rhasspy: Rhasspy,
+    program: Union[str, PipelineProgramConfig],
+    wav_in: IO[bytes],
+    samples_per_chunk: int,
 ) -> Optional[Transcript]:
     wav_file: wave.Wave_read = wave.open(wav_in, "rb")
     with wav_file:
@@ -56,7 +61,9 @@ async def transcribe(
                 else:
                     timestamp += chunk.milliseconds
 
-            await async_write_event(AudioStop(timestamp=timestamp).event(), asr_proc.stdin)
+            await async_write_event(
+                AudioStop(timestamp=timestamp).event(), asr_proc.stdin
+            )
 
             while True:
                 event = await async_read_event(asr_proc.stdout)
@@ -67,6 +74,6 @@ async def transcribe(
                     return Transcript.from_event(event)
         finally:
             asr_proc.terminate()
-            await asr_proc.wait()
+            asyncio.create_task(asr_proc.wait())
 
     return None
