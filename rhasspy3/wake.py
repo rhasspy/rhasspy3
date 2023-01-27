@@ -2,7 +2,7 @@
 import asyncio
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, MutableSequence
 
 from .audio import AudioChunk
 from .core import Rhasspy
@@ -31,8 +31,12 @@ class Detection(Eventable):
 
 
 async def detect(
-    rhasspy: Rhasspy, program: str, mic_in: asyncio.StreamReader
+    rhasspy: Rhasspy,
+    program: str,
+    mic_in: asyncio.StreamReader,
+    chunk_buffer: Optional[MutableSequence[Event]] = None,
 ) -> Optional[Detection]:
+    detection: Optional[Detection] = None
     wake_proc = await create_process(rhasspy, DOMAIN, program)
     try:
         assert wake_proc.stdin is not None
@@ -53,10 +57,16 @@ async def detect(
 
                 if AudioChunk.is_type(mic_event.type):
                     await async_write_event(mic_event, wake_proc.stdin)
+                    if chunk_buffer is not None:
+                        chunk_buffer.append(mic_event)
 
                 # Next chunk
                 mic_task = asyncio.create_task(async_read_event(mic_in))
                 pending.add(mic_task)
+
+            if detection is not None:
+                # Ensure last mic task is finished
+                break
 
             if wake_task in done:
                 wake_event = wake_task.result()
@@ -64,13 +74,13 @@ async def detect(
                     break
 
                 if Detection.is_type(wake_event.type):
-                    return Detection.from_event(wake_event)
-
-                # Next wake event
-                wake_task = asyncio.create_task(async_read_event(wake_proc.stdout))
-                pending.add(wake_task)
+                    detection = Detection.from_event(wake_event)
+                else:
+                    # Next wake event
+                    wake_task = asyncio.create_task(async_read_event(wake_proc.stdout))
+                    pending.add(wake_task)
     finally:
         wake_proc.terminate()
         await wake_proc.wait()
 
-    return None
+    return detection
