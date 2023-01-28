@@ -41,6 +41,11 @@ async def create_process(
         pipeline_config = name
         name = pipeline_config.name
 
+    if "." in name:
+        base_name = name.split(".", maxsplit=1)[0]
+    else:
+        base_name = name
+
     program_config: Optional[ProgramConfig] = rhasspy.config.programs.get(
         domain, {}
     ).get(name)
@@ -58,7 +63,7 @@ async def create_process(
         command_template = string.Template(command_str)
         command_str = command_template.safe_substitute(mapping)
 
-    working_dir = rhasspy.config_dir / "programs" / domain / name
+    working_dir = rhasspy.config_dir / "programs" / domain / base_name
     env = dict(os.environ)
 
     # Add rhasspy3/bin to $PATH

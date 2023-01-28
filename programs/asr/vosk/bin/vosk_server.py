@@ -4,14 +4,9 @@ import json
 import logging
 import os
 import socket
-import sys
 import threading
 
 from vosk import Model, KaldiRecognizer, SetLogLevel
-
-from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
-from rhasspy3.asr import Transcript
-from rhasspy3.event import read_event, write_event
 
 _LOGGER = logging.getLogger("vosk_server")
 
@@ -58,7 +53,9 @@ def main():
 
                 # Start new thread for client
                 threading.Thread(
-                    target=handle_client, args=(connection, model, args.rate), daemon=True
+                    target=handle_client,
+                    args=(connection, model, args.rate),
+                    daemon=True,
                 ).start()
             except KeyboardInterrupt:
                 break
@@ -78,25 +75,29 @@ def handle_client(connection: socket.socket, model: Model, rate: int) -> None:
 
         with connection, connection.makefile(mode="rwb") as conn_file:
             while True:
-                event = read_event(conn_file)
-                if event is None:
-                    break
+                event_info = json.loads(conn_file.readline())
+                event_type = event_info["type"]
 
-                if AudioChunk.is_type(event.type):
+                if event_type == "audio-chunk":
                     if is_first_audio:
                         _LOGGER.debug("Receiving audio")
                         is_first_audio = False
 
-                    chunk = AudioChunk.from_event(event)
-                    recognizer.AcceptWaveform(chunk.audio)
-                elif AudioStop.is_type(event.type):
+                    num_bytes = event_info["payload_length"]
+                    chunk = conn_file.read(num_bytes)
+                    recognizer.AcceptWaveform(chunk)
+                elif event_type == "audio-stop":
                     _LOGGER.info("Audio stopped")
 
                     result = json.loads(recognizer.FinalResult())
                     _LOGGER.info(result)
                     text = result["text"]
 
-                    write_event(Transcript(text=text).event(), conn_file)
+                    transcript_str = (
+                        json.dumps({"type": "transcript", "data": {"text": text}})
+                        + "\n"
+                    )
+                    conn_file.write(transcript_str.encode())
                     break
     except Exception:
         _LOGGER.exception("Unexpected error in client thread")

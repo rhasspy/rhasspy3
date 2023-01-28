@@ -2,11 +2,32 @@ programs:
   asr:
     vosk:
       command: |
+        script/raw2text ${model}
+      adapter: |
+        asr_adapter_raw2text.py
+      template_args:
+        model: "share/vosk-model-small-en-us-0.15"
+    vosk.client:
+      command: |
         client_unix_socket.py var/run/vosk.socket
     coqui-stt:
       command: |
+        script/raw2text ${model}
+      adapter: |
+        asr_adapter_raw2text.py
+      template_args:
+        model: "share/english_v1.0.0-large-vocab"
+    coqui-stt.client:
+      command: |
         client_unix_socket.py var/run/coqui-stt.socket
     pocketsphinx:
+      command: |
+        script/raw2text ${model}
+      adapter: |
+        asr_adapter_raw2text.py
+      template_args:
+        model: "share/en-us_pocketsphinx-cmu"
+    pocketsphinx.client:
       command: |
         client_unix_socket.py var/run/pocketsphinx.socket
     whisper:

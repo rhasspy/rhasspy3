@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 import argparse
 import logging
+import json
 import os
 import socket
-import sys
 import threading
 from pathlib import Path
 
 import pocketsphinx
 
-from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
-from rhasspy3.asr import Transcript
-from rhasspy3.event import read_event, write_event
 
 _LOGGER = logging.getLogger("pocketsphinx_server")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Path to Pocketsphinx model directory")
     parser.add_argument(
@@ -74,25 +71,27 @@ def main():
         os.unlink(args.socketfile)
 
 
-def handle_client(connection: socket.socket, decoder: pocketsphinx.Decoder, rate: int) -> None:
+def handle_client(
+    connection: socket.socket, decoder: pocketsphinx.Decoder, rate: int
+) -> None:
     try:
         decoder.start_utt()
         is_first_audio = True
 
         with connection, connection.makefile(mode="rwb") as conn_file:
             while True:
-                event = read_event(conn_file)
-                if event is None:
-                    break
+                event_info = json.loads(conn_file.readline())
+                event_type = event_info["type"]
 
-                if AudioChunk.is_type(event.type):
+                if event_type == "audio-chunk":
                     if is_first_audio:
                         _LOGGER.debug("Receiving audio")
                         is_first_audio = False
 
-                    chunk = AudioChunk.from_event(event)
-                    decoder.process_raw(chunk.audio, False, False)
-                elif AudioStop.is_type(event.type):
+                    num_bytes = event_info["payload_length"]
+                    chunk = conn_file.read(num_bytes)
+                    decoder.process_raw(chunk, False, False)
+                elif event_type == "audio-stop":
                     _LOGGER.info("Audio stopped")
 
                     decoder.end_utt()
@@ -102,7 +101,11 @@ def handle_client(connection: socket.socket, decoder: pocketsphinx.Decoder, rate
                     else:
                         text = ""
 
-                    write_event(Transcript(text=text).event(), conn_file)
+                    transcript_str = (
+                        json.dumps({"type": "transcript", "data": {"text": text}})
+                        + "\n"
+                    )
+                    conn_file.write(transcript_str.encode())
                     break
     except Exception:
         _LOGGER.exception("Unexpected error in client thread")
