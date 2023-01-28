@@ -1,5 +1,5 @@
 """Speech to text."""
-import asyncio
+import logging
 import wave
 from dataclasses import dataclass
 from typing import IO, Optional, Union
@@ -12,6 +12,8 @@ from .program import create_process
 
 DOMAIN = "asr"
 _TRANSCRIPT_TYPE = "transcript"
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -37,14 +39,14 @@ async def transcribe(
     wav_in: IO[bytes],
     samples_per_chunk: int,
 ) -> Optional[Transcript]:
+    transcript: Optional[Transcript] = None
     wav_file: wave.Wave_read = wave.open(wav_in, "rb")
     with wav_file:
         rate = wav_file.getframerate()
         width = wav_file.getsampwidth()
         channels = wav_file.getnchannels()
 
-        asr_proc = await create_process(rhasspy, DOMAIN, program)
-        try:
+        async with (await create_process(rhasspy, DOMAIN, program)) as asr_proc:
             assert asr_proc.stdin is not None
             assert asr_proc.stdout is not None
 
@@ -54,7 +56,13 @@ async def transcribe(
                 asr_proc.stdin,
             )
 
+            is_first_chunk = True
+
             for chunk in wav_to_chunks(wav_file, samples_per_chunk=samples_per_chunk):
+                if is_first_chunk:
+                    is_first_chunk = False
+                    _LOGGER.debug("transcribe: processing audio")
+
                 await async_write_event(chunk.event(), asr_proc.stdin)
                 if chunk.timestamp is not None:
                     timestamp = chunk.timestamp
@@ -65,15 +73,16 @@ async def transcribe(
                 AudioStop(timestamp=timestamp).event(), asr_proc.stdin
             )
 
+            _LOGGER.debug("transcribe: audio finished")
+
             while True:
                 event = await async_read_event(asr_proc.stdout)
                 if event is None:
                     break
 
                 if Transcript.is_type(event.type):
-                    return Transcript.from_event(event)
-        finally:
-            asr_proc.terminate()
-            asyncio.create_task(asr_proc.wait())
+                    transcript = Transcript.from_event(event)
+                    _LOGGER.debug("transcribe: %s", transcript)
+                    break
 
-    return None
+    return transcript

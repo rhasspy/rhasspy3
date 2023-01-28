@@ -43,34 +43,36 @@ async def main() -> None:
                 timestamp = int(wav_seconds * 1_000)
                 audio_bytes = wav_file.readframes(num_frames)
 
-        proc = await create_process(rhasspy, DOMAIN, args.name)
-        assert proc.stdin is not None
-        assert proc.stdout is not None
+        async with (await create_process(rhasspy, DOMAIN, args.name)) as asr_proc:
+            assert asr_proc.stdin is not None
+            assert asr_proc.stdout is not None
 
-        await async_write_event(
-            AudioStart(rate, width, channels, timestamp=0).event(), proc.stdin
-        )
-        await async_write_event(
-            AudioChunk(rate, width, channels, audio_bytes, timestamp=0).event(),
-            proc.stdin,
-        )
-        await async_write_event(AudioStop(timestamp=timestamp).event(), proc.stdin)
+            await async_write_event(
+                AudioStart(rate, width, channels, timestamp=0).event(), asr_proc.stdin
+            )
+            await async_write_event(
+                AudioChunk(rate, width, channels, audio_bytes, timestamp=0).event(),
+                asr_proc.stdin,
+            )
+            await async_write_event(
+                AudioStop(timestamp=timestamp).event(), asr_proc.stdin
+            )
 
-        transcript: Optional[Transcript] = None
-        while True:
-            event = await async_read_event(proc.stdout)
-            if event is None:
-                break
+            transcript: Optional[Transcript] = None
+            while True:
+                event = await async_read_event(asr_proc.stdout)
+                if event is None:
+                    break
 
-            if Transcript.is_type(event.type):
-                transcript = Transcript.from_event(event)
-                break
+                if Transcript.is_type(event.type):
+                    transcript = Transcript.from_event(event)
+                    break
 
-        if transcript is not None:
-            print(transcript.text)
-        else:
-            # No transcript
-            print("")
+            if transcript is not None:
+                print(transcript.text)
+            else:
+                # No transcript
+                print("")
 
 
 def get_wav_bytes(args: argparse.Namespace) -> Iterable[bytes]:

@@ -21,8 +21,7 @@ async def play(
 ):
     wav_file: wave.Wave_read = wave.open(wav_in, "rb")
     with wav_file:
-        snd_proc = await create_process(rhasspy, DOMAIN, program)
-        try:
+        async with (await create_process(rhasspy, DOMAIN, program)) as snd_proc:
             assert snd_proc.stdin is not None
 
             for chunk in wav_to_chunks(wav_file, samples_per_chunk=samples_per_chunk):
@@ -31,6 +30,3 @@ async def play(
             if sleep:
                 wav_seconds = wav_file.getnframes() / wav_file.getframerate()
                 await asyncio.sleep(wav_seconds)
-        finally:
-            snd_proc.terminate()
-            asyncio.create_task(snd_proc.wait())

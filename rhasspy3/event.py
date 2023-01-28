@@ -17,6 +17,10 @@ class Event:
     data: Dict[str, Any] = field(default_factory=dict)
     payload: Optional[bytes] = None
 
+    @staticmethod
+    def from_dict(event_dict: Dict[str, Any]) -> "Event":
+        return Event(type=event_dict["type"], data=event_dict.get("data", {}))
+
 
 class Eventable(ABC):
     @abstractmethod

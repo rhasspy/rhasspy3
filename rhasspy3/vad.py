@@ -63,8 +63,7 @@ async def segment(
     asr_out: asyncio.StreamWriter,
     chunk_buffer: Optional[Iterable[Event]] = None,
 ):
-    vad_proc = await create_process(rhasspy, DOMAIN, program)
-    try:
+    async with (await create_process(rhasspy, DOMAIN, program)) as vad_proc:
         assert vad_proc.stdin is not None
         assert vad_proc.stdout is not None
 
@@ -81,6 +80,7 @@ async def segment(
 
         timestamp = 0
         in_command = False
+        is_first_chunk = True
 
         while True:
             done, pending = await asyncio.wait(
@@ -93,6 +93,10 @@ async def segment(
 
                 # Process chunk
                 if AudioChunk.is_type(mic_event.type):
+                    if is_first_chunk:
+                        is_first_chunk = False
+                        _LOGGER.debug("segment: processing audio")
+
                     chunk = AudioChunk.from_event(mic_event)
                     timestamp = (
                         chunk.timestamp
@@ -126,10 +130,10 @@ async def segment(
                     if not in_command:
                         # Start of voice command
                         in_command = True
-                        _LOGGER.debug("segment: started")
+                        _LOGGER.debug("segment: speaking started")
                 elif VoiceStopped.is_type(vad_event.type):
                     # End of voice command
-                    _LOGGER.debug("segment: ended")
+                    _LOGGER.debug("segment: speaking ended")
                     await async_write_event(
                         AudioStop(timestamp=timestamp).event(), asr_out
                     )
@@ -138,6 +142,3 @@ async def segment(
                 # Next VAD event
                 vad_task = asyncio.create_task(async_read_event(vad_proc.stdout))
                 pending.add(vad_task)
-    finally:
-        vad_proc.terminate()
-        asyncio.create_task(vad_proc.wait())

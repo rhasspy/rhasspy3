@@ -27,17 +27,14 @@ async def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
     rhasspy = Rhasspy.load(args.config)
-    proc = await create_process(rhasspy, DOMAIN, args.program)
-
-    try:
-        assert proc.stdin is not None
-        assert proc.stdout is not None
+    async with (await create_process(rhasspy, DOMAIN, args.program)) as intent_proc:
+        assert intent_proc.stdin is not None
+        assert intent_proc.stdout is not None
 
         for text in get_texts(args):
-            await async_write_event(Recognize(text=text).event(), proc.stdin)
-
+            await async_write_event(Recognize(text=text).event(), intent_proc.stdin)
             while True:
-                event = await async_read_event(proc.stdout)
+                event = await async_read_event(intent_proc.stdout)
                 if event is None:
                     sys.exit(1)
 
@@ -50,10 +47,6 @@ async def main() -> None:
                     not_recognized = NotRecognized.from_event(event)
                     print(not_recognized)
                     break
-    except KeyboardInterrupt:
-        pass
-    finally:
-        proc.terminate()
 
 
 def get_texts(args: argparse.Namespace) -> Iterable[str]:

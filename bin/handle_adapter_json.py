@@ -7,7 +7,7 @@ import subprocess
 
 from rhasspy3.event import read_event, write_event
 from rhasspy3.handle import Handled, NotHandled
-from rhasspy3.intent import Intent
+from rhasspy3.intent import Intent, NotRecognized
 
 _LOGGER = logging.getLogger("handle_adapter_text")
 
@@ -34,7 +34,7 @@ def main():
         shell=args.shell,
         universal_newlines=True,
     )
-    try:
+    with proc:
         assert proc.stdin is not None
         assert proc.stdout is not None
 
@@ -75,8 +75,10 @@ def main():
                     write_event(NotHandled().event())
 
                 break
-    finally:
-        proc.terminate()
+
+            if NotRecognized.is_type(event.type):
+                write_event(NotHandled().event())
+                break
 
 
 if __name__ == "__main__":

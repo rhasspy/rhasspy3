@@ -1,5 +1,4 @@
 """Text to speech."""
-import asyncio
 import wave
 from dataclasses import dataclass
 from typing import IO, Union
@@ -37,8 +36,7 @@ async def synthesize(
     text: str,
     wav_out: IO[bytes],
 ):
-    tts_proc = await create_process(rhasspy, DOMAIN, program)
-    try:
+    async with (await create_process(rhasspy, DOMAIN, program)) as tts_proc:
         assert tts_proc.stdin is not None
         assert tts_proc.stdout is not None
 
@@ -64,6 +62,3 @@ async def synthesize(
                         wav_file.writeframes(chunk.audio)
                 elif AudioStop.is_type(event.type):
                     break
-    finally:
-        tts_proc.terminate()
-        asyncio.create_task(tts_proc.wait())

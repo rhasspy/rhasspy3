@@ -37,10 +37,9 @@ async def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
     rhasspy = Rhasspy.load(args.config)
-    proc = await create_process(rhasspy, DOMAIN, args.program)
-    try:
-        assert proc.stdin is not None
-        assert proc.stdout is not None
+    async with (await create_process(rhasspy, DOMAIN, args.program)) as vad_proc:
+        assert vad_proc.stdin is not None
+        assert vad_proc.stdout is not None
 
         for wav_bytes in get_wav_bytes(args):
             with io.BytesIO(wav_bytes) as wav_io:
@@ -52,7 +51,7 @@ async def main() -> None:
                     timestamp = 0
                     await async_write_event(
                         AudioStart(rate, width, channels, timestamp=timestamp).event(),
-                        proc.stdin,
+                        vad_proc.stdin,
                     )
 
                     audio_bytes = wav_file.readframes(args.samples_per_chunk)
@@ -62,19 +61,19 @@ async def main() -> None:
                         )
                         await async_write_event(
                             chunk.event(),
-                            proc.stdin,
+                            vad_proc.stdin,
                         )
                         timestamp += chunk.milliseconds
                         audio_bytes = wav_file.readframes(args.samples_per_chunk)
 
                     await async_write_event(
-                        AudioStop(timestamp=timestamp).event(), proc.stdin
+                        AudioStop(timestamp=timestamp).event(), vad_proc.stdin
                     )
 
             voice_started: Optional[VoiceStarted] = None
             voice_stopped: Optional[VoiceStopped] = None
             while True:
-                event = await async_read_event(proc.stdout)
+                event = await async_read_event(vad_proc.stdout)
                 if event is None:
                     break
 
@@ -92,9 +91,6 @@ async def main() -> None:
                 print(voice_started.timestamp, voice_stopped.timestamp)
             else:
                 print("")
-    finally:
-        proc.terminate()
-        await proc.wait()
 
 
 def get_wav_bytes(args: argparse.Namespace) -> Iterable[bytes]:

@@ -1,4 +1,5 @@
 """Intent recognition and handling."""
+import logging
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
@@ -11,6 +12,8 @@ DOMAIN = "intent"
 _RECOGNIZE_TYPE = "recognize"
 _INTENT_TYPE = "intent"
 _NOT_RECOGNIZED_TYPE = "not-recognized"
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -103,20 +106,26 @@ class NotRecognized(Eventable):
 async def recognize(
     rhasspy: Rhasspy, program: Union[str, PipelineProgramConfig], text: str
 ) -> Optional[Union[Intent, NotRecognized]]:
-    intent_proc = await create_process(rhasspy, DOMAIN, program)
-    assert intent_proc.stdin is not None
-    assert intent_proc.stdout is not None
+    result: Optional[Union[Intent, NotRecognized]] = None
+    async with (await create_process(rhasspy, DOMAIN, program)) as intent_proc:
+        assert intent_proc.stdin is not None
+        assert intent_proc.stdout is not None
 
-    await async_write_event(Recognize(text=text).event(), intent_proc.stdin)
-    while True:
-        intent_event = await async_read_event(intent_proc.stdout)
-        if intent_event is None:
-            break
+        _LOGGER.debug("recognize: text='%s'", text)
+        await async_write_event(Recognize(text=text).event(), intent_proc.stdin)
+        while True:
+            intent_event = await async_read_event(intent_proc.stdout)
+            if intent_event is None:
+                break
 
-        if Intent.is_type(intent_event.type):
-            return Intent.from_event(intent_event)
+            if Intent.is_type(intent_event.type):
+                result = Intent.from_event(intent_event)
+                break
 
-        if NotRecognized.is_type(intent_event.type):
-            return NotRecognized.from_event(intent_event)
+            if NotRecognized.is_type(intent_event.type):
+                result = NotRecognized.from_event(intent_event)
+                break
 
-    return None
+    _LOGGER.debug("recognize: %s", result)
+
+    return result

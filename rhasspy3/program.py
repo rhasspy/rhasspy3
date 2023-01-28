@@ -3,7 +3,7 @@ import logging
 import os
 import shlex
 import string
-from asyncio import subprocess
+from asyncio.subprocess import PIPE, Process
 from typing import Optional, Union
 
 from .config import PipelineProgramConfig, ProgramConfig
@@ -17,10 +17,25 @@ class MissingProgramConfigError(Exception):
     pass
 
 
-# pylint: disable=no-member
+class ProcessContextManager:
+    def __init__(self, proc: Process):
+        self.proc = proc
+
+    async def __aenter__(self):
+        return self.proc
+
+    async def __aexit__(self, exc_type, exc, tb):
+        try:
+            self.proc.terminate()
+            asyncio.create_task(self.proc.wait())
+        except ProcessLookupError:
+            # Expected when process has already exited
+            pass
+
+
 async def create_process(
     rhasspy: Rhasspy, domain: str, name: Union[str, PipelineProgramConfig]
-) -> subprocess.Process:
+) -> ProcessContextManager:
     pipeline_config: Optional[PipelineProgramConfig] = None
     if isinstance(name, PipelineProgramConfig):
         pipeline_config = name
@@ -63,16 +78,16 @@ async def create_process(
             proc = await asyncio.create_subprocess_exec(
                 program,
                 *args,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
+                stdin=PIPE,
+                stdout=PIPE,
                 cwd=cwd,
                 env=env,
             )
         else:
             proc = await asyncio.create_subprocess_shell(
                 command_str,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
+                stdin=PIPE,
+                stdout=PIPE,
                 cwd=cwd,
                 env=env,
             )
@@ -86,10 +101,10 @@ async def create_process(
         proc = await asyncio.create_subprocess_exec(
             program,
             *args,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
+            stdin=PIPE,
+            stdout=PIPE,
             cwd=cwd,
             env=env,
         )
 
-    return proc
+    return ProcessContextManager(proc)

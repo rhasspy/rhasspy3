@@ -103,7 +103,7 @@ programs:
         echo "Turned on ${name}."
       shell: true
       adapter: |
-        wrapper_handle_text.py
+        handle_adapter_json.py
 
   snd:
     aplay:

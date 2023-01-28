@@ -48,8 +48,7 @@ def add_pipeline(
             chunk_buffer = None
 
         data = {}
-        mic_proc = await create_process(rhasspy, MIC_DOMAIN, mic_program)
-        try:
+        async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
             assert mic_proc.stdout is not None
             asr_proc = await create_process(rhasspy, ASR_DOMAIN, asr_program)
             try:
@@ -75,21 +74,22 @@ def add_pipeline(
 
                         if Transcript.is_type(asr_event.type):
                             transcript = Transcript.from_event(asr_event)
-                            _LOGGER.debug("listen-for-command: transcript=%s", transcript)
+                            _LOGGER.debug(
+                                "listen-for-command: transcript=%s", transcript
+                            )
 
                             if transcript.text:
                                 recognize_result = await recognize(
                                     rhasspy, intent_program, transcript.text
                                 )
-                                _LOGGER.debug("listen-for-command: recognize=%s", recognize_result)
+                                _LOGGER.debug(
+                                    "listen-for-command: recognize=%s", recognize_result
+                                )
                                 if isinstance(recognize_result, Intent):
                                     data = recognize_result.to_rhasspy()
                             break
             finally:
                 asr_proc.terminate()
                 asyncio.create_task(asr_proc.wait())
-        finally:
-            mic_proc.terminate()
-            asyncio.create_task(mic_proc.wait())
 
         return jsonify(data)

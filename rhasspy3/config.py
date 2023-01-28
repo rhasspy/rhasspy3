@@ -22,14 +22,14 @@ class PipelineProgramConfig(DataClassJsonMixin):
 
 @dataclass
 class PipelineConfig(DataClassJsonMixin):
-    mic: PipelineProgramConfig
-    wake: PipelineProgramConfig
-    vad: PipelineProgramConfig
-    asr: PipelineProgramConfig
-    intent: PipelineProgramConfig
-    handle: PipelineProgramConfig
-    tts: PipelineProgramConfig
-    snd: PipelineProgramConfig
+    mic: Optional[PipelineProgramConfig] = None
+    wake: Optional[PipelineProgramConfig] = None
+    vad: Optional[PipelineProgramConfig] = None
+    asr: Optional[PipelineProgramConfig] = None
+    intent: Optional[PipelineProgramConfig] = None
+    handle: Optional[PipelineProgramConfig] = None
+    tts: Optional[PipelineProgramConfig] = None
+    snd: Optional[PipelineProgramConfig] = None
 
 
 @dataclass

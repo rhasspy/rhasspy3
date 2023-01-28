@@ -1,5 +1,6 @@
 """Wake word detection"""
 import asyncio
+import logging
 from dataclasses import dataclass
 from typing import MutableSequence, Optional, Union
 
@@ -11,6 +12,8 @@ from .program import create_process
 
 DOMAIN = "wake"
 _DETECTION_TYPE = "detection"
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -37,14 +40,14 @@ async def detect(
     chunk_buffer: Optional[MutableSequence[Event]] = None,
 ) -> Optional[Detection]:
     detection: Optional[Detection] = None
-    wake_proc = await create_process(rhasspy, DOMAIN, program)
-    try:
+    async with (await create_process(rhasspy, DOMAIN, program)) as wake_proc:
         assert wake_proc.stdin is not None
         assert wake_proc.stdout is not None
 
         mic_task = asyncio.create_task(async_read_event(mic_in))
         wake_task = asyncio.create_task(async_read_event(wake_proc.stdout))
         pending = {mic_task, wake_task}
+        is_first_chunk = True
 
         while True:
             done, pending = await asyncio.wait(
@@ -56,6 +59,10 @@ async def detect(
                     break
 
                 if AudioChunk.is_type(mic_event.type):
+                    if is_first_chunk:
+                        is_first_chunk = False
+                        _LOGGER.debug("detect: processing audio")
+
                     await async_write_event(mic_event, wake_proc.stdin)
                     if chunk_buffer is not None:
                         chunk_buffer.append(mic_event)
@@ -80,8 +87,7 @@ async def detect(
                     # Next wake event
                     wake_task = asyncio.create_task(async_read_event(wake_proc.stdout))
                     pending.add(wake_task)
-    finally:
-        wake_proc.terminate()
-        asyncio.create_task(wake_proc.wait())
+
+    _LOGGER.debug("detect: %s", detection)
 
     return detection
