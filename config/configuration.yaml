@@ -90,6 +90,9 @@ programs:
         voice: "cmu-slt-hsmm"
       adapter: |
         tts_adapter_text2wav.py
+    mimic3.client:
+      command: |
+        client_unix_socket.py var/run/mimic3.socket
   vad:
     silero:
       command: |
@@ -148,6 +151,43 @@ programs:
         aplay -q -r 16000 -f S16_LE -c 1 -t raw
       adapter: |
         snd_adapter_raw.py
+
+
+servers:
+  asr:
+    vosk:
+      command: |
+        script/server ${model}
+      template_args:
+        model: "share/vosk-model-small-en-us-0.15"
+    coqui-stt:
+      command: |
+        script/server ${model}
+      template_args:
+        model: "share/english_v1.0.0-large-vocab"
+    pocketsphinx:
+      command: |
+        script/server ${model}
+      template_args:
+        model: "share/en-us_pocketsphinx-cmu"
+    whisper:
+      command: |
+        script/server --language ${language} --device ${device} ${model}
+      template_args:
+        language: "en"
+        model: "tiny.en"
+        device: "cuda"  # or cuda
+    whisper-cpp:
+      command: |
+        script/server ${model}
+      template_args:
+        model: "share/ggml-tiny.en.bin"
+  tts:
+    mimic3:
+      command: |
+        script/server --voice ${voice}
+      template_args:
+        voice: "en_US/ljspeech_low"
 
 pipelines:
   en:

@@ -33,11 +33,21 @@ class PipelineConfig(DataClassJsonMixin):
 
 
 @dataclass
+class ServerConfig(DataClassJsonMixin):
+    command: str
+    shell: bool = False
+    template_args: Optional[Dict[str, Any]] = None
+
+
+@dataclass
 class Config(DataClassJsonMixin):
     programs: Dict[str, Dict[str, ProgramConfig]]
     """domain -> name -> program"""
 
     pipelines: Dict[str, PipelineConfig] = field(default_factory=dict)
+
+    servers: Dict[str, Dict[str, ServerConfig]] = field(default_factory=dict)
+    """domain -> name -> server"""
 
 
 # -----------------------------------------------------------------------------

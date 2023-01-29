@@ -49,7 +49,7 @@ def main():
         command = shlex.split(args.command)
 
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    try:
+    with proc:
         assert proc.stdout is not None
 
         write_event(
@@ -71,11 +71,6 @@ def main():
                     timestamp=time.monotonic_ns(),
                 ).event()
             )
-    except KeyboardInterrupt:
-        pass
-    finally:
-        if proc.poll() is None:
-            proc.terminate()
 
 
 if __name__ == "__main__":
