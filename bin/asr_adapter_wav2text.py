@@ -24,7 +24,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
     with tempfile.NamedTemporaryFile(mode="wb+", suffix=".wav") as wav_io:
-        args.command = args.command.format(file=shlex.quote(wav_io.name))
+        args.command = args.command.format(wav_file=shlex.quote(wav_io.name))
         if args.shell:
             command = args.command
         else:

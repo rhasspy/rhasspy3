@@ -32,9 +32,15 @@ programs:
         client_unix_socket.py var/run/pocketsphinx.socket
     whisper:
       command: |
-        .venv/bin/whisper --language en --model tiny {temp_file}
+        script/wav2text --language ${language} ${model} {wav_file}
       adapter: |
-        asr_adapter_wav2text.py --temp_file --text-filter 'cut -d" "' --text-filter-shell
+        asr_adapter_wav2text.py
+      template_args:
+        language: "en"
+        model: "tiny.en"
+    whisper.client:
+      command: |
+        client_unix_socket.py var/run/whisper.socket
   tts:
     larynx2:
       command: |
