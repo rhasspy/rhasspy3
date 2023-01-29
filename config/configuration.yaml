@@ -41,6 +41,16 @@ programs:
     whisper.client:
       command: |
         client_unix_socket.py var/run/whisper.socket
+    whisper-cpp:
+      command: |
+        script/wav2text ${model} {wav_file}
+      adapter: |
+        asr_adapter_wav2text.py
+      template_args:
+        model: "share/ggml-tiny.en.bin"
+    whisper-cpp.client:
+      command: |
+        client_unix_socket.py var/run/whisper-cpp.socket
   tts:
     larynx2:
       command: |
