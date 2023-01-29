@@ -1,7 +1,10 @@
 import asyncio
 import argparse
 import logging
+import os
 import io
+import threading
+import subprocess
 import wave
 from collections import deque
 from pathlib import Path
@@ -43,6 +46,13 @@ def main():
     )
     parser.add_argument(
         "--pipeline", required=True, help="Name of default pipeline to run"
+    )
+    parser.add_argument(
+        "--server",
+        nargs=2,
+        action="append",
+        metavar=("domain", "name"),
+        help="Domain/name of server(s) to run",
     )
     parser.add_argument(
         "--host", default="0.0.0.0", help="Host of HTTP server (default: 0.0.0.0)"
@@ -102,10 +112,40 @@ def main():
     hyp_config = hypercorn.config.Config()
     hyp_config.bind = [f"{args.host}:{args.port}"]
 
+    if args.server:
+        run_servers(rhasspy, args.server)
+
     try:
         asyncio.run(hypercorn.asyncio.serve(app, hyp_config))
     except KeyboardInterrupt:
         pass
+
+
+# -----------------------------------------------------------------------------
+
+
+def run_servers(rhasspy, servers):
+    def run_server(domain: str, name: str):
+        try:
+            command = [
+                "server_run.py",
+                "--config",
+                str(rhasspy.config_dir),
+                domain,
+                name,
+            ]
+            env = dict(os.environ)
+            env["PATH"] = f'{rhasspy.base_dir}/bin:{env["PATH"]}'
+            _LOGGER.debug(command)
+            _LOGGER.info("Starting %s %s", domain, name)
+            subprocess.run(command, check=True, cwd=rhasspy.base_dir, env=env)
+        except Exception:
+            _LOGGER.exception(
+                "Unexpected error running server: domain=%s, name=%s", domain, name
+            )
+
+    for domain, server_name in servers:
+        threading.Thread(target=run_server, args=(domain, server_name), daemon=True).start()
 
 
 # -----------------------------------------------------------------------------
