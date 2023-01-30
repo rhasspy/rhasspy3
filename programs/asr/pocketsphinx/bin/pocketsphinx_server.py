@@ -51,6 +51,8 @@ def main() -> None:
         decoder_config.set_string("-lm", str(model_dir / "language_model.txt"))
         decoder = pocketsphinx.Decoder(decoder_config)
 
+        _LOGGER.info("Ready")
+
         # Listen for connections
         while True:
             try:

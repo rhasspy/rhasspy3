@@ -45,6 +45,7 @@ def main() -> None:
         model.setScorerAlphaBeta(*args.alpha_beta)
 
     for wav_path in args.wav_file:
+        _LOGGER.debug("Processing %s", wav_path)
         wav_file: wave.Wave_read = wave.open(wav_path, "rb")
         with wav_file:
             assert wav_file.getframerate() == 16000, "16Khz sample rate required"
