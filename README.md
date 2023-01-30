@@ -1,6 +1,14 @@
 # Rhasspy 3
 
+**NOTE: This is a very early alpha release!**
+
 An open source toolkit for building voice assistants.
+
+Rhasspy focuses on:
+
+* Privacy - no data leaves your computer
+* Broad language support - more than just English
+* Customization - everything can be changed
 
 
 ## Programs
@@ -15,7 +23,7 @@ An open source toolkit for building voice assistants.
     * snowboy
 * vad
     * silero
-    * energy
+    * energy (TODO)
 * asr 
     * vosk
     * coqui-stt
@@ -25,8 +33,9 @@ An open source toolkit for building voice assistants.
 * intent
     * regex
 * tts 
-    * larynx1
+    * larynx1 (TODO)
     * larynx2
+    * mimic3
     * coqui-tts
     * marytts
     * flite
@@ -36,7 +45,7 @@ An open source toolkit for building voice assistants.
     * aplay
     
     
-## Services
+## Servers
 
 * asr
     * vosk
@@ -48,6 +57,7 @@ An open source toolkit for building voice assistants.
     * larynx1
     * larynx2
     * coqui-tts
+    * mimic3
 
 
 ## Pipelines
