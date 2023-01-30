@@ -2,17 +2,19 @@
 import argparse
 import logging
 import sys
+import wave
 from pathlib import Path
 
 from stt import Model
 import numpy as np
 
-_LOGGER = logging.getLogger("coqui_stt_raw2text")
+_LOGGER = logging.getLogger("coqui_stt_wav2text")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Path to Coqui STT model directory")
+    parser.add_argument("wav_file", nargs="+", help="Path to WAV file(s) to transcribe")
     parser.add_argument(
         "--scorer", help="Path to scorer (default: .scorer file in model directory)"
     )
@@ -22,12 +24,6 @@ def main() -> None:
         nargs=2,
         metavar=("alpha", "beta"),
         help="Scorer alpha/beta",
-    )
-    parser.add_argument(
-        "--samples-per-chunk",
-        type=int,
-        default=1024,
-        help="Number of samples to process at a time",
     )
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
@@ -48,18 +44,20 @@ def main() -> None:
     if args.alpha_beta is not None:
         model.setScorerAlphaBeta(*args.alpha_beta)
 
-    model_stream = model.createStream()
-    chunk = sys.stdin.buffer.read(args.samples_per_chunk)
-    _LOGGER.debug("Processing audio")
-    while chunk:
-        chunk_array = np.frombuffer(chunk, dtype=np.int16)
-        model_stream.feedAudioContent(chunk_array)
-        chunk = sys.stdin.buffer.read(args.samples_per_chunk)
+    for wav_path in args.wav_file:
+        wav_file: wave.Wave_read = wave.open(wav_path, "rb")
+        with wav_file:
+            assert wav_file.getframerate() == 16000, "16Khz sample rate required"
+            assert wav_file.getsampwidth() == 2, "16-bit samples required"
+            assert wav_file.getnchannels() == 1, "Mono audio required"
+            audio_bytes = wav_file.readframes(wav_file.getnframes())
 
-    text = model_stream.finishStream()
-    _LOGGER.debug(text)
+            model_stream = model.createStream()
+            audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+            model_stream.feedAudioContent(audio_array)
 
-    print(text.strip())
+            text = model_stream.finishStream()
+            print(text.strip())
 
 
 # -----------------------------------------------------------------------------

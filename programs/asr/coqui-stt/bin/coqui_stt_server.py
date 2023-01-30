@@ -67,6 +67,8 @@ def main():
         if args.alpha_beta is not None:
             model.setScorerAlphaBeta(*args.alpha_beta)
 
+        _LOGGER.info("Ready")
+
         # Listen for connections
         while True:
             try:
