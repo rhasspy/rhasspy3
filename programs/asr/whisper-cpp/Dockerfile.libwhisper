@@ -1,0 +1,26 @@
+FROM debian:bullseye as build
+ARG TARGETARCH
+ARG TARGETVARIANT
+
+ENV LANG C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install --yes build-essential wget
+
+WORKDIR /build
+
+ARG VERSION=1.1.0
+RUN wget "https://github.com/ggerganov/whisper.cpp/archive/refs/tags/v${VERSION}.tar.gz" && \
+    tar -xzf "v${VERSION}.tar.gz"
+
+RUN mv "whisper.cpp-${VERSION}/" 'whisper.cpp'
+COPY lib/Makefile ./
+RUN cd "whisper.cpp" && make -j8
+RUN make
+
+# -----------------------------------------------------------------------------
+
+FROM scratch
+
+COPY --from=build /build/libwhisper.so .

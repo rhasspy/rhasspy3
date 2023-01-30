@@ -41,5 +41,5 @@ endif
 
 default: libwhisper.so
 
-libWhisper.so: whisper.cpp/ggml.o whisper.cpp/whisper.cpp
+libwhisper.so: whisper.cpp/ggml.o whisper.cpp/whisper.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)

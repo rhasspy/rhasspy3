@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+# Directory of *this* script
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+
+# Base directory of repo
+base_dir="$(realpath "${this_dir}/..")"
+
+docker buildx build "${base_dir}" \
+    -f "${base_dir}/Dockerfile.libwhisper" \
+    --platform 'linux/amd64,linux/arm64' \
+    --output "type=local,dest=${base_dir}/build/"
+
+# -----------------------------------------------------------------------------
+
+echo "Copy the appropriate libwhisper.so from build/ to lib/"
