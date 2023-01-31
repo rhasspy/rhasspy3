@@ -9,6 +9,10 @@ _TYPE = "audio-chunk"
 _START_TYPE = "audio-start"
 _STOP_TYPE = "audio-stop"
 
+DEFAULT_RATE = 16000  # Hz
+DEFAULT_WIDTH = 2  # bytes
+DEFAULT_CHANNELS = 1  # mono
+
 
 @dataclass
 class AudioChunk(Eventable):

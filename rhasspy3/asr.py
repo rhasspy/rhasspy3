@@ -2,9 +2,9 @@
 import logging
 import wave
 from dataclasses import dataclass
-from typing import IO, Optional, Union
+from typing import IO, AsyncIterable, Optional, Union
 
-from .audio import AudioStart, AudioStop, wav_to_chunks
+from .audio import AudioChunk, AudioStart, AudioStop, wav_to_chunks
 from .config import PipelineProgramConfig
 from .core import Rhasspy
 from .event import Event, Eventable, async_read_event, async_write_event
@@ -84,5 +84,56 @@ async def transcribe(
                     transcript = Transcript.from_event(event)
                     _LOGGER.debug("transcribe: %s", transcript)
                     break
+
+    return transcript
+
+
+async def transcribe_stream(
+    rhasspy: Rhasspy,
+    program: Union[str, PipelineProgramConfig],
+    audio_stream: AsyncIterable[bytes],
+    rate: int,
+    width: int,
+    channels: int,
+) -> Optional[Transcript]:
+    transcript: Optional[Transcript] = None
+    async with (await create_process(rhasspy, DOMAIN, program)) as asr_proc:
+        assert asr_proc.stdin is not None
+        assert asr_proc.stdout is not None
+
+        timestamp = 0
+        await async_write_event(
+            AudioStart(rate, width, channels, timestamp=timestamp).event(),
+            asr_proc.stdin,
+        )
+
+        is_first_chunk = True
+
+        async for chunk_bytes in audio_stream:
+            if is_first_chunk:
+                is_first_chunk = False
+                _LOGGER.debug("transcribe: processing audio")
+
+            if not chunk_bytes:
+                # Empty chunk means to stop
+                break
+
+            chunk = AudioChunk(rate, width, channels, chunk_bytes)
+            await async_write_event(chunk.event(), asr_proc.stdin)
+            timestamp += chunk.milliseconds
+
+        await async_write_event(AudioStop(timestamp=timestamp).event(), asr_proc.stdin)
+
+        _LOGGER.debug("transcribe: audio finished")
+
+        while True:
+            event = await async_read_event(asr_proc.stdout)
+            if event is None:
+                break
+
+            if Transcript.is_type(event.type):
+                transcript = Transcript.from_event(event)
+                _LOGGER.debug("transcribe: %s", transcript)
+                break
 
     return transcript

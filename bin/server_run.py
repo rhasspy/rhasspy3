@@ -2,11 +2,11 @@
 import argparse
 import logging
 import os
-import sys
 import shlex
 import string
 import subprocess
-from typing import Union, List
+import sys
+from typing import List, Union
 
 from rhasspy3.core import Rhasspy
 from rhasspy3.util import merge_dict

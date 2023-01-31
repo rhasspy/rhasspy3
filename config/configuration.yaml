@@ -198,7 +198,7 @@ pipelines:
     vad:
       name: silero
     asr:
-      name: vosk.client
+      name: vosk
     intent:
       name: regex
     handle:

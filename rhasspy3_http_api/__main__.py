@@ -73,7 +73,15 @@ def main():
 
     app = Quart("rhasspy3", template_folder=str(template_dir))
     app.secret_key = str(uuid4())
-    app = quart_cors.cors(app)
+
+    # Monkey patch quart_cors to get rid of non-standard requirement that
+    # websockets have origin header set.
+    async def _apply_websocket_cors(*args, **kwargs):
+        """Allow null origin."""
+        pass
+
+    quart_cors._apply_websocket_cors = _apply_websocket_cors
+    app = quart_cors.cors(app, allow_origin="*")
 
     add_wake(app, rhasspy, pipeline, args)
     add_asr(app, rhasspy, pipeline, args)
@@ -145,7 +153,9 @@ def run_servers(rhasspy, servers):
             )
 
     for domain, server_name in servers:
-        threading.Thread(target=run_server, args=(domain, server_name), daemon=True).start()
+        threading.Thread(
+            target=run_server, args=(domain, server_name), daemon=True
+        ).start()
 
 
 # -----------------------------------------------------------------------------

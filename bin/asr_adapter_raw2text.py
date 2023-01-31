@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import logging
 import io
+import logging
 import shlex
 import subprocess
 import tempfile
