@@ -1,7 +1,7 @@
 """Text to speech."""
 import wave
 from dataclasses import dataclass
-from typing import AsyncIterable, IO, Union
+from typing import IO, AsyncIterable, Union
 
 from .audio import AudioChunk, AudioStart, AudioStop
 from .config import PipelineProgramConfig
