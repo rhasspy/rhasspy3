@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 import argparse
-import io
 import logging
 import shlex
 import subprocess
-import tempfile
-import wave
 
 from rhasspy3.asr import Transcript
-from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
+from rhasspy3.audio import AudioChunk, AudioStop
 from rhasspy3.event import read_event, write_event
 
 _LOGGER = logging.getLogger("asr_adapter_wav2text")

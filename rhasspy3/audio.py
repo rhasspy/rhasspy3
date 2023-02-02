@@ -1,4 +1,5 @@
 """Audio input/output."""
+import audioop
 import wave
 from dataclasses import dataclass
 from typing import Iterable, Optional
@@ -115,6 +116,54 @@ class AudioStop(Eventable):
     @staticmethod
     def from_event(event: Event) -> "AudioStop":
         return AudioStop(timestamp=event.data.get("timestamp"))
+
+
+@dataclass
+class AudioChunkConverter:
+    """Converts audio chunks using audioop."""
+
+    rate: int
+    width: int
+    channels: int
+    _ratecv_state = None
+
+    def convert(self, chunk: AudioChunk) -> AudioChunk:
+        if (
+            (chunk.rate == self.rate)
+            and (chunk.width == self.width)
+            and (chunk.channels == self.channels)
+        ):
+            return chunk
+
+        audio_bytes = chunk.audio
+
+        if chunk.width != self.width:
+            # Convert sample width
+            audio_bytes = audioop.lin2lin(audio_bytes, chunk.width, self.width)
+
+        if chunk.channels != self.channels:
+            # Convert to mono or stereo
+            if self.channels == 1:
+                audio_bytes = audioop.tomono(audio_bytes, self.width, 1.0, 1.0)
+            elif self.channels == 2:
+                audio_bytes = audioop.tostereo(audio_bytes, self.width, 1.0, 1.0)
+            else:
+                raise ValueError(f"Cannot convert to channels: {self.channels}")
+
+        if chunk.rate != self.rate:
+            # Resample
+            audio_bytes, self._ratecv_state = audioop.ratecv(
+                audio_bytes,
+                self.width,
+                self.channels,
+                chunk.rate,
+                self.rate,
+                self._ratecv_state,
+            )
+
+        return AudioChunk(
+            self.rate, self.width, self.channels, audio_bytes, timestamp=chunk.timestamp
+        )
 
 
 def wav_to_chunks(
