@@ -39,7 +39,7 @@ def main() -> None:
     if not args.destination:
         args.destination = _DIR.parent / "bin"
 
-    args.destination.parent.mkdir(parents=True, exist_ok=True)
+    args.destination.mkdir(parents=True, exist_ok=True)
 
     url = args.link_format.format(platform=args.platform)
     _LOGGER.info("Downloading %s", url)
