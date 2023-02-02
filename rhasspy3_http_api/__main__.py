@@ -41,11 +41,11 @@ def main():
     parser.add_argument(
         "-c",
         "--config",
-        required=True,
+        default=_DIR.parent / "config",
         help="Configuration directory",
     )
     parser.add_argument(
-        "--pipeline", required=True, help="Name of default pipeline to run"
+        "--pipeline", default="default", help="Name of default pipeline to run"
     )
     parser.add_argument(
         "--server",

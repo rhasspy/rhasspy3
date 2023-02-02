@@ -9,9 +9,9 @@ from rhasspy3.audio import (
     AudioStart,
     AudioChunk,
     AudioStop,
-    DEFAULT_CHANNELS,
-    DEFAULT_RATE,
-    DEFAULT_WIDTH,
+    DEFAULT_IN_CHANNELS,
+    DEFAULT_IN_RATE,
+    DEFAULT_IN_WIDTH,
 )
 from rhasspy3.asr import transcribe, transcribe_stream, Transcript
 from rhasspy3.core import Rhasspy
@@ -90,9 +90,9 @@ def add_asr(
         asr_program = websocket.args.get("asr_program", pipeline.asr)
         assert asr_program, "Missing program for asr"
 
-        rate = int(websocket.args.get("rate", DEFAULT_RATE))
-        width = int(websocket.args.get("width", DEFAULT_WIDTH))
-        channels = int(websocket.args.get("channels", DEFAULT_CHANNELS))
+        rate = int(websocket.args.get("rate", DEFAULT_IN_RATE))
+        width = int(websocket.args.get("width", DEFAULT_IN_WIDTH))
+        channels = int(websocket.args.get("channels", DEFAULT_IN_CHANNELS))
 
         _LOGGER.debug("speech-to-text: asr=%s", asr_program)
 

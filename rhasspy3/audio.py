@@ -10,9 +10,14 @@ _TYPE = "audio-chunk"
 _START_TYPE = "audio-start"
 _STOP_TYPE = "audio-stop"
 
-DEFAULT_RATE = 16000  # Hz
-DEFAULT_WIDTH = 2  # bytes
-DEFAULT_CHANNELS = 1  # mono
+DEFAULT_IN_RATE = 16000  # Hz
+DEFAULT_OUT_RATE = 22050  # Hz
+
+DEFAULT_IN_WIDTH = 2  # bytes
+DEFAULT_OUT_WIDTH = 2  # bytes
+
+DEFAULT_IN_CHANNELS = 1  # mono
+DEFAULT_OUT_CHANNELS = 1  # mono
 
 
 @dataclass

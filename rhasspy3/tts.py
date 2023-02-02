@@ -1,7 +1,7 @@
 """Text to speech."""
 import wave
 from dataclasses import dataclass
-from typing import IO, Union
+from typing import AsyncIterable, IO, Union
 
 from .audio import AudioChunk, AudioStart, AudioStop
 from .config import PipelineProgramConfig
@@ -62,3 +62,25 @@ async def synthesize(
                         wav_file.writeframes(chunk.audio)
                 elif AudioStop.is_type(event.type):
                     break
+
+
+async def synthesize_stream(
+    rhasspy: Rhasspy,
+    program: Union[str, PipelineProgramConfig],
+    text: str,
+) -> AsyncIterable[AudioChunk]:
+    async with (await create_process(rhasspy, DOMAIN, program)) as tts_proc:
+        assert tts_proc.stdin is not None
+        assert tts_proc.stdout is not None
+
+        await async_write_event(Synthesize(text=text).event(), tts_proc.stdin)
+
+        while True:
+            event = await async_read_event(tts_proc.stdout)
+            if event is None:
+                break
+
+            if AudioChunk.is_type(event.type):
+                yield AudioChunk.from_event(event)
+            elif AudioStop.is_type(event.type):
+                break
