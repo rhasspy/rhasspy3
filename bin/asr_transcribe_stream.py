@@ -38,7 +38,7 @@ async def main() -> None:
         "-p", "--pipeline", default="default", help="Name of pipeline to use"
     )
     parser.add_argument(
-        "--asr-program", help="Name of ASR program to use (overrides pipeline)"
+        "--asr-program", help="Name of asr program to use (overrides pipeline)"
     )
     #
     parser.add_argument(
