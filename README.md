@@ -87,6 +87,7 @@ In `bin/`:
 
 In `bin/`:
 
+* `asr_transcribe.py`
 * `asr_transcribe_wav.py`
 * `asr_transcribe_stream.py`
 * TODO `mic_record_wav.py`
