@@ -31,3 +31,4 @@ An event is:
 | handle | handled        | text                            |         |
 | handle | not-handled    | text                            |         |
 | tts    | synthesize     | text                            |         |
+| snd    | played         |                                 |         |

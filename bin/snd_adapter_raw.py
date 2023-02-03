@@ -6,8 +6,9 @@ import shlex
 import subprocess
 from pathlib import Path
 
-from rhasspy3.audio import AudioChunk, AudioChunkConverter
-from rhasspy3.event import read_event
+from rhasspy3.audio import AudioChunk, AudioChunkConverter, AudioStop
+from rhasspy3.event import read_event, write_event
+from rhasspy3.snd import Played
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -39,16 +40,21 @@ def main() -> None:
     assert proc.stdin is not None
 
     converter = AudioChunkConverter(args.rate, args.width, args.channels)
-    while True:
-        event = read_event()
-        if event is None:
-            break
+    with proc:
+        while True:
+            event = read_event()
+            if event is None:
+                break
 
-        if AudioChunk.is_type(event.type):
-            chunk = AudioChunk.from_event(event)
-            chunk = converter.convert(chunk)
-            proc.stdin.write(chunk.audio)
-            proc.stdin.flush()
+            if AudioChunk.is_type(event.type):
+                chunk = AudioChunk.from_event(event)
+                chunk = converter.convert(chunk)
+                proc.stdin.write(chunk.audio)
+                proc.stdin.flush()
+            elif AudioStop.is_type(event.type):
+                break
+
+    write_event(Played().event())
 
 
 if __name__ == "__main__":

@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
+"""Reads raw audio chunks from stdin."""
 import argparse
 import logging
 import shlex
 import subprocess
 import time
+from pathlib import Path
 
-from rhasspy3.audio import AudioChunk, AudioStart
+from rhasspy3.audio import (
+    DEFAULT_IN_CHANNELS,
+    DEFAULT_IN_RATE,
+    DEFAULT_IN_WIDTH,
+    DEFAULT_SAMPLES_PER_CHUNK,
+    AudioChunk,
+    AudioStart,
+)
 from rhasspy3.event import write_event
 
-_LOGGER = logging.getLogger("mic_adapter_raw")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 def main():
@@ -21,21 +32,25 @@ def main():
     parser.add_argument(
         "--samples-per-chunk",
         type=int,
+        default=DEFAULT_SAMPLES_PER_CHUNK,
         help="Number of samples to read at a time from command",
     )
     parser.add_argument(
         "--rate",
         type=int,
+        default=DEFAULT_IN_RATE,
         help="Sample rate (hz)",
     )
     parser.add_argument(
         "--width",
         type=int,
+        default=DEFAULT_IN_WIDTH,
         help="Sample width bytes",
     )
     parser.add_argument(
         "--channels",
         type=int,
+        default=DEFAULT_IN_CHANNELS,
         help="Sample channel count",
     )
     args = parser.parse_args()

@@ -6,6 +6,7 @@ import os
 import sys
 from pathlib import Path
 
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK
 from rhasspy3.core import Rhasspy
 from rhasspy3.snd import play
 
@@ -28,7 +29,7 @@ async def main() -> None:
     parser.add_argument(
         "--samples-per-chunk",
         type=int,
-        default=1024,
+        default=DEFAULT_SAMPLES_PER_CHUNK,
         help="Samples to send to snd program at a time",
     )
     parser.add_argument(

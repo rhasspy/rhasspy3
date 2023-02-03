@@ -19,6 +19,8 @@ DEFAULT_OUT_WIDTH = 2  # bytes
 DEFAULT_IN_CHANNELS = 1  # mono
 DEFAULT_OUT_CHANNELS = 1  # mono
 
+DEFAULT_SAMPLES_PER_CHUNK = 1024
+
 
 @dataclass
 class AudioChunk(Eventable):

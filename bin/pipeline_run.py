@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
+"""Run a pipeline all or part of the way."""
 import argparse
 import asyncio
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import IO, Optional, Union
 
 from rhasspy3.asr import Transcript
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import Event
 from rhasspy3.handle import Handled, NotHandled
 from rhasspy3.intent import Intent, NotRecognized
+from rhasspy3.pipeline import StopAfterDomain
 from rhasspy3.pipeline import run as run_pipeline
 from rhasspy3.wake import Detection
 
@@ -30,15 +34,34 @@ async def main() -> None:
     parser.add_argument(
         "-p", "--pipeline", default="default", help="Name of pipeline to use"
     )
+    #
+    parser.add_argument(
+        "--stop-after",
+        choices=[domain.value for domain in StopAfterDomain],
+        help="Domain to stop pipeline after",
+    )
+    #
+    parser.add_argument(
+        "--wake-name", help="Skip wake word detection and use name instead"
+    )
+    parser.add_argument(
+        "--asr-wav",
+        help="Use WAV file for speech to text instead of mic input (skips wake)",
+    )
+    parser.add_argument("--asr-text", help="Use text for asr transcript (skips wake)")
+    parser.add_argument(
+        "--intent-json", help="Use JSON for recognized intent (skips wake, asr)"
+    )
+    parser.add_argument(
+        "--handle-text", help="Use text for handle response (skips handle)"
+    )
+    parser.add_argument(
+        "--tts-wav", help="Play WAV file instead of text to speech response (skips tts)"
+    )
 
-    parser.add_argument("--wake-name")
-    parser.add_argument("--asr-wav")
-    parser.add_argument("--asr-text")
-    parser.add_argument("--intent-json")
-    parser.add_argument("--handle-text")
-    parser.add_argument("--tts-wav")
-
-    parser.add_argument("--samples-per-chunk", type=int, default=1024)
+    parser.add_argument(
+        "--samples-per-chunk", type=int, default=DEFAULT_SAMPLES_PER_CHUNK
+    )
     parser.add_argument("--asr-chunks-to-buffer", type=int, default=0)
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
@@ -73,7 +96,7 @@ async def main() -> None:
         tts_wav_in = open(args.tts_wav, "rb")
 
     rhasspy = Rhasspy.load(args.config)
-    await run_pipeline(
+    pipeline_result = await run_pipeline(
         rhasspy,
         args.pipeline,
         samples_per_chunk=args.samples_per_chunk,
@@ -84,7 +107,11 @@ async def main() -> None:
         intent_result=intent_result,
         handle_result=handle_result,
         tts_wav_in=tts_wav_in,
+        stop_after=args.stop_after,
     )
+
+    json.dump(pipeline_result.to_dict(), sys.stdout, ensure_ascii=False)
+    print("")
 
 
 if __name__ == "__main__":

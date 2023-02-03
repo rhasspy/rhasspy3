@@ -18,19 +18,23 @@ class MissingProgramConfigError(Exception):
 
 
 class ProcessContextManager:
-    def __init__(self, proc: Process):
+    def __init__(self, proc: Process, name: str):
         self.proc = proc
+        self.name = name
 
     async def __aenter__(self):
         return self.proc
 
     async def __aexit__(self, exc_type, exc, tb):
         try:
-            self.proc.terminate()
-            asyncio.create_task(self.proc.wait())
+            if self.proc.returncode is None:
+                self.proc.terminate()
+                await self.proc.wait()
         except ProcessLookupError:
             # Expected when process has already exited
             pass
+        except Exception:
+            _LOGGER.exception("Unexpected error stopping process: %s", self.name)
 
 
 async def create_process(
@@ -112,4 +116,4 @@ async def create_process(
             env=env,
         )
 
-    return ProcessContextManager(proc)
+    return ProcessContextManager(proc, name=name)
