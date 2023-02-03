@@ -92,6 +92,7 @@ In `bin/`:
 * TODO `mic_record_wav.py`
 * `server_run.py`
 * `snd_play.py`
+* `wake_detect.py`
 
 ## HTTP API
 
