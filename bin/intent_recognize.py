@@ -61,7 +61,7 @@ async def main() -> None:
                     sys.exit(1)
 
                 if Intent.is_type(event.type) or NotRecognized.is_type(event.type):
-                    json.dump(event.data, sys.stdout)
+                    json.dump(event.data, sys.stdout, ensure_ascii=False)
                     print("", flush=True)
                     break
 

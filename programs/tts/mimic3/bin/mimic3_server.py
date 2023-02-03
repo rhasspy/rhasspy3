@@ -124,7 +124,10 @@ def handle_client(connection: socket.socket, mimic3: Mimic3TextToSpeechSystem) -
                         conn_file.write(result.audio_bytes)
 
                     conn_file.write(
-                        (json.dumps({"type": "audio-stop"}) + "\n").encode()
+                        (
+                            json.dumps({"type": "audio-stop"}, ensure_ascii=False)
+                            + "\n"
+                        ).encode()
                     )
                     break
     except Exception:

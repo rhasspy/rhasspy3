@@ -8,11 +8,11 @@ import sys
 from pathlib import Path
 
 from rhasspy3.asr import DOMAIN, Transcript
-from rhasspy3.mic import DOMAIN as MIC_DOMAIN
 from rhasspy3.core import Rhasspy
+from rhasspy3.event import async_read_event
+from rhasspy3.mic import DOMAIN as MIC_DOMAIN
 from rhasspy3.program import create_process
 from rhasspy3.vad import segment
-from rhasspy3.event import async_read_event
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -97,7 +97,7 @@ async def main() -> None:
 
         if args.output_json:
             # JSON output
-            json.dump(transcript.event().data, sys.stdout)
+            json.dump(transcript.event().data, sys.stdout, ensure_ascii=False)
             print("", flush=True)
         else:
             # Text output

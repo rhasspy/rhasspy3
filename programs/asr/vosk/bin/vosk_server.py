@@ -94,7 +94,10 @@ def handle_client(connection: socket.socket, model: Model, rate: int) -> None:
                     text = result["text"]
 
                     transcript_str = (
-                        json.dumps({"type": "transcript", "data": {"text": text}})
+                        json.dumps(
+                            {"type": "transcript", "data": {"text": text}},
+                            ensure_ascii=False,
+                        )
                         + "\n"
                     )
                     conn_file.write(transcript_str.encode())

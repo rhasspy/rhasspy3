@@ -104,7 +104,10 @@ def handle_client(
                         text = ""
 
                     transcript_str = (
-                        json.dumps({"type": "transcript", "data": {"text": text}})
+                        json.dumps(
+                            {"type": "transcript", "data": {"text": text}},
+                            ensure_ascii=False,
+                        )
                         + "\n"
                     )
                     conn_file.write(transcript_str.encode())

@@ -151,7 +151,7 @@ async def main() -> None:
 
         if args.output_json:
             # JSON output
-            json.dump(transcript.event().data, sys.stdout)
+            json.dump(transcript.event().data, sys.stdout, ensure_ascii=False)
             print("", flush=True)
         else:
             # Text output

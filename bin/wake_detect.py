@@ -67,7 +67,7 @@ async def main() -> None:
         detection = await detect(rhasspy, wake_program, mic_proc.stdout)
         if detection is not None:
             if args.output_json:
-                json.dump(detection.event().data, sys.stdout)
+                json.dump(detection.event().data, sys.stdout, ensure_ascii=False)
                 print("", flush=True)
             else:
                 print(detection.name, flush=True)

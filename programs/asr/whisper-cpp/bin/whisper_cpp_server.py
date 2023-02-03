@@ -86,7 +86,10 @@ def handle_client(connection: socket.socket, whisper: Whisper) -> None:
             _LOGGER.debug(text)
 
             transcript_str = (
-                json.dumps({"type": "transcript", "data": {"text": text}}) + "\n"
+                json.dumps(
+                    {"type": "transcript", "data": {"text": text}}, ensure_ascii=False
+                )
+                + "\n"
             )
             conn_file.write(transcript_str.encode())
     except Exception:

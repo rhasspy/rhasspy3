@@ -57,9 +57,8 @@ class Intent(Eventable):
         return Event(type=_INTENT_TYPE, data=data)
 
     @staticmethod
-    def from_event(event: Event) -> "Intent":
-        assert event.data is not None
-        entity_dicts = event.data.get("entities")
+    def from_dict(data: Dict[str, Any]) -> "Intent":
+        entity_dicts = data.get("entities")
         if entity_dicts:
             entities: List[Entity] = [
                 Entity(**entity_dict) for entity_dict in entity_dicts
@@ -67,7 +66,12 @@ class Intent(Eventable):
         else:
             entities = []
 
-        return Intent(name=event.data["name"], entities=entities)
+        return Intent(name=data["name"], entities=entities)
+
+    @staticmethod
+    def from_event(event: Event) -> "Intent":
+        assert event.data is not None
+        return Intent.from_dict(event.data)
 
     def to_rhasspy(self) -> Dict[str, Any]:
         return {
