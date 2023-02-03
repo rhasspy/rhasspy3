@@ -4,11 +4,14 @@ import argparse
 import logging
 import shlex
 import subprocess
+from pathlib import Path
 
 from rhasspy3.audio import AudioChunk, AudioChunkConverter
 from rhasspy3.event import read_event
 
-_LOGGER = logging.getLogger("snd_adapter_raw")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 def main() -> None:
@@ -21,8 +24,11 @@ def main() -> None:
     parser.add_argument("--width", type=int, help="Sample width (bytes)")
     parser.add_argument("--channels", type=int, help="Sample channel count")
     parser.add_argument("--shell", action="store_true", help="Run command with shell")
+    parser.add_argument(
+        "--debug", action="store_true", help="Print DEBUG messages to console"
+    )
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     if args.shell:
         command = args.command

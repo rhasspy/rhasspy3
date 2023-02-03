@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-import json
 import logging
 import shlex
 import subprocess
 from pathlib import Path
 
+from rhasspy3.asr import Transcript
 from rhasspy3.event import read_event, write_event
 from rhasspy3.handle import Handled, NotHandled
-from rhasspy3.intent import Intent, NotRecognized
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -49,26 +48,9 @@ def main() -> None:
             if event is None:
                 break
 
-            if Intent.is_type(event.type):
-                intent = Intent.from_event(event)
-                stdout, _stderr = proc.communicate(
-                    input=json.dumps(
-                        {
-                            "intent": {
-                                "name": intent.name,
-                            },
-                            "entities": [
-                                {"entity": entity.name, "value": entity.value}
-                                for entity in intent.entities or []
-                            ],
-                            "slots": {
-                                entity.name: entity.value
-                                for entity in intent.entities or []
-                            },
-                        },
-                        ensure_ascii=False,
-                    )
-                )
+            if Transcript.is_type(event.type):
+                transcript = Transcript.from_event(event)
+                stdout, _stderr = proc.communicate(input=transcript.text)
                 handled = False
                 for line in stdout.splitlines():
                     line = line.strip()
@@ -80,10 +62,6 @@ def main() -> None:
                 if not handled:
                     write_event(NotHandled().event())
 
-                break
-
-            if NotRecognized.is_type(event.type):
-                write_event(NotHandled().event())
                 break
 
 

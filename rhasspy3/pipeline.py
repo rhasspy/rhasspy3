@@ -70,18 +70,23 @@ async def run(
         asr_transcript = pipeline_result.asr_transcript
 
     # Text to intent
-    if asr_transcript is not None:
+    if (asr_transcript is not None) and (pipeline.intent is not None):
         pipeline_result.asr_transcript = asr_transcript
-        assert pipeline.intent is not None, "Pipeline is missing intent"
         intent_result = await recognize(
             rhasspy, pipeline.intent, asr_transcript.text or ""
         )
 
     # Handle intent
+    handle_input: Optional[Union[Intent, NotRecognized, Transcript]] = None
     if intent_result is not None:
         pipeline_result.intent_result = intent_result
+        handle_input = intent_result
+    elif asr_transcript is not None:
+        handle_input = asr_transcript
+
+    if handle_input is not None:
         assert pipeline.handle is not None, "Pipeline is missing handle"
-        handle_result = await handle(rhasspy, pipeline.handle, intent_result)
+        handle_result = await handle(rhasspy, pipeline.handle, handle_input)
 
     # Text to speech
     if handle_result is not None:

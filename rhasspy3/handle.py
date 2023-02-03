@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Union
 
+from .asr import Transcript
 from .config import PipelineProgramConfig
 from .core import Rhasspy
 from .event import Event, Eventable, async_read_event, async_write_event
@@ -61,15 +62,15 @@ class NotHandled(Eventable):
 async def handle(
     rhasspy: Rhasspy,
     program: Union[str, PipelineProgramConfig],
-    intent_result: Union[Intent, NotRecognized],
+    handle_input: Union[Intent, NotRecognized, Transcript],
 ) -> Optional[Union[Handled, NotHandled]]:
     handle_result: Optional[Union[Handled, NotHandled]] = None
     async with (await create_process(rhasspy, DOMAIN, program)) as handle_proc:
         assert handle_proc.stdin is not None
         assert handle_proc.stdout is not None
 
-        _LOGGER.debug("handle: intent=%s", intent_result)
-        await async_write_event(intent_result.event(), handle_proc.stdin)
+        _LOGGER.debug("handle: input=%s", handle_input)
+        await async_write_event(handle_input.event(), handle_proc.stdin)
         while True:
             event = await async_read_event(handle_proc.stdout)
             if event is None:

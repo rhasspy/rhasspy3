@@ -72,6 +72,27 @@ Rhasspy focuses on:
 8. snd - synthesized audio is played through speakers or satellite
 
 
+## Adapters
+
+In `bin/`:
+
+* `asr_adapter_raw2text.py`
+* `asr_adapter_wav2text.py`
+* `handle_adapter_json.py`
+* `handle_adapter_text.py`
+* `snd_adapter_raw.py`
+
+
+## Utilities
+
+In `bin/`:
+
+* `asr_transcribe_wav.py`
+* `asr_transcribe_stream.py`
+* TODO `mic_record_wav.py`
+* `server_run.py`
+* `snd_play.py`
+
 ## HTTP API
 
 `http://localhost:12101/<endpoint>`

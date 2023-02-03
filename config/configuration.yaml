@@ -137,6 +137,12 @@ programs:
         bin/regex.py -i TurnOn 'turn on (the )?(?P<name>.+)'
 
   handle:
+    repeat:
+      command: |
+        cat
+      shell: true
+      adapter: |
+        handle_adapter_text.py
     test:
       command: |
         name="$(jq -r .slots.name)"
@@ -199,10 +205,10 @@ pipelines:
       name: silero
     asr:
       name: vosk
-    intent:
-      name: regex
+    # intent:
+    #   name: regex
     handle:
-      name: test
+      name: repeat
     tts:
       name: larynx2
     snd:

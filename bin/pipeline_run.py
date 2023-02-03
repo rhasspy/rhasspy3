@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import json
 import logging
+from pathlib import Path
 from typing import IO, Optional, Union
 
 from rhasspy3.asr import Transcript
@@ -13,7 +14,9 @@ from rhasspy3.intent import Intent, NotRecognized
 from rhasspy3.pipeline import run as run_pipeline
 from rhasspy3.wake import Detection
 
-_LOGGER = logging.getLogger("pipeline_run")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 async def main() -> None:
@@ -21,10 +24,12 @@ async def main() -> None:
     parser.add_argument(
         "-c",
         "--config",
-        required=True,
+        default=_DIR.parent / "config",
         help="Configuration directory",
     )
-    parser.add_argument("pipeline", help="Name of pipeline to run")
+    parser.add_argument(
+        "-p", "--pipeline", default="default", help="Name of pipeline to use"
+    )
 
     parser.add_argument("--wake-name")
     parser.add_argument("--asr-wav")
