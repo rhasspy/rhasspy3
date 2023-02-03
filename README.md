@@ -90,9 +90,12 @@ In `bin/`:
 * `asr_transcribe.py`
 * `asr_transcribe_wav.py`
 * `asr_transcribe_stream.py`
+* `handle_handle.py`
+* `intent_recognize.py`
 * TODO `mic_record_wav.py`
 * `server_run.py`
 * `snd_play.py`
+* `tts_speak.py`
 * `wake_detect.py`
 
 ## HTTP API

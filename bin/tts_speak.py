@@ -11,8 +11,9 @@ from rhasspy3.core import Rhasspy
 from rhasspy3.snd import play
 from rhasspy3.tts import synthesize
 
-_LOGGER = logging.getLogger("speak_text")
-_DIR = Path(__file__).parent
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 async def main() -> None:

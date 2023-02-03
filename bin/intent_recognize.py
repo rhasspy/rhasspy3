@@ -9,9 +9,7 @@ from pathlib import Path
 from typing import Iterable
 
 from rhasspy3.core import Rhasspy
-from rhasspy3.event import async_read_event, async_write_event
-from rhasspy3.intent import DOMAIN, Intent, NotRecognized, Recognize
-from rhasspy3.program import create_process
+from rhasspy3.intent import recognize
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -49,21 +47,13 @@ async def main() -> None:
 
     assert intent_program, "No intent program"
 
-    async with (await create_process(rhasspy, DOMAIN, intent_program)) as intent_proc:
-        assert intent_proc.stdin is not None
-        assert intent_proc.stdout is not None
+    for text in get_texts(args):
+        intent_result = await recognize(rhasspy, intent_program, text)
+        if intent_result is None:
+            continue
 
-        for text in get_texts(args):
-            await async_write_event(Recognize(text=text).event(), intent_proc.stdin)
-            while True:
-                event = await async_read_event(intent_proc.stdout)
-                if event is None:
-                    sys.exit(1)
-
-                if Intent.is_type(event.type) or NotRecognized.is_type(event.type):
-                    json.dump(event.data, sys.stdout, ensure_ascii=False)
-                    print("", flush=True)
-                    break
+        json.dump(intent_result.event().data, sys.stdout, ensure_ascii=False)
+        print("", flush=True)
 
 
 def get_texts(args: argparse.Namespace) -> Iterable[str]:

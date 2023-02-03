@@ -205,10 +205,10 @@ pipelines:
       name: silero
     asr:
       name: vosk
-    # intent:
-    #   name: regex
+    intent:
+      name: regex
     handle:
-      name: repeat
+      name: test
     tts:
       name: larynx2
     snd:
