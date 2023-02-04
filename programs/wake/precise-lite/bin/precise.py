@@ -27,7 +27,6 @@ import numpy as np
 import tflite_runtime.interpreter as tflite
 from sonopy import mfcc_spec
 
-
 MAX_WAV_VALUE = 32768
 _log = logging.getLogger("mycroft_hotword")
 

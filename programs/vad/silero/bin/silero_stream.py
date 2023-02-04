@@ -3,18 +3,20 @@ import argparse
 import logging
 import sys
 import time
-from dataclasses import dataclass, field
-from enum import auto, Enum
-from typing import Optional, Union
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional, Union
 
 import numpy as np
 import onnxruntime
-from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
-from rhasspy3.vad import VoiceStarted, VoiceStopped
-from rhasspy3.event import read_event, write_event
 
-_LOGGER = logging.getLogger("silero_stream")
+from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
+from rhasspy3.event import read_event, write_event
+from rhasspy3.vad import VoiceStarted, VoiceStopped
+
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 def main() -> None:
@@ -41,6 +43,7 @@ def main() -> None:
         type=float,
         default=15.0,
     )
+    parser.add_argument("--samples-per-chunk", type=int, default=512)
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
@@ -57,6 +60,9 @@ def main() -> None:
     sent_started = False
     sent_stopped = False
     last_stop_timestamp: Optional[int] = None
+    audio_bytes = bytes()
+    bytes_per_chunk = args.samples_per_chunk * 2
+    seconds_per_chunk = args.samples_per_chunk / 16000.0
 
     try:
         while True:
@@ -74,31 +80,40 @@ def main() -> None:
                     is_first_audio = False
 
                 chunk = AudioChunk.from_event(event)
-                is_speech = detector.is_speech(chunk.audio)
-                timestamp = (
-                    time.monotonic_ns() if chunk.timestamp is None else chunk.timestamp
-                )
-                last_stop_timestamp = timestamp + chunk.milliseconds
-                segmenter.process(
-                    chunk=chunk.audio,
-                    chunk_seconds=chunk.seconds,
-                    is_speech=is_speech,
-                    timestamp=timestamp,
-                )
+                audio_bytes += chunk.audio
 
-                if (not sent_started) and (segmenter.start_timestamp is not None):
-                    _LOGGER.debug("Voice started")
-                    write_event(
-                        VoiceStarted(timestamp=segmenter.start_timestamp).event()
+                # Handle uneven chunk sizes
+                while len(audio_bytes) >= bytes_per_chunk:
+                    detector_audio_bytes = audio_bytes[:bytes_per_chunk]
+                    is_speech = detector.is_speech(detector_audio_bytes)
+                    timestamp = (
+                        time.monotonic_ns()
+                        if chunk.timestamp is None
+                        else chunk.timestamp
                     )
-                    sent_started = True
+                    last_stop_timestamp = timestamp + chunk.milliseconds
+                    segmenter.process(
+                        chunk=detector_audio_bytes,
+                        chunk_seconds=seconds_per_chunk,
+                        is_speech=is_speech,
+                        timestamp=timestamp,
+                    )
 
-                if (not sent_stopped) and (segmenter.stop_timestamp is not None):
-                    _LOGGER.debug("Voice stopped")
-                    write_event(
-                        VoiceStopped(timestamp=segmenter.stop_timestamp).event()
-                    )
-                    sent_stopped = True
+                    if (not sent_started) and (segmenter.start_timestamp is not None):
+                        _LOGGER.debug("Voice started")
+                        write_event(
+                            VoiceStarted(timestamp=segmenter.start_timestamp).event()
+                        )
+                        sent_started = True
+
+                    if (not sent_stopped) and (segmenter.stop_timestamp is not None):
+                        _LOGGER.debug("Voice stopped")
+                        write_event(
+                            VoiceStopped(timestamp=segmenter.stop_timestamp).event()
+                        )
+                        sent_stopped = True
+
+                    audio_bytes = audio_bytes[bytes_per_chunk:]
             elif AudioStart.is_type(event.type):
                 _LOGGER.debug("Audio started")
                 is_first_audio = True

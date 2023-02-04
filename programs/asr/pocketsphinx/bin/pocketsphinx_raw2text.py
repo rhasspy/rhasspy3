@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pocketsphinx
 
-
 _LOGGER = logging.getLogger("pocketsphinx_raw2text")
 
 

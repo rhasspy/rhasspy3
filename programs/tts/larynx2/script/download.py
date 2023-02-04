@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import platform
 import tarfile
 from pathlib import Path
 from urllib.request import urlopen

@@ -7,7 +7,7 @@ import socket
 import threading
 
 import numpy as np
-from whisper import load_model, transcribe, Whisper
+from whisper import Whisper, load_model, transcribe
 
 _LOGGER = logging.getLogger("whisper_server")
 

@@ -10,7 +10,7 @@ An event is:
 1. A single line of JSON with an object:
     * `type` - string (required)
     * `data` - object (optional)
-    * `payload_bytes` - number (optional)
+    * `payload_length` - number (optional)
 2. An optional binary payload of `payload_length` bytes
 
 

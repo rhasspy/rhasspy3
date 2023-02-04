@@ -4,6 +4,7 @@ from typing import Iterable, Union
 
 import numpy as np
 
+
 # Must match struct in whisper.h
 class WhisperFullParams(ctypes.Structure):
     _fields_ = [

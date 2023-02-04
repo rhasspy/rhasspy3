@@ -5,8 +5,8 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 from rhasspy3.asr import Transcript
-from rhasspy3.intent import Entity, Intent, NotRecognized
 from rhasspy3.event import read_event, write_event
+from rhasspy3.intent import Entity, Intent, NotRecognized
 
 
 def main() -> None:

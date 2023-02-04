@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 
-from vosk import Model, KaldiRecognizer, SetLogLevel
+from vosk import KaldiRecognizer, Model, SetLogLevel
 
 _LOGGER = logging.getLogger("vosk_raw2text")
 

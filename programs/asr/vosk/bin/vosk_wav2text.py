@@ -2,12 +2,14 @@
 import argparse
 import json
 import logging
-import sys
 import wave
+from pathlib import Path
 
-from vosk import Model, KaldiRecognizer, SetLogLevel
+from vosk import KaldiRecognizer, Model, SetLogLevel
 
-_LOGGER = logging.getLogger("vosk_raw2text")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 def main() -> None:

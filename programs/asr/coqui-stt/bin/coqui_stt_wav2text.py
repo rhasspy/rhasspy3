@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import sys
 import wave
 from pathlib import Path
 
-from stt import Model
 import numpy as np
+from stt import Model
 
 _LOGGER = logging.getLogger("coqui_stt_wav2text")
 

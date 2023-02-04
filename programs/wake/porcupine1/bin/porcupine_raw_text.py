@@ -8,7 +8,9 @@ from typing import List
 
 import pvporcupine
 
-_LOGGER = logging.getLogger("porcupine_raw_text")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 # -----------------------------------------------------------------------------
 
@@ -23,9 +25,12 @@ def main() -> None:
         nargs="+",
         help="Keyword model settings (path, [sensitivity])",
     )
-    parser.add_argument("--samples-per-chunk", type=int, default=1024)
+    parser.add_argument("--samples-per-chunk", type=int, default=512)
+    parser.add_argument(
+        "--debug", action="store_true", help="Print DEBUG messages to console"
+    )
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     # Path to embedded keywords
     keyword_dir = Path(next(iter(pvporcupine.pv_keyword_paths("").values()))).parent
@@ -59,15 +64,25 @@ def main() -> None:
     chunk_format = "h" * porcupine.frame_length
 
     # Read 16Khz, 16-bit mono PCM from stdin
+    bytes_per_chunk = args.samples_per_chunk * 2
     try:
-        chunk = sys.stdin.buffer.read(args.samples_per_chunk)
+        chunk = sys.stdin.buffer.read(bytes_per_chunk)
         while chunk:
-            unpacked_chunk = struct.unpack_from(chunk_format, chunk)
-            keyword_index = porcupine.process(unpacked_chunk)
-            if keyword_index >= 0:
-                print(names[keyword_index], flush=True)
+            while len(chunk) >= args.samples_per_chunk:
+                unpacked_chunk = struct.unpack_from(
+                    chunk_format, chunk[:bytes_per_chunk]
+                )
+                keyword_index = porcupine.process(unpacked_chunk)
+                if keyword_index >= 0:
+                    print(names[keyword_index], flush=True)
 
-            chunk = sys.stdin.buffer.read(args.samples_per_chunk)
+                chunk = chunk[bytes_per_chunk:]
+
+            next_chunk = sys.stdin.buffer.read(bytes_per_chunk)
+            if not next_chunk:
+                break
+
+            chunk += next_chunk
     except KeyboardInterrupt:
         pass
 

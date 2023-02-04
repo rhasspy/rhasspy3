@@ -9,15 +9,17 @@ from pathlib import Path
 
 from mimic3_tts import (
     DEFAULT_VOICE,
+    AudioResult,
     Mimic3Settings,
     Mimic3TextToSpeechSystem,
-    AudioResult,
 )
 
-_LOGGER = logging.getLogger("mimic3_server")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("voices_dir", help="Path to directory with <language>/<voice>")
     parser.add_argument("--voice", default=DEFAULT_VOICE, help="Name of voice to use")

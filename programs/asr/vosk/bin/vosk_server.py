@@ -6,7 +6,7 @@ import os
 import socket
 import threading
 
-from vosk import Model, KaldiRecognizer, SetLogLevel
+from vosk import KaldiRecognizer, Model, SetLogLevel
 
 _LOGGER = logging.getLogger("vosk_server")
 

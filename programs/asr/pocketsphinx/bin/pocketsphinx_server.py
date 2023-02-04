@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-import logging
 import json
+import logging
 import os
 import socket
 import threading
 from pathlib import Path
 
 import pocketsphinx
-
 
 _LOGGER = logging.getLogger("pocketsphinx_server")
 

@@ -105,14 +105,21 @@ programs:
         mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
     gstreamer_udp:
       command: |
-        gst-launch-1.0 -v udpsrc address=${address} port=${port} ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=22050 num-channels=1 ! audioconvert ! audioresample ! audio/x-raw,rate=16000 ! volume volume=3.0 ! level ! fdsink fd=1 sync=false
+        gst-launch-1.0 -v udpsrc address=${address} port=${port} ! rawaudioparse use-sink-caps=false format=pcm pcm-format=${format} sample-rate=${rate} num-channels=${channels} ! audioconvert ! audioresample ! volume volume=3.0 ! level ! fdsink fd=1 sync=false
       template_args:
+        format: s16le
+        rate: 16000
+        channels: 1
         address: "0.0.0.0"
+        port: 5000
       adapter: |
         mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
     udp_raw:
       command: |
-        bin/udp_raw.py --port 5000
+        bin/udp_raw.py --host ${host} --port ${port}
+      template_args:
+        host: 0.0.0.0
+        port: 5000
 
   wake:
     precise-lite:
@@ -157,6 +164,12 @@ programs:
         aplay -q -r 22050 -f S16_LE -c 1 -t raw
       adapter: |
         snd_adapter_raw.py --rate 22050 --width 2 --channels 1
+    udp_raw:
+      command: |
+        bin/udp_raw.py --host ${host} --port ${port}
+      template_args:
+        host: 127.0.0.1
+        port: 5001
 
 
 servers:
@@ -198,7 +211,7 @@ servers:
 pipelines:
   default:
     mic:
-      name: arecord
+      name: udp_raw
     wake:
       name: porcupine1
     vad:
@@ -212,4 +225,6 @@ pipelines:
     tts:
       name: larynx2
     snd:
-      name: aplay
+      name: udp_raw
+      template_args:
+        host: 192.168.1.7

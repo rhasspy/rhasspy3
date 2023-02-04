@@ -4,8 +4,8 @@ import logging
 import sys
 from pathlib import Path
 
-from stt import Model
 import numpy as np
+from stt import Model
 
 _LOGGER = logging.getLogger("coqui_stt_raw2text")
 
