@@ -125,7 +125,9 @@ async def run(
         asr_transcript = pipeline_result.asr_transcript
         pipeline_result.asr_transcript = asr_transcript
 
-    if stop_after == StopAfterDomain.ASR:
+    if (stop_after == StopAfterDomain.ASR) or (
+        (intent_program is None) and (handle_program is None)
+    ):
         return pipeline_result
 
     # Text to intent
@@ -152,7 +154,7 @@ async def run(
         handle_result = await handle(rhasspy, handle_program, handle_input)
         pipeline_result.handle_result = handle_result
 
-    if stop_after == StopAfterDomain.HANDLE:
+    if (stop_after == StopAfterDomain.HANDLE) or (tts_program is None):
         return pipeline_result
 
     # Text to speech
@@ -165,7 +167,7 @@ async def run(
         else:
             _LOGGER.debug("No text returned from handle")
 
-    if stop_after == StopAfterDomain.TTS:
+    if (stop_after == StopAfterDomain.TTS) or (snd_program is None):
         return pipeline_result
 
     # Audio output
