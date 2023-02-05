@@ -22,7 +22,7 @@ _DIR = _FILE.parent
 _LOGGER = logging.getLogger(_FILE.stem)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "command",
@@ -53,8 +53,11 @@ def main():
         default=DEFAULT_IN_CHANNELS,
         help="Sample channel count",
     )
+    parser.add_argument(
+        "--debug", action="store_true", help="Print DEBUG messages to console"
+    )
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     bytes_per_chunk = args.samples_per_chunk * args.width * args.channels
 
