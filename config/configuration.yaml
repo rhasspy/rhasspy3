@@ -120,6 +120,11 @@ programs:
       template_args:
         host: 0.0.0.0
         port: 5000
+    test_opus:
+      command: |
+        gst-launch-1.0 -v udpsrc address=192.168.1.18 port=5000 caps="application/x-rtp" ! rtpopusdepay ! opusdec ! audioconvert ! audioresample ! audio/x-raw, rate=16000, format=S16LE, channels=1 ! fdsink fd=1 sync=false
+      adapter: |
+        mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
 
   wake:
     precise-lite:
@@ -211,20 +216,18 @@ servers:
 pipelines:
   default:
     mic:
-      name: udp_raw
+      name: arecord
     wake:
       name: porcupine1
     vad:
       name: silero
     asr:
       name: vosk
-    intent:
-      name: regex
+    # intent:
+    #   name: regex
     handle:
-      name: test
+      name: repeat
     tts:
       name: larynx2
     snd:
-      name: udp_raw
-      template_args:
-        host: 192.168.1.7
+      name: aplay

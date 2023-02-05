@@ -6,12 +6,15 @@ import shlex
 import string
 import subprocess
 import sys
+from pathlib import Path
 from typing import List, Union
 
 from rhasspy3.core import Rhasspy
 from rhasspy3.util import merge_dict
 
-_LOGGER = logging.getLogger("server_run")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 def main() -> None:
@@ -19,7 +22,7 @@ def main() -> None:
     parser.add_argument(
         "-c",
         "--config",
-        required=True,
+        default=_DIR.parent / "config",
         help="Configuration directory",
     )
     parser.add_argument("domain", help="Domain of server (asr, tts, etc.)")

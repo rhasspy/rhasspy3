@@ -15,4 +15,5 @@ if [ -d "${venv}" ]; then
     source "${venv}/bin/activate"
 fi
 
+export PYTHONPATH="${base_dir}:${PYTHONPATH}"
 pytest -vv "${base_dir}/tests"

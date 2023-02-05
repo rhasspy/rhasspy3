@@ -63,6 +63,7 @@ async def main() -> None:
         "--samples-per-chunk", type=int, default=DEFAULT_SAMPLES_PER_CHUNK
     )
     parser.add_argument("--asr-chunks-to-buffer", type=int, default=0)
+    parser.add_argument("--loop", action="store_true", help="Keep pipeline running")
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
@@ -96,22 +97,27 @@ async def main() -> None:
         tts_wav_in = open(args.tts_wav, "rb")
 
     rhasspy = Rhasspy.load(args.config)
-    pipeline_result = await run_pipeline(
-        rhasspy,
-        args.pipeline,
-        samples_per_chunk=args.samples_per_chunk,
-        asr_chunks_to_buffer=args.asr_chunks_to_buffer,
-        wake_detection=wake_detection,
-        asr_wav_in=asr_wav_in,
-        asr_transcript=asr_transcript,
-        intent_result=intent_result,
-        handle_result=handle_result,
-        tts_wav_in=tts_wav_in,
-        stop_after=args.stop_after,
-    )
 
-    json.dump(pipeline_result.to_dict(), sys.stdout, ensure_ascii=False)
-    print("")
+    while True:
+        pipeline_result = await run_pipeline(
+            rhasspy,
+            args.pipeline,
+            samples_per_chunk=args.samples_per_chunk,
+            asr_chunks_to_buffer=args.asr_chunks_to_buffer,
+            wake_detection=wake_detection,
+            asr_wav_in=asr_wav_in,
+            asr_transcript=asr_transcript,
+            intent_result=intent_result,
+            handle_result=handle_result,
+            tts_wav_in=tts_wav_in,
+            stop_after=args.stop_after,
+        )
+
+        json.dump(pipeline_result.to_dict(), sys.stdout, ensure_ascii=False)
+        print("")
+
+        if not args.loop:
+            break
 
 
 if __name__ == "__main__":

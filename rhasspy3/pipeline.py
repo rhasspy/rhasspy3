@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import IO, Deque, Optional, Union
 
-from dataclasses_json import DataClassJsonMixin
-
 from .asr import DOMAIN as ASR_DOMAIN
 from .asr import Transcript, transcribe
 from .config import PipelineConfig
@@ -18,6 +16,7 @@ from .mic import DOMAIN as MIC_DOMAIN
 from .program import create_process
 from .snd import play
 from .tts import synthesize
+from .util.dataclasses_json import DataClassJsonMixin
 from .vad import segment
 from .wake import Detection, detect
 

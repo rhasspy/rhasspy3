@@ -17,6 +17,8 @@ Rhasspy focuses on:
     * arecord
     * gstreamer_udp
     * udp_raw
+    * sounddevice (TODO)
+    * pyaudio (TODO)
 * wake 
     * porcupine1
     * precise-lite
@@ -32,6 +34,7 @@ Rhasspy focuses on:
     * pocketsphinx
 * intent
     * regex
+* handle
 * tts 
     * larynx1 (TODO)
     * larynx2
@@ -43,6 +46,8 @@ Rhasspy focuses on:
     * espeak-ng
 * snd
     * aplay
+    * gstreamer_udp
+    * udp_raw
     
     
 ## Servers
