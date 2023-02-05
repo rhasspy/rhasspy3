@@ -40,8 +40,11 @@ def add_pipeline(
         vad_program = request.args.get("vad_program", pipeline.vad)
         asr_program = request.args.get("asr_program", pipeline.asr)
         intent_program = request.args.get("intent_program", pipeline.intent)
+        handle_program = request.args.get("handle_program", pipeline.handle)
+        tts_program = request.args.get("tts_program", pipeline.tts)
+        snd_program = request.args.get("snd_program", pipeline.snd)
         #
-        stop_after = request.args.get("stop_after", StopAfterDomain.INTENT)
+        stop_after = request.args.get("stop_after")
         #
         samples_per_chunk = int(
             request.args.get("samples_per_chunk", args.samples_per_chunk)
@@ -51,12 +54,15 @@ def add_pipeline(
         )
 
         _LOGGER.debug(
-            "listen-for-command: mic=%s, wake=%s, vad=%s, asr=%s, intent=%s, stop_after=%s",
+            "listen-for-command: mic=%s, wake=%s, vad=%s, asr=%s, intent=%s, handle=%s, tts=%s, snd=%s, stop_after=%s",
             mic_program,
             wake_program,
             vad_program,
             asr_program,
             intent_program,
+            handle_program,
+            tts_program,
+            snd_program,
             stop_after,
         )
 
@@ -70,6 +76,9 @@ def add_pipeline(
             asr_program=asr_program,
             vad_program=vad_program,
             intent_program=intent_program,
+            handle_program=handle_program,
+            tts_program=tts_program,
+            snd_program=snd_program,
             stop_after=stop_after,
         )
 

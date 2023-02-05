@@ -72,8 +72,8 @@ async def run(
     vad_program = vad_program or pipeline.vad
     intent_program = intent_program or pipeline.intent
     handle_program = handle_program or pipeline.handle
-    tts_program = vad_program or pipeline.tts
-    snd_program = vad_program or pipeline.snd
+    tts_program = tts_program or pipeline.tts
+    snd_program = snd_program or pipeline.snd
 
     # Speech to text
     if asr_wav_in is not None:
@@ -144,7 +144,7 @@ async def run(
     elif asr_transcript is not None:
         handle_input = asr_transcript
 
-    if stop_after == StopAfterDomain.INTENT:
+    if (stop_after == StopAfterDomain.INTENT) or (handle_program is None):
         return pipeline_result
 
     if (handle_input is not None) and (handle_result is None):

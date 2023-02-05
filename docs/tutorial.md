@@ -77,8 +77,15 @@ Install [Vosk](https://alphacephei.com/vosk/):
 ```sh
 cp -R programs/asr/vosk config/programs/asr/
 config/programs/asr/vosk/script/setup
+```
+
+Download small English model:
+
+```sh
 config/programs/asr/vosk/script/download.py en_small
 ```
+
+Put models in `config/programs/asr/vosk/share`
 
 configuration.yaml:
 
@@ -255,7 +262,7 @@ Reduce the pause length:
 script/run bin/pipeline_run.py --debug --stop-after asr --asr-chunks-to-buffer 5
 ```
 
-Test with HTTP server:
+Test over HTTP server (restart server):
 
 ```sh
 curl -X POST 'localhost:12101/api/wait-for-wake'
@@ -316,8 +323,110 @@ Test input:
 echo 'What time is it?' | script/run bin/handle_handle.py --debug
 ```
 
+Test full voice command + handling:
+
 ```sh
 script/run bin/pipeline_run.py --debug --stop-after handle
 ```
 
 (say "porcupine", *pause*, "what time is it?")
+
+Test over HTTP (restart server):
+
+```sh
+curl -X POST 'localhost:12101/api/listen-for-command'
+```
+
+(say "porcupine", *pause*, "what's the date?")
+
+
+
+## Text to Speech and Sound
+
+configuration.yaml:
+
+```yaml
+programs:
+  mic: ...
+  vad: ...
+  asr: ...
+  wake: ...
+  handle: ...
+  tts:
+    larynx2:
+      command: |
+        bin/larynx --model share/en-us-blizzard_lessac-medium.onnx --output_file -
+      adapter: |
+        tts_adapter_text2wav.py
+  snd:
+    aplay:
+      command: |
+        aplay -q -r 22050 -f S16_LE -c 1 -t raw
+      adapter: |
+        snd_adapter_raw.py --rate 22050 --width 2 --channels 1
+
+servers:
+  asr: ...
+
+pipelines:
+  default:
+    mic: ...
+    vad: ...
+    asr: ...
+    wake: ...
+    handle: ...
+    tts:
+      name: larynx2
+    snd:
+      name: aplay
+```
+
+Install [Larynx 2](https://github.com/rhasspy/larynx2):
+
+```sh
+cp -R programs/tts/larynx2 config/programs/tts/
+config/programs/tts/larynx2/script/setup.py
+```
+
+```sh
+config/programs/tts/larynx2/script/download.py english
+```
+
+Download English voice:
+
+```sh
+config/programs/tts/larynx2/script/download.py english
+```
+
+Put voices in `config/programs/tts/larynx2/share`
+
+Test text to speech:
+
+```sh
+script/run bin/tts_speak.py 'Welcome to the world of speech synthesis.'
+```
+
+Use `bin/tts_synthesize.py` to get WAV.
+
+Test over HTTP (restart server):
+
+```sh
+curl -X POST --data 'Welcome to the world of speech synthesis.' 'localhost:12101/api/speak-text'
+```
+
+To get WAV file over HTTP:
+
+```sh
+curl -X POST --data 'Welcome to the world of speech synthesis.' --output welcome.wav 'localhost:12101/api/text-to-speech'
+```
+
+Listen to `welcome.wav`
+
+### Client/Server
+
+TODO
+
+
+## Complete Pipeline
+
+
