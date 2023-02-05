@@ -200,7 +200,7 @@ servers:
       template_args:
         language: "en"
         model: "tiny.en"
-        device: "cuda"  # or cuda
+        device: "cpu"  # or cuda
     whisper-cpp:
       command: |
         script/server ${model}

@@ -30,6 +30,14 @@ if [ -f "${base_dir}/requirements.txt" ]; then
     pip3 install -r "${base_dir}/requirements.txt"
 fi
 
+# Copy default config
+config_dir="${base_dir}/config"
+config_file="${config_dir}/configuration.yaml"
+
+if [ ! -f "${config_file}" ]; then
+    cp "${config_dir}/configuration.default.yaml" "${config_file}"
+fi
+
 # -----------------------------------------------------------------------------
 
 echo "OK"
