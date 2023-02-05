@@ -100,6 +100,7 @@ async def main() -> None:
         asr_program = pipeline.asr
 
     assert asr_program, "No asr program"
+    _LOGGER.debug("asr program: %s", asr_program)
 
     # Transcribe raw audio from stdin
     converter = AudioChunkConverter(args.asr_rate, args.asr_width, args.asr_channels)
@@ -109,6 +110,7 @@ async def main() -> None:
     async with (await create_process(rhasspy, DOMAIN, asr_program)) as asr_proc:
         assert asr_proc.stdin is not None
         assert asr_proc.stdout is not None
+        _LOGGER.debug("Started %s", asr_program)
 
         await async_write_event(
             AudioStart(

@@ -74,6 +74,7 @@ async def main() -> None:
         asr_program = pipeline.asr
 
     assert asr_program, "No asr program"
+    _LOGGER.debug("asr program: %s", asr_program)
 
     # Transcribe WAV file(s)
     for wav_bytes in get_wav_bytes(args):
@@ -110,6 +111,7 @@ async def main() -> None:
             )
 
             # Read transcript
+            _LOGGER.debug("Waiting for transcription")
             transcript = Transcript(text="")
             while True:
                 event = await async_read_event(asr_proc.stdout)
@@ -119,6 +121,8 @@ async def main() -> None:
                 if Transcript.is_type(event.type):
                     transcript = Transcript.from_event(event)
                     break
+
+            _LOGGER.debug(transcript)
 
             if args.output_json:
                 # JSON output
@@ -133,6 +137,7 @@ def get_wav_bytes(args: argparse.Namespace) -> Iterable[bytes]:
     if args.wav:
         # WAV file path(s)
         for wav_path in args.wav:
+            _LOGGER.debug("Processing %s", wav_path)
             with open(wav_path, "rb") as wav_file:
                 yield wav_file.read()
     else:

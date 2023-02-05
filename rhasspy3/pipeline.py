@@ -69,6 +69,10 @@ async def run(
             rhasspy, pipeline.asr, asr_wav_in, samples_per_chunk
         )
     elif asr_transcript is None:
+        if pipeline.wake is None:
+            await _mic_asr(rhasspy, pipeline, pipeline_result)
+            return pipeline_result
+
         # Audio input, wake word detection, segmentation, speech to text
         if stop_after == StopAfterDomain.WAKE:
             await _mic_wake(
@@ -164,6 +168,39 @@ async def _mic_wake(
             pipeline_result.wake_detection = wake_detection
         else:
             _LOGGER.debug("run: no wake word detected")
+
+
+async def _mic_asr(
+    rhasspy: Rhasspy,
+    pipeline: PipelineConfig,
+    pipeline_result: PipelineResult,
+    asr_chunks_to_buffer: int = 0,
+):
+    assert pipeline.mic is not None, "Pipeline is missing mic"
+    assert pipeline.vad is not None, "Pipeline is missing vad"
+    assert pipeline.asr is not None, "Pipeline is missing asr"
+
+    async with (await create_process(rhasspy, MIC_DOMAIN, pipeline.mic)) as mic_proc, (
+        await create_process(rhasspy, ASR_DOMAIN, pipeline.asr)
+    ) as asr_proc:
+        assert mic_proc.stdout is not None
+        assert asr_proc.stdin is not None
+        assert asr_proc.stdout is not None
+
+        await segment(
+            rhasspy,
+            pipeline.vad,
+            mic_proc.stdout,
+            asr_proc.stdin,
+        )
+        while True:
+            asr_event = await async_read_event(asr_proc.stdout)
+            if asr_event is None:
+                break
+
+            if Transcript.is_type(asr_event.type):
+                pipeline_result.asr_transcript = Transcript.from_event(asr_event)
+                break
 
 
 async def _mic_wake_asr(

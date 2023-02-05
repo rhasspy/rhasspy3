@@ -62,8 +62,9 @@ def main():
     )
     parser.add_argument("--samples-per-chunk", type=int, default=1024)
     parser.add_argument("--asr-chunks-to-buffer", type=int, default=0)
+    parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     rhasspy = Rhasspy.load(args.config)
     pipeline = rhasspy.config.pipelines[args.pipeline]
@@ -76,7 +77,7 @@ def main():
 
     # Monkey patch quart_cors to get rid of non-standard requirement that
     # websockets have origin header set.
-    async def _apply_websocket_cors(*args, **kwargs):
+    def _apply_websocket_cors(*args, **kwargs):
         """Allow null origin."""
         pass
 
