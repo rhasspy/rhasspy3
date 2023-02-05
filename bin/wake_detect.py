@@ -38,6 +38,8 @@ async def main() -> None:
     parser.add_argument(
         "--output-json", action="store_true", help="Outputs JSON instead of text"
     )
+    #
+    parser.add_argument("--loop", action="store_true", help="Keep detecting wake words")
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )
@@ -54,24 +56,34 @@ async def main() -> None:
         mic_program = pipeline.mic
 
     assert mic_program, "No mic program"
+    _LOGGER.debug("mic program: %s", mic_program)
 
     if not wake_program:
         assert pipeline is not None, f"No pipline named {args.pipeline}"
         wake_program = pipeline.wake
 
     assert wake_program, "No wake program"
+    _LOGGER.debug("wake program: %s", wake_program)
 
     # Detect wake word
-    async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
-        assert mic_proc.stdout is not None
-        detection = await detect(rhasspy, wake_program, mic_proc.stdout)
-        if detection is not None:
-            if args.output_json:
-                json.dump(detection.event().data, sys.stdout, ensure_ascii=False)
-                print("", flush=True)
-            else:
-                print(detection.name, flush=True)
+    while True:
+        async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
+            assert mic_proc.stdout is not None
+            _LOGGER.debug("Detecting wake word")
+            detection = await detect(rhasspy, wake_program, mic_proc.stdout)
+            if detection is not None:
+                if args.output_json:
+                    json.dump(detection.event().data, sys.stdout, ensure_ascii=False)
+                    print("", flush=True)
+                else:
+                    print(detection.name, flush=True)
+
+        if not args.loop:
+            break
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass

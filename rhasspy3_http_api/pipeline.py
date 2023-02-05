@@ -25,6 +25,7 @@ from rhasspy3.intent import recognize, Intent
 from rhasspy3.wake import detect
 from rhasspy3.vad import segment
 from rhasspy3.tts import synthesize_stream
+from rhasspy3.pipeline import run as run_pipeline, StopAfterDomain
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,65 +40,40 @@ def add_pipeline(
         vad_program = request.args.get("vad_program", pipeline.vad)
         asr_program = request.args.get("asr_program", pipeline.asr)
         intent_program = request.args.get("intent_program", pipeline.intent)
+        #
+        stop_after = request.args.get("stop_after", StopAfterDomain.INTENT)
+        #
+        samples_per_chunk = int(
+            request.args.get("samples_per_chunk", args.samples_per_chunk)
+        )
         asr_chunks_to_buffer = int(
             request.args.get("asr_chunks_to_buffer", args.asr_chunks_to_buffer)
         )
 
         _LOGGER.debug(
-            "listen-for-command: mic=%s, wake=%s, vad=%s, asr=%s, intent=%s",
+            "listen-for-command: mic=%s, wake=%s, vad=%s, asr=%s, intent=%s, stop_after=%s",
             mic_program,
             wake_program,
             vad_program,
             asr_program,
             intent_program,
+            stop_after,
         )
 
-        if asr_chunks_to_buffer > 0:
-            chunk_buffer: Optional[Deque[Event]] = deque(maxlen=asr_chunks_to_buffer)
-        else:
-            chunk_buffer = None
+        pipeline_result = await run_pipeline(
+            rhasspy,
+            pipeline,
+            samples_per_chunk,
+            asr_chunks_to_buffer=asr_chunks_to_buffer,
+            mic_program=mic_program,
+            wake_program=wake_program,
+            asr_program=asr_program,
+            vad_program=vad_program,
+            intent_program=intent_program,
+            stop_after=stop_after,
+        )
 
-        data = {}
-        async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
-            assert mic_proc.stdout is not None
-
-            asr_proc = await create_process(rhasspy, ASR_DOMAIN, asr_program)
-            assert asr_proc.stdin is not None
-            assert asr_proc.stdout is not None
-
-            detect_result = await detect(
-                rhasspy, wake_program, mic_proc.stdout, chunk_buffer
-            )
-            if detect_result is not None:
-                _LOGGER.debug("listen-for-command: detect=%s", detect_result)
-                await segment(
-                    rhasspy,
-                    vad_program,
-                    mic_proc.stdout,
-                    asr_proc.stdin,
-                    chunk_buffer,
-                )
-                while True:
-                    asr_event = await async_read_event(asr_proc.stdout)
-                    if asr_event is None:
-                        break
-
-                    if Transcript.is_type(asr_event.type):
-                        transcript = Transcript.from_event(asr_event)
-                        _LOGGER.debug("listen-for-command: transcript=%s", transcript)
-
-                        if transcript.text:
-                            recognize_result = await recognize(
-                                rhasspy, intent_program, transcript.text
-                            )
-                            _LOGGER.debug(
-                                "listen-for-command: recognize=%s", recognize_result
-                            )
-                            if isinstance(recognize_result, Intent):
-                                data = recognize_result.to_rhasspy()
-                        break
-
-        return jsonify(data)
+        return jsonify(pipeline_result.to_dict())
 
     @app.websocket("/api/stream-to-stream")
     async def api_stream_to_stream():

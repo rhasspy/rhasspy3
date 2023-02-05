@@ -188,3 +188,136 @@ Run with HTTP server:
 ```sh
 script/http_server --debug --server asr vosk
 ```
+
+
+## Wake Word Detection
+
+Install [Porcupine](https://github.com/Picovoice/porcupine):
+
+```sh
+cp -R programs/wake/porcupine1 config/programs/wake/
+config/programs/wake/porcupine1/script/setup
+```
+
+configuration.yaml:
+
+```yaml
+programs:
+  mic: ...
+  vad: ...
+  asr: ...
+  wake:
+    porcupine1:
+      command: |
+        .venv/bin/python3 bin/porcupine_raw_text.py --model porcupine_linux.ppn
+      adapter: |
+        wake_adapter_raw.py
+
+servers:
+  asr: ...
+
+pipelines:
+  default:
+    mic: ...
+    vad: ...
+    asr: ...
+    wake:
+      name: porcupine1
+```
+
+Use `_raspberry-pi.ppn` instead of `_linux.ppn` on Raspberry Pi.
+
+Test wake word detection:
+
+```sh
+script/run bin/wake_detect.py --debug
+```
+
+(say "porcupine")
+
+See available models:
+
+```sh
+find config/programs/wake/porcupine1 -name '*.ppn'
+```
+
+Run wake + speech to text:
+
+```sh
+script/run bin/pipeline_run.py --debug --stop-after asr
+```
+
+(say "porcupine", *pause*, voice command)
+
+Reduce the pause length:
+
+```sh
+script/run bin/pipeline_run.py --debug --stop-after asr --asr-chunks-to-buffer 5
+```
+
+Test with HTTP server:
+
+```sh
+curl -X POST 'localhost:12101/api/wait-for-wake'
+```
+
+(say "porcupine")
+
+Test full voice command:
+
+```sh
+curl -X POST 'localhost:12101/api/listen-for-command'
+```
+
+(say "porcupine", *pause*, voice command)
+
+
+
+## Intent Handling
+
+configuration.yaml:
+
+```yaml
+programs:
+  mic: ...
+  vad: ...
+  asr: ...
+  wake: ...
+  handle:
+    date_time:
+      command: |
+        bin/date_time.py
+      adapter: |
+        handle_adapter_text.py
+
+servers:
+  asr: ...
+
+pipelines:
+  default:
+    mic: ...
+    vad: ...
+    asr: ...
+    wake: ...
+    handle:
+      name: date_time
+
+```
+
+Install date time script:
+
+```sh
+cp -R programs/handle/date_time config/programs/handle/
+```
+
+Test input:
+
+```sh
+echo 'What time is it?' | script/run bin/handle_handle.py --debug
+```
+
+```sh
+script/run bin/pipeline_run.py --debug --stop-after handle
+```
+
+(say "porcupine", *pause*, "what time is it?")

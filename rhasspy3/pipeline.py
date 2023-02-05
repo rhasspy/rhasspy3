@@ -7,7 +7,7 @@ from typing import IO, Deque, Optional, Union
 
 from .asr import DOMAIN as ASR_DOMAIN
 from .asr import Transcript, transcribe
-from .config import PipelineConfig
+from .config import PipelineConfig, PipelineProgramConfig
 from .core import Rhasspy
 from .event import Event, async_read_event
 from .handle import Handled, NotHandled, handle
@@ -44,12 +44,20 @@ async def run(
     pipeline: Union[str, PipelineConfig],
     samples_per_chunk: int,
     asr_chunks_to_buffer: int = 0,
+    mic_program: Optional[Union[str, PipelineProgramConfig]] = None,
+    wake_program: Optional[Union[str, PipelineProgramConfig]] = None,
     wake_detection: Optional[Detection] = None,
+    asr_program: Optional[Union[str, PipelineProgramConfig]] = None,
     asr_wav_in: Optional[IO[bytes]] = None,
     asr_transcript: Optional[Transcript] = None,
+    vad_program: Optional[Union[str, PipelineProgramConfig]] = None,
     intent_result: Optional[Union[Intent, NotRecognized]] = None,
+    intent_program: Optional[Union[str, PipelineProgramConfig]] = None,
     handle_result: Optional[Union[Handled, NotHandled]] = None,
+    handle_program: Optional[Union[str, PipelineProgramConfig]] = None,
     tts_wav_in: Optional[IO[bytes]] = None,
+    tts_program: Optional[Union[str, PipelineProgramConfig]] = None,
+    snd_program: Optional[Union[str, PipelineProgramConfig]] = None,
     stop_after: Optional[StopAfterDomain] = None,
     play_sleep: bool = True,
 ) -> PipelineResult:
@@ -58,34 +66,57 @@ async def run(
     if isinstance(pipeline, str):
         pipeline = rhasspy.config.pipelines[pipeline]
 
+    mic_program = mic_program or pipeline.mic
+    wake_program = wake_program or pipeline.wake
+    asr_program = asr_program or pipeline.asr
+    vad_program = vad_program or pipeline.vad
+    intent_program = intent_program or pipeline.intent
+    handle_program = handle_program or pipeline.handle
+    tts_program = vad_program or pipeline.tts
+    snd_program = vad_program or pipeline.snd
+
     # Speech to text
     if asr_wav_in is not None:
         if stop_after == StopAfterDomain.WAKE:
             return pipeline_result
 
         asr_wav_in.seek(0)
-        assert pipeline.asr is not None, "Pipeline is missing asr"
+        assert asr_program is not None, "No asr program"
         asr_transcript = await transcribe(
-            rhasspy, pipeline.asr, asr_wav_in, samples_per_chunk
+            rhasspy, asr_program, asr_wav_in, samples_per_chunk
         )
     elif asr_transcript is None:
-        if pipeline.wake is None:
-            await _mic_asr(rhasspy, pipeline, pipeline_result)
+        assert mic_program is not None, "No asr program"
+
+        if wake_program is None:
+            assert asr_program is not None, "No asr program"
+            assert vad_program is not None, "No vad program"
+            await _mic_asr(
+                rhasspy, mic_program, asr_program, vad_program, pipeline_result
+            )
             return pipeline_result
 
         # Audio input, wake word detection, segmentation, speech to text
         if stop_after == StopAfterDomain.WAKE:
+            assert wake_program is not None, "No vad program"
             await _mic_wake(
                 rhasspy,
-                pipeline,
+                mic_program,
+                wake_program,
                 pipeline_result,
                 wake_detection=wake_detection,
             )
             return pipeline_result
 
+        assert wake_program is not None, "No vad program"
+        assert asr_program is not None, "No asr program"
+        assert vad_program is not None, "No vad program"
         await _mic_wake_asr(
             rhasspy,
-            pipeline,
+            mic_program,
+            wake_program,
+            asr_program,
+            vad_program,
             pipeline_result,
             asr_chunks_to_buffer=asr_chunks_to_buffer,
             wake_detection=wake_detection,
@@ -98,10 +129,10 @@ async def run(
         return pipeline_result
 
     # Text to intent
-    if (asr_transcript is not None) and (pipeline.intent is not None):
+    if (asr_transcript is not None) and (intent_program is not None):
         pipeline_result.asr_transcript = asr_transcript
         intent_result = await recognize(
-            rhasspy, pipeline.intent, asr_transcript.text or ""
+            rhasspy, intent_program, asr_transcript.text or ""
         )
         pipeline_result.intent_result = intent_result
 
@@ -117,8 +148,8 @@ async def run(
         return pipeline_result
 
     if (handle_input is not None) and (handle_result is None):
-        assert pipeline.handle is not None, "Pipeline is missing handle"
-        handle_result = await handle(rhasspy, pipeline.handle, handle_input)
+        assert handle_program is not None, "Pipeline is missing handle"
+        handle_result = await handle(rhasspy, handle_program, handle_input)
         pipeline_result.handle_result = handle_result
 
     if stop_after == StopAfterDomain.HANDLE:
@@ -128,9 +159,9 @@ async def run(
     if handle_result is not None:
         pipeline_result.handle_result = handle_result
         if handle_result.text:
-            assert pipeline.tts is not None, "Pipeline is missing tts"
+            assert tts_program is not None, "Pipeline is missing tts"
             tts_wav_in = io.BytesIO()
-            await synthesize(rhasspy, pipeline.tts, handle_result.text, tts_wav_in)
+            await synthesize(rhasspy, tts_program, handle_result.text, tts_wav_in)
         else:
             _LOGGER.debug("No text returned from handle")
 
@@ -140,27 +171,25 @@ async def run(
     # Audio output
     if tts_wav_in is not None:
         tts_wav_in.seek(0)
-        assert pipeline.snd is not None, "Pipeline is missing snd"
-        await play(rhasspy, pipeline.snd, tts_wav_in, samples_per_chunk, play_sleep)
+        assert snd_program is not None, "Pipeline is missing snd"
+        await play(rhasspy, snd_program, tts_wav_in, samples_per_chunk, play_sleep)
 
     return pipeline_result
 
 
 async def _mic_wake(
     rhasspy: Rhasspy,
-    pipeline: PipelineConfig,
+    mic_program: Union[str, PipelineProgramConfig],
+    wake_program: Union[str, PipelineProgramConfig],
     pipeline_result: PipelineResult,
     wake_detection: Optional[Detection] = None,
 ):
-    assert pipeline.mic is not None, "Pipeline is missing mic"
-    assert pipeline.wake is not None, "Pipeline is missing wake"
-
-    async with (await create_process(rhasspy, MIC_DOMAIN, pipeline.mic)) as mic_proc:
+    async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
         assert mic_proc.stdout is not None
         if wake_detection is None:
             wake_detection = await detect(
                 rhasspy,
-                pipeline.wake,
+                wake_program,
                 mic_proc.stdout,
             )
 
@@ -172,16 +201,14 @@ async def _mic_wake(
 
 async def _mic_asr(
     rhasspy: Rhasspy,
-    pipeline: PipelineConfig,
+    mic_program: Union[str, PipelineProgramConfig],
+    asr_program: Union[str, PipelineProgramConfig],
+    vad_program: Union[str, PipelineProgramConfig],
     pipeline_result: PipelineResult,
     asr_chunks_to_buffer: int = 0,
 ):
-    assert pipeline.mic is not None, "Pipeline is missing mic"
-    assert pipeline.vad is not None, "Pipeline is missing vad"
-    assert pipeline.asr is not None, "Pipeline is missing asr"
-
-    async with (await create_process(rhasspy, MIC_DOMAIN, pipeline.mic)) as mic_proc, (
-        await create_process(rhasspy, ASR_DOMAIN, pipeline.asr)
+    async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc, (
+        await create_process(rhasspy, ASR_DOMAIN, asr_program)
     ) as asr_proc:
         assert mic_proc.stdout is not None
         assert asr_proc.stdin is not None
@@ -189,7 +216,7 @@ async def _mic_asr(
 
         await segment(
             rhasspy,
-            pipeline.vad,
+            vad_program,
             mic_proc.stdout,
             asr_proc.stdin,
         )
@@ -205,7 +232,10 @@ async def _mic_asr(
 
 async def _mic_wake_asr(
     rhasspy: Rhasspy,
-    pipeline: PipelineConfig,
+    mic_program: Union[str, PipelineProgramConfig],
+    wake_program: Union[str, PipelineProgramConfig],
+    asr_program: Union[str, PipelineProgramConfig],
+    vad_program: Union[str, PipelineProgramConfig],
     pipeline_result: PipelineResult,
     asr_chunks_to_buffer: int = 0,
     wake_detection: Optional[Detection] = None,
@@ -214,13 +244,8 @@ async def _mic_wake_asr(
         deque(maxlen=asr_chunks_to_buffer) if asr_chunks_to_buffer > 0 else None
     )
 
-    assert pipeline.mic is not None, "Pipeline is missing mic"
-    assert pipeline.wake is not None, "Pipeline is missing wake"
-    assert pipeline.vad is not None, "Pipeline is missing vad"
-    assert pipeline.asr is not None, "Pipeline is missing asr"
-
-    async with (await create_process(rhasspy, MIC_DOMAIN, pipeline.mic)) as mic_proc, (
-        await create_process(rhasspy, ASR_DOMAIN, pipeline.asr)
+    async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc, (
+        await create_process(rhasspy, ASR_DOMAIN, asr_program)
     ) as asr_proc:
         assert mic_proc.stdout is not None
         assert asr_proc.stdin is not None
@@ -228,14 +253,14 @@ async def _mic_wake_asr(
 
         if wake_detection is None:
             wake_detection = await detect(
-                rhasspy, pipeline.wake, mic_proc.stdout, chunk_buffer
+                rhasspy, wake_program, mic_proc.stdout, chunk_buffer
             )
 
         if wake_detection is not None:
             pipeline_result.wake_detection = wake_detection
             await segment(
                 rhasspy,
-                pipeline.vad,
+                vad_program,
                 mic_proc.stdout,
                 asr_proc.stdin,
                 chunk_buffer,
