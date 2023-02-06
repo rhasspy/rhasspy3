@@ -24,7 +24,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--link-format",
-        default="https://github.com/rhasspy/models/releases/download/v1.0/asr_whisper-cpp-ggml-tiny.en.tar.gz-{model}.tar.gz",
+        default="https://github.com/rhasspy/models/releases/download/v1.0/asr_whisper-cpp-ggml-{model}.tar.gz",
         help="Format string for download URLs",
     )
     args = parser.parse_args()

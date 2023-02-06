@@ -54,7 +54,16 @@ def add_pipeline(
         )
 
         _LOGGER.debug(
-            "listen-for-command: mic=%s, wake=%s, vad=%s, asr=%s, intent=%s, handle=%s, tts=%s, snd=%s, stop_after=%s",
+            "listen-for-command:"
+            + "mic=%s,"
+            + "wake=%s,"
+            + "vad=%s,"
+            + "asr=%s,"
+            + "intent=%s,"
+            + "handle=%s,"
+            + "tts=%s,"
+            + "snd=%s,"
+            + "stop_after=%s",
             mic_program,
             wake_program,
             vad_program,

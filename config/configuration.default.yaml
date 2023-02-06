@@ -57,6 +57,9 @@ programs:
         bin/larynx --model share/en-us-blizzard_lessac-medium.onnx --output_file -
       adapter: |
         tts_adapter_text2wav.py
+    larynx2.client:
+      command: |
+        client_unix_socket.py var/run/larynx2.socket
     espeak-ng:
       command: |
         espeak-ng -v en-us --stdin -w ${temp_file}
@@ -78,13 +81,13 @@ programs:
         tts_adapter_text2wav.py --temp_file
     coqui-tts:
       command: |
-        tts_adapter_http.py '${url}' --param speaker_id '${speaker_id}'
+        tts_adapter_http.py ${url} --param speaker_id ${speaker_id}
       template_args:
         url: "http://localhost:5002/api/tts"
         speaker_id: ""
     marytts:
       command: |
-        bin/marytts.py '${url}' '${voice}'
+        bin/marytts.py ${url} '${voice}
       template_args:
         url: "http://localhost:59125/process"
         voice: "cmu-slt-hsmm"
@@ -146,7 +149,7 @@ programs:
   intent:
     regex:
       command: |
-        bin/regex.py -i TurnOn 'turn on (the )?(?P<name>.+)'
+        bin/regex.py -i TurnOn turn on (the )?(?P<name>.+)
 
   handle:
     repeat:
@@ -212,6 +215,11 @@ servers:
         script/server --voice ${voice}
       template_args:
         voice: "en_US/ljspeech_low"
+    larynx2:
+      command: |
+        script/server ${model}
+      template_args:
+        model: "share/en-us-blizzard_lessac-medium.onnx"
 
 pipelines:
   default:

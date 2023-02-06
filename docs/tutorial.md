@@ -424,9 +424,53 @@ Listen to `welcome.wav`
 
 ### Client/Server
 
-TODO
+```yaml
+programs:
+  mic: ...
+  vad: ...
+  asr: ...
+  wake: ...
+  handle: ...
+  tts:
+    larynx2.client:
+      command: |
+        client_unix_socket.py var/run/larynx2.socket
+  snd: ...
+
+servers:
+  asr: ...
+  tts:
+    larynx2:
+      command: |
+        script/server ${model}
+      template_args:
+        model: "share/en-us-blizzard_lessac-medium.onnx"
+
+pipelines:
+  default:
+    mic: ...
+    vad: ...
+    asr: ...
+    wake: ...
+    handle: ...
+    tts:
+      name: larynx2.client
+    snd: ...
+```
+
+Restart server:
+
+```sh
+script/http_server --debug --server asr vosk --server tts larynx2
+```
 
 
 ## Complete Pipeline
 
+```sh
+curl -X POST 'localhost:12101/api/listen-for-command'
+```
 
+(say "porcupine", *pause*, "what time is it?")
+
+(speaks time)

@@ -28,6 +28,8 @@ pip3 install --upgrade wheel setuptools
 
 pip3 install -r "${base_dir}/requirements.txt"
 
+python3 "${this_dir}/setup.py"
+
 # -----------------------------------------------------------------------------
 
 echo "OK"
