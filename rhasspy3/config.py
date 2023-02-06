@@ -16,9 +16,16 @@ class ProgramConfig(DataClassJsonMixin):
 
 
 @dataclass
+class CommandConfig(DataClassJsonMixin):
+    command: str
+    shell: bool = False
+
+
+@dataclass
 class PipelineProgramConfig(DataClassJsonMixin):
     name: str
     template_args: Optional[Dict[str, Any]] = None
+    after: Optional[CommandConfig] = None
 
 
 @dataclass

@@ -7,13 +7,13 @@ from typing import IO, Deque, Optional, Union
 
 from .asr import DOMAIN as ASR_DOMAIN
 from .asr import Transcript, transcribe
-from .config import PipelineConfig, PipelineProgramConfig
+from .config import CommandConfig, PipelineConfig, PipelineProgramConfig
 from .core import Rhasspy
 from .event import Event, async_read_event
 from .handle import Handled, NotHandled, handle
 from .intent import Intent, NotRecognized, recognize
 from .mic import DOMAIN as MIC_DOMAIN
-from .program import create_process
+from .program import create_process, run_command
 from .snd import play
 from .tts import synthesize
 from .util.dataclasses_json import DataClassJsonMixin
@@ -67,8 +67,13 @@ async def run(
         pipeline = rhasspy.config.pipelines[pipeline]
 
     mic_program = mic_program or pipeline.mic
+
     wake_program = wake_program or pipeline.wake
+    wake_after = pipeline.wake.after if pipeline.wake else None
+
     asr_program = asr_program or pipeline.asr
+    asr_after = pipeline.asr.after if pipeline.asr else None
+
     vad_program = vad_program or pipeline.vad
     intent_program = intent_program or pipeline.intent
     handle_program = handle_program or pipeline.handle
@@ -77,6 +82,7 @@ async def run(
 
     # Speech to text
     if asr_wav_in is not None:
+        # WAV input
         if stop_after == StopAfterDomain.WAKE:
             return pipeline_result
 
@@ -85,10 +91,15 @@ async def run(
         asr_transcript = await transcribe(
             rhasspy, asr_program, asr_wav_in, samples_per_chunk
         )
+
+        if asr_after is not None:
+            await run_command(rhasspy, asr_after)
     elif asr_transcript is None:
+        # Mic input
         assert mic_program is not None, "No asr program"
 
         if wake_program is None:
+            # No wake
             assert asr_program is not None, "No asr program"
             assert vad_program is not None, "No vad program"
             await _mic_asr(
@@ -120,7 +131,11 @@ async def run(
             pipeline_result,
             asr_chunks_to_buffer=asr_chunks_to_buffer,
             wake_detection=wake_detection,
+            wake_after=wake_after,
         )
+
+        if asr_after is not None:
+            await run_command(rhasspy, asr_after)
 
         asr_transcript = pipeline_result.asr_transcript
         pipeline_result.asr_transcript = asr_transcript
@@ -241,6 +256,7 @@ async def _mic_wake_asr(
     pipeline_result: PipelineResult,
     asr_chunks_to_buffer: int = 0,
     wake_detection: Optional[Detection] = None,
+    wake_after: Optional[CommandConfig] = None,
 ):
     chunk_buffer: Optional[Deque[Event]] = (
         deque(maxlen=asr_chunks_to_buffer) if asr_chunks_to_buffer > 0 else None
@@ -259,6 +275,9 @@ async def _mic_wake_asr(
             )
 
         if wake_detection is not None:
+            if wake_after is not None:
+                await run_command(rhasspy, wake_after)
+
             pipeline_result.wake_detection = wake_detection
             await segment(
                 rhasspy,

@@ -87,7 +87,7 @@ programs:
         speaker_id: ""
     marytts:
       command: |
-        bin/marytts.py ${url} '${voice}
+        bin/marytts.py ${url} ${voice}
       template_args:
         url: "http://localhost:59125/process"
         voice: "cmu-slt-hsmm"
@@ -156,6 +156,14 @@ programs:
       command: |
         cat
       shell: true
+      adapter: |
+        handle_adapter_text.py
+    home_assistant_conversation:
+      command: |
+        bin/converse.py ${url} ${token_file}
+      template_args:
+        url: "http://localhost:8123/api/conversation/process"
+        token_file: "etc/token"
       adapter: |
         handle_adapter_text.py
     test:

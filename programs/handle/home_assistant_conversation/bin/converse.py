@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from urllib.request import urlopen, Request
+from urllib.request import Request, urlopen
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent

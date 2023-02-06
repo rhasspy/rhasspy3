@@ -6,7 +6,7 @@ import string
 from asyncio.subprocess import PIPE, Process
 from typing import Optional, Union
 
-from .config import PipelineProgramConfig, ProgramConfig
+from .config import CommandConfig, PipelineProgramConfig, ProgramConfig
 from .core import Rhasspy
 from .util import merge_dict
 
@@ -117,3 +117,31 @@ async def create_process(
         )
 
     return ProcessContextManager(proc, name=name)
+
+
+async def run_command(rhasspy: Rhasspy, command_config: CommandConfig) -> int:
+    env = dict(os.environ)
+
+    # Add rhasspy3/bin to $PATH
+    env["PATH"] = f'{rhasspy.base_dir}/bin:${env["PATH"]}'
+
+    # Ensure stdout is flushed for Python programs
+    env["PYTHONUNBUFFERED"] = "1"
+
+    if command_config.shell:
+        proc = await asyncio.create_subprocess_shell(
+            command_config.command,
+            env=env,
+        )
+    else:
+        program, *args = shlex.split(command_config.command)
+        proc = await asyncio.create_subprocess_exec(
+            program,
+            *args,
+            env=env,
+        )
+
+    await proc.wait()
+    assert proc.returncode is not None
+
+    return proc.returncode
