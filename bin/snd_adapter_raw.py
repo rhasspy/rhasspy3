@@ -6,7 +6,14 @@ import shlex
 import subprocess
 from pathlib import Path
 
-from rhasspy3.audio import AudioChunk, AudioChunkConverter, AudioStop
+from rhasspy3.audio import (
+    DEFAULT_OUT_CHANNELS,
+    DEFAULT_OUT_RATE,
+    DEFAULT_OUT_WIDTH,
+    AudioChunk,
+    AudioChunkConverter,
+    AudioStop,
+)
 from rhasspy3.event import read_event, write_event
 from rhasspy3.snd import Played
 
@@ -21,9 +28,18 @@ def main() -> None:
         "command",
         help="Command to run",
     )
-    parser.add_argument("--rate", type=int, help="Sample rate (hertz)")
-    parser.add_argument("--width", type=int, help="Sample width (bytes)")
-    parser.add_argument("--channels", type=int, help="Sample channel count")
+    parser.add_argument(
+        "--rate", type=int, default=DEFAULT_OUT_RATE, help="Sample rate (hertz)"
+    )
+    parser.add_argument(
+        "--width", type=int, default=DEFAULT_OUT_WIDTH, help="Sample width (bytes)"
+    )
+    parser.add_argument(
+        "--channels",
+        type=int,
+        default=DEFAULT_OUT_CHANNELS,
+        help="Sample channel count",
+    )
     parser.add_argument("--shell", action="store_true", help="Run command with shell")
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
