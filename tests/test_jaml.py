@@ -12,11 +12,11 @@ outer_a:  # Inline comment
   prop_str_noquotes: hello: world
   prop_str_1quotes: 'hello: world'
   prop_str_2quotes: "hello: world"
-  prop_str_block: |
+  prop_str_literal: |
     hello:
     world
-  # inner_a:
-  #   name: inner_a
+  inner_a:
+    name: inner_a
 
 outer_b:
   name: inner_b
@@ -34,6 +34,8 @@ def test_safe_load():
                 "prop_str_noquotes": "hello: world",
                 "prop_str_1quotes": "hello: world",
                 "prop_str_2quotes": "hello: world",
+                "prop_str_literal": "hello:\nworld",
+                "inner_a": {"name": "inner_a"},
             },
             "outer_b": {"name": "inner_b"},
         }

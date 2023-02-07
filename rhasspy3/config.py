@@ -2,9 +2,8 @@ import argparse
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
-from yaml import safe_load
-
 from .util.dataclasses_json import DataClassJsonMixin
+from .util.jaml import safe_load
 
 
 @dataclass
