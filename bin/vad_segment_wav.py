@@ -6,15 +6,18 @@ import logging
 import sys
 import time
 import wave
+from pathlib import Path
 from typing import Iterable, Optional
 
-from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK, AudioChunk, AudioStart, AudioStop
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import async_read_event, async_write_event
 from rhasspy3.program import create_process
 from rhasspy3.vad import DOMAIN, VoiceStarted, VoiceStopped
 
-_LOGGER = logging.getLogger("vad_segment_wav")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 async def main() -> None:
@@ -22,22 +25,36 @@ async def main() -> None:
     parser.add_argument(
         "-c",
         "--config",
-        required=True,
+        default=_DIR.parent / "config",
         help="Configuration directory",
     )
-    parser.add_argument("-p", "--program", required=True, help="VAD program name")
+    parser.add_argument(
+        "-p", "--pipeline", default="default", help="Name of pipeline to use"
+    )
+    parser.add_argument(
+        "--vad-program", help="Name of vad program to use (overrides pipeline)"
+    )
     parser.add_argument(
         "--samples-per-chunk",
         type=int,
-        default=1024,
+        default=DEFAULT_SAMPLES_PER_CHUNK,
         help="Samples to process at a time",
     )
     parser.add_argument("wav", nargs="*", help="Path(s) to WAV file(s)")
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     rhasspy = Rhasspy.load(args.config)
-    async with (await create_process(rhasspy, DOMAIN, args.program)) as vad_proc:
+    vad_program = args.vad_program
+    pipeline = rhasspy.config.pipelines.get(args.pipeline)
+
+    if not vad_program:
+        assert pipeline is not None, f"No pipline named {args.pipeline}"
+        vad_program = pipeline.vad
+
+    assert vad_program, "No vad program"
+
+    async with (await create_process(rhasspy, DOMAIN, vad_program)) as vad_proc:
         assert vad_proc.stdin is not None
         assert vad_proc.stdout is not None
 
