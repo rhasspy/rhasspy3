@@ -42,10 +42,16 @@ async def main() -> None:
     )
     #
     parser.add_argument(
+        "--chunk-buffer-size",
+        type=int,
+        default=25,
+        help="Audio chunks to buffer before start is known",
+    )
+    parser.add_argument(
         "-b",
         "--keep-chunks-before",
         type=int,
-        default=0,
+        default=5,
         help="Audio chunks to keep before voice starts",
     )
     parser.add_argument(
@@ -82,8 +88,13 @@ async def main() -> None:
     for wav_path in args.wav_file:
         wav_file: wave.Wave_write = wave.open(wav_path, "wb")
         with wav_file:
-            before_chunks: Deque[AudioChunk] = deque(maxlen=args.keep_chunks_before)
             is_first_chunk = True
+
+            # Audio kept before we get the event that the voice command started
+            # at a timestep in the past.
+            chunk_buffer: Deque[AudioChunk] = deque(
+                maxlen=max(args.chunk_buffer_size, args.keep_chunks_before)
+            )
 
             async with (
                 await create_process(rhasspy, MIC_DOMAIN, mic_program)
@@ -120,7 +131,7 @@ async def main() -> None:
 
                             await async_write_event(mic_event, vad_proc.stdin)
                             if before_command:
-                                before_chunks.append(chunk)
+                                chunk_buffer.append(chunk)
                             else:
                                 wav_file.writeframes(chunk.audio)
 
@@ -138,9 +149,32 @@ async def main() -> None:
                         if VoiceStarted.is_type(vad_event.type):
                             if before_command:
                                 # Start of voice command
-                                while before_chunks:
-                                    chunk = before_chunks.popleft()
-                                    wav_file.writeframes(chunk.audio)
+                                voice_started = VoiceStarted.from_event(vad_event)
+                                if voice_started.timestamp is None:
+                                    # Keep chunks before
+                                    chunks_left = args.keep_chunks_before
+                                    while chunk_buffer and (chunks_left > 0):
+                                        chunk = chunk_buffer.popleft()
+                                        wav_file.writeframes(chunk.audio)
+                                else:
+                                    # Locate start chunk
+                                    start_idx = 0
+                                    for i, chunk in enumerate(chunk_buffer):
+                                        if (chunk.timestamp is not None) and (
+                                            chunk.timestamp >= voice_started.timestamp
+                                        ):
+                                            start_idx = i
+                                            break
+
+                                    # Back up by "keep chunks" and then write audio forward
+                                    start_idx = max(
+                                        0, start_idx - args.keep_chunks_before
+                                    )
+                                    for i, chunk in enumerate(chunk_buffer):
+                                        if i >= start_idx:
+                                            wav_file.writeframes(chunk.audio)
+
+                                    chunk_buffer.clear()
 
                                 before_command = False
                                 _LOGGER.info("Speaking started")
