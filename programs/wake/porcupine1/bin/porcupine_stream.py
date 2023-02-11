@@ -54,7 +54,7 @@ def main() -> None:
 
         sensitivity = 0.5
         if len(model_settings) > 1:
-            sensitivity = float(model_settings[0])
+            sensitivity = float(model_settings[1])
 
         sensitivities.append(sensitivity)
 
