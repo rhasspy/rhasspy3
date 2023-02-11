@@ -80,68 +80,73 @@ async def main() -> None:
                 remote_task = asyncio.create_task(async_read_event(remote_proc.stdout))
                 pending = {mic_task, remote_task}
 
-                # Stream to remote until audio is received
-                while True:
-                    done, pending = await asyncio.wait(
-                        pending, return_when=asyncio.FIRST_COMPLETED
-                    )
-
-                    if mic_task in done:
-                        mic_event = mic_task.result()
-                        if mic_event is None:
-                            break
-
-                        if AudioChunk.is_type(mic_event.type):
-                            await async_write_event(mic_event, remote_proc.stdin)
-
-                        mic_task = asyncio.create_task(
-                            async_read_event(mic_proc.stdout)
+                try:
+                    # Stream to remote until audio is received
+                    while True:
+                        done, pending = await asyncio.wait(
+                            pending, return_when=asyncio.FIRST_COMPLETED
                         )
-                        pending.add(mic_task)
 
-                    if remote_task in done:
-                        remote_event = remote_task.result()
-                        if remote_event is not None:
-                            snd_buffer.append(remote_event)
+                        if mic_task in done:
+                            mic_event = mic_task.result()
+                            if mic_event is None:
+                                break
 
-                        for task in pending:
-                            task.cancel()
+                            if AudioChunk.is_type(mic_event.type):
+                                await async_write_event(mic_event, remote_proc.stdin)
 
-                        break
+                            mic_task = asyncio.create_task(
+                                async_read_event(mic_proc.stdout)
+                            )
+                            pending.add(mic_task)
 
-                # Output audio
-                async with (
-                    await create_process(rhasspy, SND_DOMAIN, args.snd_program)
-                ) as snd_proc:
-                    assert snd_proc.stdin is not None
-                    assert snd_proc.stdout is not None
+                        if remote_task in done:
+                            remote_event = remote_task.result()
+                            if remote_event is not None:
+                                snd_buffer.append(remote_event)
 
-                    for remote_event in snd_buffer:
-                        if AudioChunk.is_type(remote_event.type):
-                            await async_write_event(remote_event, snd_proc.stdin)
-                        elif AudioStop.is_type(remote_event.type):
-                            # Unexpected, but it could happen
-                            continue
+                            for task in pending:
+                                task.cancel()
 
-                    while True:
-                        remote_event = await async_read_event(remote_proc.stdout)
-                        if remote_event is None:
                             break
 
-                        if AudioChunk.is_type(remote_event.type):
-                            await async_write_event(remote_event, snd_proc.stdin)
-                        elif AudioStop.is_type(remote_event.type):
-                            await async_write_event(remote_event, snd_proc.stdin)
-                            break
+                    # Output audio
+                    async with (
+                        await create_process(rhasspy, SND_DOMAIN, args.snd_program)
+                    ) as snd_proc:
+                        assert snd_proc.stdin is not None
+                        assert snd_proc.stdout is not None
 
-                    # Wait for audio to finish playing
-                    while True:
-                        snd_event = await async_read_event(snd_proc.stdout)
-                        if snd_event is None:
-                            break
+                        for remote_event in snd_buffer:
+                            if AudioChunk.is_type(remote_event.type):
+                                await async_write_event(remote_event, snd_proc.stdin)
+                            elif AudioStop.is_type(remote_event.type):
+                                # Unexpected, but it could happen
+                                continue
 
-                        if Played.is_type(snd_event.type):
-                            break
+                        while True:
+                            remote_event = await async_read_event(remote_proc.stdout)
+                            if remote_event is None:
+                                break
+
+                            if AudioChunk.is_type(remote_event.type):
+                                await async_write_event(remote_event, snd_proc.stdin)
+                            elif AudioStop.is_type(remote_event.type):
+                                await async_write_event(remote_event, snd_proc.stdin)
+                                break
+
+                        # Wait for audio to finish playing
+                        while True:
+                            snd_event = await async_read_event(snd_proc.stdout)
+                            if snd_event is None:
+                                break
+
+                            if Played.is_type(snd_event.type):
+                                break
+                except Exception:
+                    _LOGGER.exception(
+                        "Unexpected error communicating with remote base station"
+                    )
 
         if not args.loop:
             break

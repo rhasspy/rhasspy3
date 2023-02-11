@@ -38,12 +38,12 @@ def main() -> None:
     parser.add_argument(
         "--speech-seconds",
         type=float,
-        default=0.5,
+        default=0.3,
     )
     parser.add_argument(
         "--silence-seconds",
         type=float,
-        default=0.7,
+        default=0.5,
     )
     parser.add_argument(
         "--timeout-seconds",
@@ -53,7 +53,7 @@ def main() -> None:
     parser.add_argument(
         "--reset-seconds",
         type=float,
-        default=0.2,
+        default=1,
     )
     parser.add_argument("--samples-per-chunk", type=int, default=512)
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")

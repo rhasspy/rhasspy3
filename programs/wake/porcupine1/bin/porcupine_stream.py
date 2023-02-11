@@ -2,11 +2,14 @@
 import argparse
 import logging
 import struct
-import sys
 from pathlib import Path
 from typing import List
 
 import pvporcupine
+
+from rhasspy3.audio import AudioChunk, AudioStop
+from rhasspy3.event import read_event, write_event
+from rhasspy3.wake import Detection
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -62,22 +65,32 @@ def main() -> None:
 
     chunk_format = "h" * porcupine.frame_length
     bytes_per_chunk = porcupine.frame_length * 2  # 16-bit width
+    audio_bytes = bytes()
 
-    # Read 16Khz, 16-bit mono PCM from stdin
     try:
-        chunk = sys.stdin.buffer.read(bytes_per_chunk)
         while True:
-            while len(chunk) >= bytes_per_chunk:
+            event = read_event()
+            if event is None:
+                break
+
+            if AudioStop.is_type(event.type):
+                break
+
+            if not AudioChunk.is_type(event.type):
+                continue
+
+            chunk = AudioChunk.from_event(event)
+            audio_bytes += chunk.audio
+
+            while len(audio_bytes) >= bytes_per_chunk:
                 unpacked_chunk = struct.unpack_from(
-                    chunk_format, chunk[:bytes_per_chunk]
+                    chunk_format, audio_bytes[:bytes_per_chunk]
                 )
                 keyword_index = porcupine.process(unpacked_chunk)
                 if keyword_index >= 0:
-                    print(names[keyword_index], flush=True)
+                    write_event(Detection(name=names[keyword_index]).event())
 
-                chunk = chunk[bytes_per_chunk:]
-
-            chunk += sys.stdin.buffer.read(bytes_per_chunk)
+                audio_bytes = audio_bytes[bytes_per_chunk:]
     except KeyboardInterrupt:
         pass
 

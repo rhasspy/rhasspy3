@@ -45,6 +45,8 @@ async def create_process(
         pipeline_config = name
         name = pipeline_config.name
 
+    assert name, f"No program name for domain {domain}"
+
     if "." in name:
         base_name = name.split(".", maxsplit=1)[0]
     else:
