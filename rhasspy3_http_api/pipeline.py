@@ -15,7 +15,7 @@ from rhasspy3.audio import (
     DEFAULT_OUT_WIDTH,
 )
 from rhasspy3.asr import DOMAIN as ASR_DOMAIN, Transcript, transcribe_stream
-from rhasspy3.audio import AudioChunkConverter, AudioChunk, AudioStop
+from rhasspy3.audio import AudioChunkConverter, AudioChunk, AudioStop, AudioStart
 from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
 from rhasspy3.event import Event, async_read_event, async_write_event
@@ -170,7 +170,7 @@ def add_pipeline(
                     vad_task = asyncio.create_task(async_read_event(vad_proc.stdout))
                     pending.add(vad_task)
 
-            await websocket.send("stop")
+            await websocket.send_json(VoiceStopped().event().to_dict())
 
             # Get transcript from asr
             await async_write_event(AudioStop().event(), asr_proc.stdin)
@@ -192,6 +192,9 @@ def add_pipeline(
 
             if (handle_result is not None) and handle_result.text:
                 _LOGGER.debug("stream-to-stream: sending tts")
+                await websocket.send_json(
+                    AudioStart(out_rate, out_width, out_channels).event().to_dict()
+                )
                 converter = AudioChunkConverter(out_rate, out_width, out_channels)
                 async for tts_chunk in synthesize_stream(
                     rhasspy, tts_program, handle_result.text
@@ -200,3 +203,5 @@ def add_pipeline(
                     await websocket.send(tts_chunk.audio)
 
                 _LOGGER.debug("stream-to-stream: tts done")
+
+            await websocket.send_json(AudioStop().event().to_dict())

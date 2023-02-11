@@ -17,6 +17,9 @@ class Event:
     data: Dict[str, Any] = field(default_factory=dict)
     payload: Optional[bytes] = None
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {_TYPE: self.type, _DATA: self.data}
+
     @staticmethod
     def from_dict(event_dict: Dict[str, Any]) -> "Event":
         return Event(type=event_dict["type"], data=event_dict.get("data", {}))
@@ -56,7 +59,7 @@ async def async_read_event(reader: asyncio.StreamReader) -> Optional[Event]:
 
 
 async def async_write_event(event: Event, writer: asyncio.StreamWriter):
-    event_dict: Dict[str, Any] = {_TYPE: event.type, _DATA: event.data}
+    event_dict: Dict[str, Any] = event.to_dict()
     if event.payload:
         event_dict[_PAYLOAD_LENGTH] = len(event.payload)
 
@@ -103,7 +106,7 @@ def write_event(event: Event, writer: Optional[IO[bytes]] = None):
     if writer is None:
         writer = sys.stdout.buffer
 
-    event_dict: Dict[str, Any] = {_TYPE: event.type, _DATA: event.data}
+    event_dict: Dict[str, Any] = event.to_dict()
     if event.payload:
         event_dict[_PAYLOAD_LENGTH] = len(event.payload)
 

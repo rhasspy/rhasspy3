@@ -28,6 +28,10 @@ pip3 install --upgrade wheel setuptools
 
 pip3 install -r "${base_dir}/requirements.txt"
 
+# Install rhasspy3
+rhasspy3_dir="${base_dir}/../../../.."
+pip3 install -e "${rhasspy3_dir}"
+
 # -----------------------------------------------------------------------------
 
 echo "OK"
