@@ -35,6 +35,9 @@ class Eventable(ABC):
     def is_type(event_type: str) -> bool:
         pass
 
+    def to_dict(self) -> Dict[str, Any]:
+        return self.event().data
+
 
 async def async_read_event(reader: asyncio.StreamReader) -> Optional[Event]:
     try:

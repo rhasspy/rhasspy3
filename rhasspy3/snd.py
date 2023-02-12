@@ -1,10 +1,9 @@
 """Audio output to speakers."""
-import asyncio
 import wave
 from dataclasses import dataclass
-from typing import IO, Optional, Union
+from typing import IO, AsyncIterable, Optional, Union
 
-from .audio import AudioStop, wav_to_chunks
+from .audio import AudioChunk, AudioStop, wav_to_chunks
 from .config import PipelineProgramConfig
 from .core import Rhasspy
 from .event import Event, Eventable, async_read_event, async_write_event
@@ -33,8 +32,7 @@ async def play(
     program: Union[str, PipelineProgramConfig],
     wav_in: IO[bytes],
     samples_per_chunk: int,
-    sleep: bool,
-):
+) -> Optional[Played]:
     wav_file: wave.Wave_read = wave.open(wav_in, "rb")
     with wav_file:
         async with (await create_process(rhasspy, DOMAIN, program)) as snd_proc:
@@ -45,10 +43,6 @@ async def play(
             for chunk in wav_to_chunks(wav_file, samples_per_chunk=samples_per_chunk):
                 await async_write_event(chunk.event(), snd_proc.stdin)
                 timestamp = chunk.timestamp
-
-            if sleep:
-                wav_seconds = wav_file.getnframes() / wav_file.getframerate()
-                await asyncio.sleep(wav_seconds)
 
             await async_write_event(
                 AudioStop(timestamp=timestamp).event(), snd_proc.stdin
@@ -61,4 +55,36 @@ async def play(
                     break
 
                 if Played.is_type(event.type):
-                    break
+                    return Played.from_event(event)
+
+    return None
+
+
+async def play_stream(
+    rhasspy: Rhasspy,
+    program: Union[str, PipelineProgramConfig],
+    audio_stream: AsyncIterable[bytes],
+    rate: int,
+    width: int,
+    channels: int,
+) -> Optional[Played]:
+    async with (await create_process(rhasspy, DOMAIN, program)) as snd_proc:
+        assert snd_proc.stdin is not None
+        assert snd_proc.stdout is not None
+
+        async for audio_bytes in audio_stream:
+            chunk = AudioChunk(rate, width, channels, audio_bytes)
+            await async_write_event(chunk.event(), snd_proc.stdin)
+
+        await async_write_event(AudioStop().event(), snd_proc.stdin)
+
+        # Wait for confimation
+        while True:
+            event = await async_read_event(snd_proc.stdout)
+            if event is None:
+                break
+
+            if Played.is_type(event.type):
+                return Played.from_event(event)
+
+    return None

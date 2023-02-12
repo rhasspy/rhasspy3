@@ -64,6 +64,7 @@ def main() -> None:
         model = WhisperModel(
             args.model, device=args.device, compute_type=args.compute_type
         )
+        _LOGGER.info("Ready")
 
         # Listen for connections
         while True:

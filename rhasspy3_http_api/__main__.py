@@ -23,6 +23,7 @@ from quart import (
 )
 from swagger_ui import api_doc
 
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK
 from rhasspy3.core import Rhasspy
 
 from .asr import add_asr
@@ -58,9 +59,11 @@ def main():
         "--host", default="0.0.0.0", help="Host of HTTP server (default: 0.0.0.0)"
     )
     parser.add_argument(
-        "--port", type=int, default=12101, help="Port of HTTP server (default: 12101)"
+        "--port", type=int, default=13331, help="Port of HTTP server (default: 13331)"
     )
-    parser.add_argument("--samples-per-chunk", type=int, default=1024)
+    parser.add_argument(
+        "--samples-per-chunk", type=int, default=DEFAULT_SAMPLES_PER_CHUNK
+    )
     parser.add_argument("--asr-chunks-to-buffer", type=int, default=0)
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
@@ -81,6 +84,7 @@ def main():
         """Allow null origin."""
         pass
 
+    # pylint: disable=protected-access
     quart_cors._apply_websocket_cors = _apply_websocket_cors
     app = quart_cors.cors(app, allow_origin="*")
 

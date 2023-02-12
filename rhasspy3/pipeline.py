@@ -59,7 +59,6 @@ async def run(
     tts_program: Optional[Union[str, PipelineProgramConfig]] = None,
     snd_program: Optional[Union[str, PipelineProgramConfig]] = None,
     stop_after: Optional[StopAfterDomain] = None,
-    play_sleep: bool = True,
 ) -> PipelineResult:
     pipeline_result = PipelineResult()
 
@@ -189,7 +188,7 @@ async def run(
     if tts_wav_in is not None:
         tts_wav_in.seek(0)
         assert snd_program is not None, "Pipeline is missing snd"
-        await play(rhasspy, snd_program, tts_wav_in, samples_per_chunk, play_sleep)
+        await play(rhasspy, snd_program, tts_wav_in, samples_per_chunk)
 
     return pipeline_result
 

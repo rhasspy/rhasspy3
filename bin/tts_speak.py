@@ -71,7 +71,7 @@ async def main() -> None:
         with io.BytesIO() as wav_io:
             await synthesize(rhasspy, tts_program, line, wav_io)
             wav_io.seek(0)
-            await play(rhasspy, snd_program, wav_io, args.samples_per_chunk, sleep=True)
+            await play(rhasspy, snd_program, wav_io, args.samples_per_chunk)
 
 
 if __name__ == "__main__":

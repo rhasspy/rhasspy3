@@ -51,9 +51,7 @@ async def main() -> None:
     if args.wav_file:
         for wav_path in args.wav_file:
             with open(wav_path, "rb") as wav_file:
-                await play(
-                    rhasspy, snd_program, wav_file, args.samples_per_chunk, sleep=True
-                )
+                await play(rhasspy, snd_program, wav_file, args.samples_per_chunk)
     else:
         if os.isatty(sys.stdin.fileno()):
             print("Reading WAV data from stdin", file=sys.stderr)
@@ -63,7 +61,6 @@ async def main() -> None:
             snd_program,
             sys.stdin.buffer,
             args.samples_per_chunk,
-            sleep=True,
         )
 
 
