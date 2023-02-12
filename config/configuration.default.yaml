@@ -51,6 +51,9 @@ programs:
     whisper-cpp.client:
       command: |
         client_unix_socket.py var/run/whisper-cpp.socket
+    faster-whisper.client:
+      command: |
+        client_unix_socket.py var/run/faster-whisper.socket
   tts:
     larynx2:
       command: |
@@ -220,6 +223,13 @@ servers:
         script/server ${model}
       template_args:
         model: "share/ggml-tiny.en.bin"
+    faster-whisper:
+      command: |
+        script/server --language ${language} --device ${device} ${model}
+      template_args:
+        language: "en"
+        model: "share/tiny-int8"
+        device: "cpu"  # or cuda
   tts:
     mimic3:
       command: |
