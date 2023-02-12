@@ -3,7 +3,7 @@ import json
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import IO, Any, Dict, Optional
+from typing import IO, Any, Dict, Iterable, Optional
 
 _TYPE = "type"
 _DATA = "data"
@@ -72,6 +72,27 @@ async def async_write_event(event: Event, writer: asyncio.StreamWriter):
             writer.write(event.payload)
 
         await writer.drain()
+    except KeyboardInterrupt:
+        pass
+
+
+async def async_write_events(events: Iterable[Event], writer: asyncio.StreamWriter):
+    coros = []
+    for event in events:
+        event_dict: Dict[str, Any] = event.to_dict()
+        if event.payload:
+            event_dict[_PAYLOAD_LENGTH] = len(event.payload)
+
+        json_line = json.dumps(event_dict, ensure_ascii=False)
+        writer.writelines((json_line.encode(), _NEWLINE))
+
+        if event.payload:
+            writer.write(event.payload)
+
+        coros.append(writer.drain())
+
+    try:
+        await asyncio.gather(*coros)
     except KeyboardInterrupt:
         pass
 

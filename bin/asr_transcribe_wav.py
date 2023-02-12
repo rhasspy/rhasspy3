@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+import time
 import wave
 from pathlib import Path
 from typing import Iterable
@@ -22,7 +23,7 @@ from rhasspy3.audio import (
     AudioStop,
 )
 from rhasspy3.core import Rhasspy
-from rhasspy3.event import async_read_event, async_write_event
+from rhasspy3.event import async_read_event, async_write_events
 from rhasspy3.program import create_process
 
 _FILE = Path(__file__)
@@ -99,15 +100,14 @@ async def main() -> None:
             assert asr_proc.stdout is not None
 
             # Write audio
-            await async_write_event(
-                AudioStart(rate, width, channels, timestamp=0).event(), asr_proc.stdin
-            )
-            await async_write_event(
-                chunk.event(),
+            start_time = time.monotonic_ns()
+            await async_write_events(
+                (
+                    AudioStart(rate, width, channels, timestamp=0).event(),
+                    chunk.event(),
+                    AudioStop(timestamp=timestamp).event(),
+                ),
                 asr_proc.stdin,
-            )
-            await async_write_event(
-                AudioStop(timestamp=timestamp).event(), asr_proc.stdin
             )
 
             # Read transcript
@@ -120,6 +120,10 @@ async def main() -> None:
 
                 if Transcript.is_type(event.type):
                     transcript = Transcript.from_event(event)
+                    end_time = time.monotonic_ns()
+                    _LOGGER.debug(
+                        "Transcribed in %s second(s)", (end_time - start_time) / 1e9
+                    )
                     break
 
             _LOGGER.debug(transcript)
