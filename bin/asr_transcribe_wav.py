@@ -57,9 +57,7 @@ async def main() -> None:
     )
     #
     parser.add_argument("wav", nargs="*", help="Path to WAV file(s)")
-    parser.add_argument(
-        "--output-json", action="store_true", help="Outputs JSON instead of text"
-    )
+    #
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )
@@ -128,13 +126,8 @@ async def main() -> None:
 
             _LOGGER.debug(transcript)
 
-            if args.output_json:
-                # JSON output
-                json.dump(transcript.event().data, sys.stdout, ensure_ascii=False)
-                print("", flush=True)
-            else:
-                # Text output
-                print(transcript.text or "", flush=True)
+            json.dump(transcript.event().to_dict(), sys.stdout, ensure_ascii=False)
+            print("", flush=True)
 
 
 def get_wav_bytes(args: argparse.Namespace) -> Iterable[bytes]:

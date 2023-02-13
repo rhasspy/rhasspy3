@@ -41,9 +41,6 @@ async def main() -> None:
     )
     #
     parser.add_argument(
-        "--output-json", action="store_true", help="Outputs JSON instead of text"
-    )
-    parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )
     args = parser.parse_args()
@@ -85,6 +82,7 @@ async def main() -> None:
         await segment(rhasspy, vad_program, mic_proc.stdout, asr_proc.stdin)
 
         # Read transcript
+        _LOGGER.debug("Waiting for transcript")
         transcript = Transcript(text="")
         while True:
             event = await async_read_event(asr_proc.stdout)
@@ -94,14 +92,11 @@ async def main() -> None:
             if Transcript.is_type(event.type):
                 transcript = Transcript.from_event(event)
                 break
+            else:
+                _LOGGER.warning("Received unexpected asr event: %s", event)
 
-        if args.output_json:
-            # JSON output
-            json.dump(transcript.event().data, sys.stdout, ensure_ascii=False)
-            print("", flush=True)
-        else:
-            # Text output
-            print(transcript.text or "", flush=True)
+        json.dump(transcript.event().to_dict(), sys.stdout, ensure_ascii=False)
+        print("", flush=True)
 
 
 if __name__ == "__main__":

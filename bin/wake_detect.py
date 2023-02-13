@@ -35,10 +35,6 @@ async def main() -> None:
         "--wake-program", help="Name of wake program to use (overrides pipeline)"
     )
     #
-    parser.add_argument(
-        "--output-json", action="store_true", help="Outputs JSON instead of text"
-    )
-    #
     parser.add_argument("--loop", action="store_true", help="Keep detecting wake words")
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
@@ -72,11 +68,8 @@ async def main() -> None:
             _LOGGER.debug("Detecting wake word")
             detection = await detect(rhasspy, wake_program, mic_proc.stdout)
             if detection is not None:
-                if args.output_json:
-                    json.dump(detection.event().data, sys.stdout, ensure_ascii=False)
-                    print("", flush=True)
-                else:
-                    print(detection.name, flush=True)
+                json.dump(detection.event().to_dict(), sys.stdout, ensure_ascii=False)
+                print("", flush=True)
 
         if not args.loop:
             break

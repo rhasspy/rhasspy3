@@ -7,14 +7,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from rhasspy3.audio import (
-    DEFAULT_IN_CHANNELS,
-    DEFAULT_IN_RATE,
-    DEFAULT_IN_WIDTH,
-    DEFAULT_SAMPLES_PER_CHUNK,
-    AudioChunk,
-    AudioStart,
-)
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK, AudioChunk, AudioStart
 from rhasspy3.event import write_event
 
 _FILE = Path(__file__)
@@ -38,19 +31,19 @@ def main() -> None:
     parser.add_argument(
         "--rate",
         type=int,
-        default=DEFAULT_IN_RATE,
+        required=True,
         help="Sample rate (hz)",
     )
     parser.add_argument(
         "--width",
         type=int,
-        default=DEFAULT_IN_WIDTH,
+        required=True,
         help="Sample width bytes",
     )
     parser.add_argument(
         "--channels",
         type=int,
-        default=DEFAULT_IN_CHANNELS,
+        required=True,
         help="Sample channel count",
     )
     parser.add_argument(

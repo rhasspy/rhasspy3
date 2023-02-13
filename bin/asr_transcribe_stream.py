@@ -12,6 +12,7 @@ from rhasspy3.audio import (
     DEFAULT_IN_CHANNELS,
     DEFAULT_IN_RATE,
     DEFAULT_IN_WIDTH,
+    DEFAULT_SAMPLES_PER_CHUNK,
     AudioChunk,
     AudioChunkConverter,
     AudioStart,
@@ -78,13 +79,10 @@ async def main() -> None:
     parser.add_argument(
         "--samples-per-chunk",
         type=int,
-        default=1024,
+        default=DEFAULT_SAMPLES_PER_CHUNK,
         help="Samples to process per chunk",
     )
     #
-    parser.add_argument(
-        "--output-json", action="store_true", help="Outputs JSON instead of text"
-    )
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )
@@ -151,13 +149,8 @@ async def main() -> None:
                 transcript = Transcript.from_event(event)
                 break
 
-        if args.output_json:
-            # JSON output
-            json.dump(transcript.event().data, sys.stdout, ensure_ascii=False)
-            print("", flush=True)
-        else:
-            # Text output
-            print(transcript.text or "", flush=True)
+        json.dump(transcript.event().to_dict(), sys.stdout, ensure_ascii=False)
+        print("", flush=True)
 
 
 if __name__ == "__main__":
