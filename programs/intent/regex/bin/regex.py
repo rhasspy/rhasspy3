@@ -4,9 +4,8 @@ import re
 from collections import defaultdict
 from typing import Dict, List, Optional
 
-from rhasspy3.asr import Transcript
 from rhasspy3.event import read_event, write_event
-from rhasspy3.intent import Entity, Intent, NotRecognized
+from rhasspy3.intent import Entity, Intent, NotRecognized, Recognize
 
 
 def main() -> None:
@@ -35,9 +34,9 @@ def main() -> None:
             if event is None:
                 break
 
-            if Transcript.is_type(event.type):
-                transcript = Transcript.from_event(event)
-                text = _clean(transcript.text)
+            if Recognize.is_type(event.type):
+                recognize = Recognize.from_event(event)
+                text = _clean(recognize.text)
                 intent = _recognize(text, patterns)
                 if intent is None:
                     write_event(NotRecognized().event())

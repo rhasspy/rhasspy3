@@ -21,7 +21,6 @@ from quart import (
     render_template,
     send_from_directory,
 )
-from swagger_ui import api_doc
 
 from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK
 from rhasspy3.core import Rhasspy
@@ -32,6 +31,7 @@ from .snd import add_snd
 from .tts import add_tts
 from .wake import add_wake
 from .pipeline import add_pipeline
+from .handle import add_handle
 
 _DIR = Path(__file__).parent
 _LOGGER = logging.getLogger("rhasspy")
@@ -91,6 +91,7 @@ def main():
     add_wake(app, rhasspy, pipeline, args)
     add_asr(app, rhasspy, pipeline, args)
     add_intent(app, rhasspy, pipeline, args)
+    add_handle(app, rhasspy, pipeline, args)
     add_snd(app, rhasspy, pipeline, args)
     add_tts(app, rhasspy, pipeline, args)
     add_pipeline(app, rhasspy, pipeline, args)
@@ -114,13 +115,6 @@ def main():
     @app.route("/api/version", methods=["POST"])
     async def api_version() -> str:
         return "3.0.0"
-
-    api_doc(
-        app,
-        config_path=_DIR / "swagger.yaml",
-        url_prefix="/openapi",
-        title="Rhasspy",
-    )
 
     hyp_config = hypercorn.config.Config()
     hyp_config.bind = [f"{args.host}:{args.port}"]

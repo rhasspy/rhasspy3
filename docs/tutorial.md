@@ -35,6 +35,8 @@ Mic test:
 script/run bin/mic_test_energy.py
 ```
 
+When speaking, you should see the bar change with volume. If not, check the available devices with `arecord -L` and update the `arecord` command in `configuration.yaml` with `-D <device_name>` (prefer devices that start with `plughw:`).
+
 CTRL+C to quit
 
 
@@ -65,9 +67,13 @@ pipelines:
 ```
 
 
-TODO: test
+VAD test:
 
-TODO: alternative energy
+```sh
+script/run bin/mic_record_sample.py sample.wav
+```
+
+Say something for a few seconds and then wait for the program to finish. Afterwards, listen to `sample.wav` and verify that it sounds correct. You may need to adjust microphone settings with `alsamixer`
 
 
 ## Speech to Text
@@ -123,6 +129,8 @@ script/run bin/pipeline_run.py --debug --stop-after asr
 ```
 
 (say something)
+
+Verify transcription is correct. If not, try a different model or a different ASR system like `whisper`.
 
 Set up HTTP server:
 
