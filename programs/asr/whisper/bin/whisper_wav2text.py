@@ -16,12 +16,7 @@ def main() -> None:
         help="Whisper language",
     )
     parser.add_argument("--device", default="cpu", choices=("cpu", "cuda"))
-    parser.add_argument(
-        "--samples-per-chunk",
-        type=int,
-        default=1024,
-        help="Number of samples to process at a time",
-    )
+    #
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
 
