@@ -1,6 +1,6 @@
 # Rhasspy 3
 
-**NOTE: This is a very early alpha release!**
+**NOTE: This is a very early developer preview!**
 
 An open source toolkit for building voice assistants.
 
@@ -9,6 +9,27 @@ Rhasspy focuses on:
 * Privacy - no data leaves your computer
 * Broad language support - more than just English
 * Customization - everything can be changed
+
+
+## Core Concepts
+
+### Programs
+
+Rhasspy talks to external programs using the [Wyoming protocol](docs/wyoming.md). You can add your own program by implementing the protocol or using an [adapter](#adapters).
+
+
+### Adapters
+
+Small scripts that live in `bin/` and bridge existing programs into the [Wyoming protocol](docs/wyoming.md).
+
+For example, a speech to text program (`asr`) that accepts a WAV file and outputs text can use `asr_adapter_wav2text.py`
+
+
+### Pipelines
+
+
+
+---
 
 
 ## Programs
