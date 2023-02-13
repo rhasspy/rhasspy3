@@ -9,8 +9,8 @@ from websockets import connect
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("url")
     parser.add_argument("wav_file", nargs="+", help="Path(s) to WAV file(s)")
-    parser.add_argument("--url", default="ws://localhost:13331/asr/transcribe")
     parser.add_argument("--samples-per-chunk", type=int, default=1024)
     args = parser.parse_args()
 

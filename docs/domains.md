@@ -10,7 +10,7 @@ Emits `audio-chunk` events, ideally with a `timestamp`.
 ## wake
 
 Receives `audio-chunk` events.
-Emits `detection` events.
+Emits `detection` event(s) or a `not-detected` event if the program exits without a detection.
 
 
 ## asr

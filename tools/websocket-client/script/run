@@ -16,4 +16,4 @@ fi
 
 export PATH="${base_dir}/bin:${PATH}"
 
-"$@"
+python3 "${base_dir}/bin/websocket_client.py" "$@"

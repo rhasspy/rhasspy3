@@ -25,6 +25,7 @@ def main() -> None:
         nargs="+",
         help="Keyword model settings (path, [sensitivity])",
     )
+    parser.add_argument("--samples-per-chunk", type=int, default=512)
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )
@@ -51,9 +52,12 @@ def main() -> None:
 
         sensitivity = 0.5
         if len(model_settings) > 1:
-            sensitivity = float(model_settings[1])
+            sensitivity = float(model_settings[0])
 
         sensitivities.append(sensitivity)
+
+    _LOGGER.debug("Keywords: %s", keyword_paths)
+    _LOGGER.debug("Sensitivities: %s", sensitivities)
 
     porcupine = pvporcupine.create(
         keyword_paths=[str(keyword_path.absolute()) for keyword_path in keyword_paths],
@@ -61,12 +65,13 @@ def main() -> None:
     )
 
     chunk_format = "h" * porcupine.frame_length
-    bytes_per_chunk = porcupine.frame_length * 2  # 16-bit width
 
     # Read 16Khz, 16-bit mono PCM from stdin
+    bytes_per_chunk = porcupine.frame_length * 2
     try:
-        chunk = sys.stdin.buffer.read(bytes_per_chunk)
-        while True:
+        chunk = bytes()
+        next_chunk = sys.stdin.buffer.read(bytes_per_chunk)
+        while next_chunk:
             while len(chunk) >= bytes_per_chunk:
                 unpacked_chunk = struct.unpack_from(
                     chunk_format, chunk[:bytes_per_chunk]
@@ -77,7 +82,8 @@ def main() -> None:
 
                 chunk = chunk[bytes_per_chunk:]
 
-            chunk += sys.stdin.buffer.read(bytes_per_chunk)
+            next_chunk = sys.stdin.buffer.read(bytes_per_chunk)
+            chunk += next_chunk
     except KeyboardInterrupt:
         pass
 

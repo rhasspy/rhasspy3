@@ -9,7 +9,7 @@ import pvporcupine
 
 from rhasspy3.audio import AudioChunk, AudioStop
 from rhasspy3.event import read_event, write_event
-from rhasspy3.wake import Detection
+from rhasspy3.wake import Detection, NotDetected
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -66,6 +66,7 @@ def main() -> None:
     chunk_format = "h" * porcupine.frame_length
     bytes_per_chunk = porcupine.frame_length * 2  # 16-bit width
     audio_bytes = bytes()
+    is_detected = False
 
     try:
         while True:
@@ -89,8 +90,12 @@ def main() -> None:
                 keyword_index = porcupine.process(unpacked_chunk)
                 if keyword_index >= 0:
                     write_event(Detection(name=names[keyword_index]).event())
+                    is_detected = True
 
                 audio_bytes = audio_bytes[bytes_per_chunk:]
+
+        if is_detected:
+            write_event(NotDetected().event())
     except KeyboardInterrupt:
         pass
 

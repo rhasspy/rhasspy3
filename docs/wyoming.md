@@ -18,19 +18,20 @@ An event is:
 
 ## Rhasspy Events
 
-| Domain | Type           | Data                            | Payload |
-|--------|----------------|---------------------------------|---------|
+| Domain | Type           | Data                             | Payload |
+|--------|----------------|----------------------------------|---------|
 | audio  | audio-start    | timestamp, rate, width, channels |         |
 | audio  | audio-chunk    | timestamp, rate, width, channels | PCM     |
-| audio  | audio-stop     | timestamp                       |         |
-| wake   | detection      | name                            |         |
-| vad    | voice-started  | timestamp                       |         |
-| vad    | voice-stopped  | timestamp                       |         |
-| asr    | transcript  | text                            |         |
-| intent | recognize      | text                            |         |
-| intent | intent         | name, entities                  |         |
-| intent | not-recognized | text                            |         |
-| handle | handled        | text                            |         |
-| handle | not-handled    | text                            |         |
-| tts    | synthesize     | text                            |         |
-| snd    | played         |                                 |         |
+| audio  | audio-stop     | timestamp                        |         |
+| wake   | detection      | name                             |         |
+| wake   | not-detected   |                                  |         |
+| vad    | voice-started  | timestamp                        |         |
+| vad    | voice-stopped  | timestamp                        |         |
+| asr    | transcript     | text                             |         |
+| intent | recognize      | text                             |         |
+| intent | intent         | name, entities                   |         |
+| intent | not-recognized | text                             |         |
+| handle | handled        | text                             |         |
+| handle | not-handled    | text                             |         |
+| tts    | synthesize     | text                             |         |
+| snd    | played         |                                  |         |

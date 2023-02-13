@@ -12,7 +12,7 @@ from typing import IO
 
 from rhasspy3.audio import AudioChunk, AudioStop
 from rhasspy3.event import read_event, write_event
-from rhasspy3.wake import Detection
+from rhasspy3.wake import Detection, NotDetected
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -38,8 +38,9 @@ def main() -> None:
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     command = shlex.split(args.command)
-    proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    try:
+    with subprocess.Popen(
+        command, stdin=subprocess.PIPE, stdout=subprocess.PIPE
+    ) as proc:
         assert proc.stdin is not None
         assert proc.stdout is not None
 
@@ -61,9 +62,11 @@ def main() -> None:
                 proc.stdin.write(chunk.audio)
                 proc.stdin.flush()
             elif AudioStop.is_type(event.type):
+                proc.stdin.close()
                 break
-    finally:
-        proc.terminate()
+
+    if not state.detected:
+        write_event(NotDetected().event())
 
 
 def write_proc(reader: IO[bytes], state: State):

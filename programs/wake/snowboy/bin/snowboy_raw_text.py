@@ -59,22 +59,28 @@ def main() -> None:
         detectors[model_path.stem] = detector
 
     # Read 16Khz, 16-bit mono PCM from stdin
+    bytes_per_chunk = args.samples_per_chunk * 2
     try:
-        chunk = sys.stdin.buffer.read(args.samples_per_chunk)
-        while chunk:
-            for name, detector in detectors.items():
-                # Return is:
-                # -2 silence
-                # -1 error
-                #  0 voice
-                #  n index n-1
-                result_index = detector.RunDetection(chunk)
+        chunk = bytes()
+        next_chunk = sys.stdin.buffer.read(bytes_per_chunk)
+        while next_chunk:
+            while len(chunk) >= bytes_per_chunk:
+                for name, detector in detectors.items():
+                    # Return is:
+                    # -2 silence
+                    # -1 error
+                    #  0 voice
+                    #  n index n-1
+                    result_index = detector.RunDetection(chunk[:bytes_per_chunk])
 
-                if result_index > 0:
-                    # Detection
-                    print(name, flush=True)
+                    if result_index > 0:
+                        # Detection
+                        print(name, flush=True)
 
-            chunk = sys.stdin.buffer.read(args.samples_per_chunk)
+                chunk = chunk[bytes_per_chunk:]
+
+            next_chunk = sys.stdin.buffer.read(args.samples_per_chunk)
+            chunk += next_chunk
     except KeyboardInterrupt:
         pass
 
