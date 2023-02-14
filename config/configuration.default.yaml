@@ -102,7 +102,14 @@ programs:
   vad:
     silero:
       command: |
-        .venv/bin/python3 bin/silero_stream.py share/silero_vad.onnx
+        script/speech_prob share/silero_vad.onnx
+      adapter: |
+        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 512
+    webrtcvad:
+      command: |
+        script/speech_prob 3
+      adapter: |
+        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 480
     energy:
       command: |
         bin/energy_stream.py --threshold 300
@@ -112,6 +119,12 @@ programs:
         arecord -q -r 16000 -c 1 -f S16_LE -t raw -
       adapter: |
         mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
+    pyaudio:
+      command: |
+        script/events
+    sounddevice:
+      command: |
+        script/events
     gstreamer_udp:
       command: |
         gst-launch-1.0 -v udpsrc address=${address} port=${port} ! rawaudioparse use-sink-caps=false format=pcm pcm-format=${format} sample-rate=${rate} num-channels=${channels} ! audioconvert ! audioresample ! volume volume=3.0 ! level ! fdsink fd=1 sync=false

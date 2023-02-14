@@ -56,6 +56,77 @@ class VoiceStopped(Eventable):
         return VoiceStopped(timestamp=event.data.get("timestamp"))
 
 
+@dataclass
+class Segmenter:
+    speech_seconds: float
+    silence_seconds: float
+    timeout_seconds: float
+    reset_seconds: float
+    started: bool = False
+    start_timestamp: Optional[int] = None
+    stopped: bool = False
+    stop_timestamp: Optional[int] = None
+    timeout: bool = False
+    _in_command: bool = False
+    _speech_seconds_left: float = 0.0
+    _silence_seconds_left: float = 0.0
+    _timeout_seconds_left: float = 0.0
+    _reset_seconds_left: float = 0.0
+
+    def __post_init__(self):
+        self.reset()
+
+    def reset(self):
+        self._speech_seconds_left = self.speech_seconds
+        self._silence_seconds_left = self.silence_seconds
+        self._timeout_seconds_left = self.timeout_seconds
+        self._reset_seconds_left = self.reset_seconds
+        self._in_command = False
+        self.start_timestamp = None
+        self.stop_timestamp = None
+
+    def process(
+        self, chunk: bytes, chunk_seconds: float, is_speech: bool, timestamp: int
+    ):
+        self._timeout_seconds_left -= chunk_seconds
+        if self._timeout_seconds_left <= 0:
+            self.stop_timestamp = timestamp
+            self.timeout = True
+            self.stopped = True
+            return
+
+        if not self._in_command:
+            if is_speech:
+                self._reset_seconds_left = self.reset_seconds
+
+                if self.start_timestamp is None:
+                    self.start_timestamp = timestamp
+
+                self._speech_seconds_left -= chunk_seconds
+                if self._speech_seconds_left <= 0:
+                    # Inside voice command
+                    self._in_command = True
+                    self.started = True
+            else:
+                # Reset if enough silence
+                self._reset_seconds_left -= chunk_seconds
+                if self._reset_seconds_left <= 0:
+                    self._speech_seconds_left = self.speech_seconds
+                    self.start_timestamp = None
+        else:
+            if not is_speech:
+                self._reset_seconds_left = self.reset_seconds
+                self._silence_seconds_left -= chunk_seconds
+                if self._silence_seconds_left <= 0:
+                    self.stop_timestamp = timestamp
+                    self.stopped = True
+            else:
+                # Reset if enough speech
+                self._reset_seconds_left -= chunk_seconds
+                if self._reset_seconds_left <= 0:
+                    self._silence_seconds_left = self.silence_seconds
+
+
 async def segment(
     rhasspy: Rhasspy,
     program: Union[str, PipelineProgramConfig],

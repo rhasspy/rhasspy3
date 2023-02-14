@@ -92,8 +92,6 @@ async def main() -> None:
             if Transcript.is_type(event.type):
                 transcript = Transcript.from_event(event)
                 break
-            else:
-                _LOGGER.warning("Received unexpected asr event: %s", event)
 
         json.dump(transcript.event().to_dict(), sys.stdout, ensure_ascii=False)
         print("", flush=True)
