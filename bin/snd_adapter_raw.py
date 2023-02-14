@@ -52,25 +52,28 @@ def main() -> None:
     else:
         command = shlex.split(args.command)
 
-    proc = subprocess.Popen(command, stdin=subprocess.PIPE)
-    assert proc.stdin is not None
+    try:
+        proc = subprocess.Popen(
+            command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL
+        )
+        assert proc.stdin is not None
 
-    converter = AudioChunkConverter(args.rate, args.width, args.channels)
-    with proc:
-        while True:
-            event = read_event()
-            if event is None:
-                break
+        converter = AudioChunkConverter(args.rate, args.width, args.channels)
+        with proc:
+            while True:
+                event = read_event()
+                if event is None:
+                    break
 
-            if AudioChunk.is_type(event.type):
-                chunk = AudioChunk.from_event(event)
-                chunk = converter.convert(chunk)
-                proc.stdin.write(chunk.audio)
-                proc.stdin.flush()
-            elif AudioStop.is_type(event.type):
-                break
-
-    write_event(Played().event())
+                if AudioChunk.is_type(event.type):
+                    chunk = AudioChunk.from_event(event)
+                    chunk = converter.convert(chunk)
+                    proc.stdin.write(chunk.audio)
+                    proc.stdin.flush()
+                elif AudioStop.is_type(event.type):
+                    break
+    finally:
+        write_event(Played().event())
 
 
 if __name__ == "__main__":

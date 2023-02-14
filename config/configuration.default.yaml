@@ -112,7 +112,9 @@ programs:
         vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 480
     energy:
       command: |
-        bin/energy_stream.py --threshold 300
+        bin/energy_speech_prob.py --threshold 300 --width 2 --samples-per-chunk 1024
+      adapter: |
+        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 1024
   mic:
     arecord:
       command: |

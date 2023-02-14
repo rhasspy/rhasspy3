@@ -104,10 +104,8 @@ async def run(
             await _mic_asr(
                 rhasspy, mic_program, asr_program, vad_program, pipeline_result
             )
-            return pipeline_result
-
-        # Audio input, wake word detection, segmentation, speech to text
-        if stop_after == StopAfterDomain.WAKE:
+        elif stop_after == StopAfterDomain.WAKE:
+            # Audio input, wake word detection, segmentation, speech to text
             assert wake_program is not None, "No vad program"
             await _mic_wake(
                 rhasspy,
@@ -117,21 +115,21 @@ async def run(
                 wake_detection=wake_detection,
             )
             return pipeline_result
-
-        assert wake_program is not None, "No vad program"
-        assert asr_program is not None, "No asr program"
-        assert vad_program is not None, "No vad program"
-        await _mic_wake_asr(
-            rhasspy,
-            mic_program,
-            wake_program,
-            asr_program,
-            vad_program,
-            pipeline_result,
-            asr_chunks_to_buffer=asr_chunks_to_buffer,
-            wake_detection=wake_detection,
-            wake_after=wake_after,
-        )
+        else:
+            assert wake_program is not None, "No vad program"
+            assert asr_program is not None, "No asr program"
+            assert vad_program is not None, "No vad program"
+            await _mic_wake_asr(
+                rhasspy,
+                mic_program,
+                wake_program,
+                asr_program,
+                vad_program,
+                pipeline_result,
+                asr_chunks_to_buffer=asr_chunks_to_buffer,
+                wake_detection=wake_detection,
+                wake_after=wake_after,
+            )
 
         if asr_after is not None:
             await run_command(rhasspy, asr_after)

@@ -124,6 +124,7 @@ async def main() -> None:
                         if AudioChunk.is_type(mic_event.type):
                             chunk = AudioChunk.from_event(mic_event)
                             if is_first_chunk:
+                                _LOGGER.debug("Receiving audio")
                                 is_first_chunk = False
                                 wav_file.setframerate(chunk.rate)
                                 wav_file.setsampwidth(chunk.width)
