@@ -26,6 +26,8 @@ if [ ! -d "${venv}" ]; then
     echo 'Installing Python dependencies'
     pip3 install --upgrade pip
     pip3 install --upgrade wheel setuptools
+else
+    source "${venv}/bin/activate"
 fi
 
 if [ -f "${base_dir}/requirements.txt" ]; then

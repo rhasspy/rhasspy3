@@ -8,7 +8,14 @@ from urllib.request import urlopen
 _DIR = Path(__file__).parent
 _LOGGER = logging.getLogger("setup")
 
-MODELS = ["tiny", "tiny-int8", "base", "base-int8"]
+MODELS = [
+    "tiny",
+    "tiny-int8",
+    "base",
+    "base-int8",
+    "small",
+    "small-int8",
+]
 
 
 def main() -> None:
