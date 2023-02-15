@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+ip="$1"
+token_file="$2"
+
+if [ -z "${token_file}" ]; then
+    echo 'Usage: run-docker <ip> <file_with_hass_token>'
+    exit 1
+fi
+
+token_file="$(realpath "${token_file}")"
+
+docker run -it \
+    -p 13331:13331 \
+    -p 5004:5004/udp \
+    -p 5060:5060/udp \
+    -v "${token_file}:/rhasspy3/config/programs/handle/home_assistant_conversation/etc/token" \
+    rhasspy3-phone "${ip}" "$@"
