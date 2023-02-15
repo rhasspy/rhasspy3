@@ -1,0 +1,10 @@
+*
+!setup.py
+!requirements_http_api.txt
+!rhasspy3/
+!rhasspy3_http_api/
+!programs/
+!config/
+!bin/
+!examples/
+!script/

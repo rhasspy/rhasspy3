@@ -1,0 +1,68 @@
+programs:
+  mic:
+    phone:
+      command: |
+        gst-launch-1.0 -v udpsrc port=5004 caps="application/x-rtp" ! rtpopusdepay ! opusdec ! audioconvert ! audioresample ! audio/x-raw, rate=16000, format=S16LE, channels=1 ! fdsink fd=1 sync=false
+      adapter: |
+        mic_adapter_raw.py --rate 16000 --width 2 --channels 1
+  vad:
+    silero:
+      command: |
+        script/speech_prob share/silero_vad.onnx
+      adapter: |
+        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 512
+  asr:
+    faster-whisper.client:
+      command: |
+        client_unix_socket.py var/run/faster-whisper.socket
+  tts:
+    larynx2.client:
+      command: |
+        client_unix_socket.py var/run/larynx2.socket
+  snd:
+    phone:
+      command: |
+        gst-launch-1.0 fdsrc fd=0 ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=16000 num-channels=1 ! opusenc audio-type=voice bandwidth=wideband ! rtpopuspay pt=123  ! udpsink host=192.168.1.34 port=5004 bind-port=5004
+      adapter: |
+        snd_adapter_raw.py --rate 16000 --width 2 --channels 1
+
+  handle:
+    home_assistant_conversation:
+      command: |
+        bin/converse.py ${url} ${token_file}
+      template_args:
+        url: "http://192.168.1.18:8123/api/conversation/process"
+        token_file: "etc/token"
+      adapter: |
+        handle_adapter_text.py
+
+servers:
+  asr:
+    faster-whisper:
+      command: |
+        script/server --language ${language} --device ${device} ${model}
+      template_args:
+        language: "en"
+        model: "share/tiny-int8"
+        device: "cpu"
+  tts:
+    larynx2:
+      command: |
+        script/server ${model}
+      template_args:
+        model: "share/en-us-blizzard_lessac-medium.onnx"
+
+pipelines:
+  default:
+    mic:
+      name: phone
+    vad:
+      name: silero
+    asr:
+      name: faster-whisper.client
+    handle:
+      name: home_assistant_conversation
+    tts:
+      name: larynx2.client
+    snd:
+      name: phone
