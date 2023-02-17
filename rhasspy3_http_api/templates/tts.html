@@ -2,7 +2,106 @@
 
 {% block body %}
 
-<h1>Text to Speech</h1>
+<h1>Text to Speech (tts)</h1>
+
+<h2>Speak</h2>
+
+<ol>
+  <li>
+    Text: <input id="tts_text" type="text" onkeypress="tts_keypress(event)">
+  </li>
+  <li>
+    TTS Program:
+    <select id="tts_program">
+      <option value="">default</option>
+      {% set programs = config.programs["tts"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    Snd Program:
+    <select id="tts_snd_program">
+      <option value="">Browser</option>
+      <option value="">default</option>
+      {% set programs = config.programs["snd"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    <button onclick="tts_speak()">Speak</button>
+  </li>
+  <li>
+    Status: <span id="tts_status"></span>
+  </li>
+  <li>
+    <audio id="tts_audio" preload="none" controls autoplay></audio>
+  </li>
+</ol>
+
+<script type="text/javascript">
+
+function tts_keypress(e) {
+    if (e.keyCode == 13) {
+        e.preventDefault();
+        tts_speak();
+    }
+}
+
+function tts_speak() {
+    if (q("#tts_snd_program").selectedIndex == 0) {
+        tts_synthesize();
+        return;
+    }
+
+    const ttsProgram = q("#tts_program").value;
+    const sndProgram = q("#tts_snd_program").value;
+
+    const status = q("#tts_status");
+    status.innerText = "Speaking";
+    
+    const text = q("#tts_text").value;
+    
+    const startTime = performance.now();
+    fetch("{{ url_prefix }}" + "tts/speak?tts_program="
+          + encodeURIComponent(ttsProgram)
+          + "&snd_program=" + encodeURIComponent(sndProgram),
+          { method: "POST", body: text })
+        .then(response => {
+            const endTime = performance.now();
+            status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+            return response;
+        })
+        .catch(error => alert(error));
+}
+
+function tts_synthesize() {
+    const ttsProgram = q("#tts_program").value;
+
+    const status = q("#tts_status");
+    status.innerText = "Synthesizing";
+    
+    const text = q("#tts_text").value;
+    
+    const startTime = performance.now();
+    fetch("{{ url_prefix }}" + "tts/synthesize?tts_program=" + encodeURIComponent(ttsProgram),
+          { method: "POST", body: text })
+        .then(response => {
+            const endTime = performance.now();
+            status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+            return response;
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            q('#tts_audio').src = URL.createObjectURL(blob);
+        })
+        .catch(error => alert(error));
+}
+
+</script>
 
 
 

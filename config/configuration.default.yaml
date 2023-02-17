@@ -51,6 +51,13 @@ programs:
     whisper-cpp.client:
       command: |
         client_unix_socket.py var/run/whisper-cpp.socket
+    faster-whisper:
+      command: |
+        script/wav2text ${model} {wav_file}
+      adapter: |
+        asr_adapter_wav2text.py
+      template_args:
+        model: "share/tiny-int8"
     faster-whisper.client:
       command: |
         client_unix_socket.py var/run/faster-whisper.socket

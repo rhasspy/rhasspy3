@@ -2,7 +2,141 @@
 
 {% block body %}
 
-<h1>Speech to Text</h1>
+<h1>Speech to Text (asr)</h1>
+
+<h2>Transcribe</h2>
+
+<ol>
+  <li>
+    Mic Program:
+    <select id="asr_mic_program" onchange="asr_mic_change()">
+      <option value="">WAV file</option>
+      <option value="">default</option>
+      {% set programs = config.programs["mic"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li id="asr_wav_li">
+    WAV file: <input id="asr_wav" type="file">
+  </li>
+  <li id="asr_vad_li" hidden>
+    VAD Program:
+    <select id="asr_vad_program">
+      <option value="">default</option>
+      {% set programs = config.programs["vad"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    ASR Program:
+    <select id="asr_program">
+      <option value="">default</option>
+      {% set programs = config.programs["asr"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    <button onclick="asr_transcribe()">Transcribe</button>
+  </li>
+  <li>
+    Status: <span id="asr_status"></span>
+  </li>
+  <li>
+    Transcript: <span id="asr_transcript"></span>
+  </li>
+</ol>
+
+<script type="text/javascript">
+
+function asr_mic_change() {
+    const micIndex = q("#asr_mic_program").selectedIndex;
+    q("#asr_wav_li").hidden = (micIndex != 0);
+    q("#asr_vad_li").hidden = (micIndex == 0);
+}
+
+function asr_transcribe() {
+    const micIndex = q("#asr_mic_program").selectedIndex;
+    if (micIndex == 0) {
+        asr_transcribe_wav();
+        return;
+    }
+
+    const micProgram = q("#asr_mic_program").value;
+    const asrProgram = q("#asr_program").value;
+    const vadProgram = q("#asr_vad_program").value;
+
+    const status = q("#asr_status");
+    status.innerText = "Listening";
+
+    const transcript = q("#asr_transcript");
+    transcript.innerText = "";
+
+    const startTime = performance.now();
+    fetch("{{ url_prefix }}" + "pipeline/run?start_after=wake&stop_after=asr"
+          + "&asr_program="
+          + encodeURIComponent(asrProgram)
+          + "&mic_program=" + encodeURIComponent(micProgram)
+          + "&vad_program=" + encodeURIComponent(vadProgram),
+          {method: "POST"})
+        .then(response => {
+            const endTime = performance.now();
+            status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+            return response;
+        })
+        .then(response => response.json())
+        .then(response => response.asr_transcript.data.text)
+        .then(text => {
+            transcript.innerText = text;
+        })
+        .catch(error => alert(error));
+}
+
+function asr_transcribe_wav() {
+    const asrProgram = q("#asr_program").value;
+
+    const status = q("#asr_status");
+    status.innerText = "Loading";
+
+    const transcript = q("#asr_transcript");
+    transcript.innerText = "";
+
+    const files = q("#asr_wav").files;
+    if (files.length < 1) {
+        alert("No file");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function() {
+        const wavData = this.result;
+        status.innerText = "Transcribing";
+
+        const startTime = performance.now();
+        fetch("{{ url_prefix }}" + "asr/transcribe?asr_program=" + encodeURIComponent(asrProgram),
+              { method: "POST", body: wavData })
+            .then(response => {
+                const endTime = performance.now();
+                status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+                return response;
+            })
+            .then(response => response.json())
+            .then(response => response.data.text)
+            .then(text => {
+                transcript.innerText = text;
+            })
+            .catch(error => alert(error));
+    }
+
+    reader.readAsArrayBuffer(files[0]);
+}
+
+</script>
 
 
 

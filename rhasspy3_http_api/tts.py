@@ -2,7 +2,7 @@ import argparse
 import io
 import logging
 
-from quart import Quart, Response, jsonify, request
+from quart import Quart, Response, jsonify, render_template, request
 
 from rhasspy3.config import PipelineConfig
 from rhasspy3.core import Rhasspy
@@ -15,6 +15,10 @@ _LOGGER = logging.getLogger(__name__)
 def add_tts(
     app: Quart, rhasspy: Rhasspy, pipeline: PipelineConfig, args: argparse.Namespace
 ) -> None:
+    @app.route("/tts.html", methods=["GET"])
+    async def http_tts() -> str:
+        return await render_template("tts.html", config=rhasspy.config)
+
     @app.route("/tts/synthesize", methods=["GET", "POST"])
     async def http_tts_synthesize() -> Response:
         """Synthesize a WAV file from text."""

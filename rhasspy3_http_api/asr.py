@@ -3,7 +3,7 @@ import io
 import json
 import logging
 
-from quart import Quart, Response, jsonify, request, websocket
+from quart import Quart, Response, jsonify, render_template, request, websocket
 
 from rhasspy3.asr import transcribe, transcribe_stream
 from rhasspy3.audio import (
@@ -22,6 +22,10 @@ _LOGGER = logging.getLogger(__name__)
 def add_asr(
     app: Quart, rhasspy: Rhasspy, pipeline: PipelineConfig, args: argparse.Namespace
 ) -> None:
+    @app.route("/asr.html", methods=["GET"])
+    async def http_asr() -> str:
+        return await render_template("asr.html", config=rhasspy.config)
+
     @app.route("/asr/transcribe", methods=["POST"])
     async def http_asr_transcribe() -> Response:
         """Transcribe a WAV file."""
