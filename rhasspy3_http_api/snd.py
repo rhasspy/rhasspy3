@@ -1,18 +1,18 @@
 import argparse
 import io
-import logging
 import json
+import logging
 
-from quart import request, Quart, websocket, Response, jsonify
+from quart import Quart, Response, jsonify, request, websocket
 
 from rhasspy3.audio import (
-    AudioStop,
     DEFAULT_OUT_CHANNELS,
     DEFAULT_OUT_RATE,
     DEFAULT_OUT_WIDTH,
+    AudioStop,
 )
-from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
+from rhasspy3.core import Rhasspy
 from rhasspy3.event import Event
 from rhasspy3.snd import play, play_stream
 

@@ -3,18 +3,18 @@ import io
 import json
 import logging
 
-from quart import Response, request, Quart, jsonify, websocket
+from quart import Quart, Response, jsonify, request, websocket
 
+from rhasspy3.asr import transcribe, transcribe_stream
 from rhasspy3.audio import (
-    AudioStop,
     DEFAULT_IN_CHANNELS,
     DEFAULT_IN_RATE,
     DEFAULT_IN_WIDTH,
+    AudioStop,
 )
-from rhasspy3.asr import transcribe, transcribe_stream
-from rhasspy3.event import Event
-from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
+from rhasspy3.core import Rhasspy
+from rhasspy3.event import Event
 
 _LOGGER = logging.getLogger(__name__)
 

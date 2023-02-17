@@ -1,12 +1,14 @@
 import argparse
 import asyncio
-import logging
 import io
+import logging
 from enum import Enum
-from typing import Optional, Deque, Union, IO
+from typing import IO, Optional, Union
 
-from quart import request, Quart, Response, jsonify, websocket
+from quart import Quart, Response, jsonify, request, websocket
 
+from rhasspy3.asr import DOMAIN as ASR_DOMAIN
+from rhasspy3.asr import Transcript
 from rhasspy3.audio import (
     DEFAULT_IN_CHANNELS,
     DEFAULT_IN_RATE,
@@ -14,20 +16,23 @@ from rhasspy3.audio import (
     DEFAULT_OUT_CHANNELS,
     DEFAULT_OUT_RATE,
     DEFAULT_OUT_WIDTH,
+    AudioChunk,
+    AudioChunkConverter,
+    AudioStart,
+    AudioStop,
 )
-from rhasspy3.asr import DOMAIN as ASR_DOMAIN, Transcript, transcribe_stream
-from rhasspy3.audio import AudioChunkConverter, AudioChunk, AudioStop, AudioStart
-from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
+from rhasspy3.core import Rhasspy
 from rhasspy3.event import Event, async_read_event, async_write_event
-from rhasspy3.mic import DOMAIN as MIC_DOMAIN
 from rhasspy3.handle import Handled, NotHandled, handle
+from rhasspy3.intent import Intent, NotRecognized
+from rhasspy3.pipeline import StopAfterDomain
+from rhasspy3.pipeline import run as run_pipeline
 from rhasspy3.program import create_process
-from rhasspy3.intent import recognize, Intent, NotRecognized
-from rhasspy3.wake import Detection
-from rhasspy3.vad import segment, DOMAIN as VAD_DOMAIN, VoiceStopped, VoiceStarted
 from rhasspy3.tts import synthesize_stream
-from rhasspy3.pipeline import run as run_pipeline, StopAfterDomain
+from rhasspy3.vad import DOMAIN as VAD_DOMAIN
+from rhasspy3.vad import VoiceStarted, VoiceStopped
+from rhasspy3.wake import Detection
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -167,7 +172,7 @@ def add_pipeline(
 
         return jsonify(pipeline_result.to_event_dict())
 
-    @app.websocket("/api/stream-to-stream")
+    @app.websocket("/pipeline/stream")
     async def ws_api_stream_to_stream() -> None:
         used_pipeline = pipeline
         pipeline_name = websocket.args.get("pipeline")

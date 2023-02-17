@@ -1,20 +1,19 @@
 import argparse
-import logging
-import json
 import io
+import json
+import logging
 import wave
 
-from quart import request, Quart, Response, jsonify, websocket
+from quart import Quart, Response, jsonify, request, websocket
 
 from rhasspy3.audio import (
-    AudioStop,
     DEFAULT_IN_CHANNELS,
     DEFAULT_IN_RATE,
     DEFAULT_IN_WIDTH,
-    wav_to_chunks,
+    AudioStop,
 )
-from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
+from rhasspy3.core import Rhasspy
 from rhasspy3.event import Event
 from rhasspy3.mic import DOMAIN as MIC_DOMAIN
 from rhasspy3.program import create_process

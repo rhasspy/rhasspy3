@@ -1,10 +1,10 @@
 import argparse
 import logging
 
-from quart import Response, request, Quart, jsonify
+from quart import Quart, Response, jsonify, request
 
-from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
+from rhasspy3.core import Rhasspy
 from rhasspy3.intent import recognize
 
 _LOGGER = logging.getLogger(__name__)

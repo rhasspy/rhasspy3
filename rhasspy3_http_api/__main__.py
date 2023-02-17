@@ -1,37 +1,27 @@
-import asyncio
 import argparse
+import asyncio
 import logging
 import os
-import io
-import threading
 import subprocess
-import wave
-from collections import deque
+import threading
 from pathlib import Path
-from typing import Deque, Optional, Tuple
+from typing import Tuple
 from uuid import uuid4
 
 import hypercorn
 import quart_cors
-from quart import (
-    Quart,
-    Response,
-    jsonify,
-    request,
-    render_template,
-    send_from_directory,
-)
+from quart import Quart, Response, jsonify, render_template, send_from_directory
 
 from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK
 from rhasspy3.core import Rhasspy
 
 from .asr import add_asr
+from .handle import add_handle
 from .intent import add_intent
+from .pipeline import add_pipeline
 from .snd import add_snd
 from .tts import add_tts
 from .wake import add_wake
-from .pipeline import add_pipeline
-from .handle import add_handle
 
 _DIR = Path(__file__).parent
 _LOGGER = logging.getLogger("rhasspy")

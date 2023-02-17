@@ -1,16 +1,16 @@
 import argparse
-import logging
 import json
+import logging
 from typing import Optional, Union
 
-from quart import Response, request, Quart, jsonify
+from quart import Quart, Response, jsonify, request
 
 from rhasspy3.asr import Transcript
-from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
-from rhasspy3.intent import Intent, NotRecognized
+from rhasspy3.core import Rhasspy
 from rhasspy3.event import Event
 from rhasspy3.handle import handle
+from rhasspy3.intent import Intent, NotRecognized
 
 _LOGGER = logging.getLogger(__name__)
 _HANDLE_INPUT_TYPES = (Transcript, Intent, NotRecognized)

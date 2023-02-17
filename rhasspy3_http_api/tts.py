@@ -2,12 +2,12 @@ import argparse
 import io
 import logging
 
-from quart import Response, request, Quart, jsonify
+from quart import Quart, Response, jsonify, request
 
-from rhasspy3.core import Rhasspy
 from rhasspy3.config import PipelineConfig
-from rhasspy3.tts import synthesize
+from rhasspy3.core import Rhasspy
 from rhasspy3.snd import play
+from rhasspy3.tts import synthesize
 
 _LOGGER = logging.getLogger(__name__)
 
