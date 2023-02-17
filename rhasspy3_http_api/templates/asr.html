@@ -79,8 +79,7 @@ function asr_transcribe() {
 
     const startTime = performance.now();
     fetch("{{ url_prefix }}" + "pipeline/run?start_after=wake&stop_after=asr"
-          + "&asr_program="
-          + encodeURIComponent(asrProgram)
+          + "&asr_program=" + encodeURIComponent(asrProgram)
           + "&mic_program=" + encodeURIComponent(micProgram)
           + "&vad_program=" + encodeURIComponent(vadProgram),
           {method: "POST"})

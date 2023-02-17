@@ -1,0 +1,182 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<h1>Pipeline</h1>
+
+<ol>
+  <li>
+    Pipeline:
+    <select id="pipeline_name">
+      <option value="default">default</option>
+      {% set pipelines = config.pipelines | sort %}
+      {% for pipeline in pipeline: %}
+      {% if pipeline != "default": %}
+      <option>{{ pipeline }}</option>
+      {% endif %}
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    Mic Program:
+    <select id="pipeline_mic_program">
+      <option value="">default</option>
+      {% set programs = config.programs["mic"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    Wake Program:
+    <select id="pipeline_wake_program">
+      <option value="">default</option>
+      {% set programs = config.programs["wake"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    ASR Program:
+    <select id="pipeline_asr_program">
+      <option value="">default</option>
+      {% set programs = config.programs["asr"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    VAD Program:
+    <select id="pipeline_vad_program">
+      <option value="">default</option>
+      {% set programs = config.programs["vad"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    Intent Program:
+    <select id="pipeline_intent_program">
+      <option value="">default</option>
+      {% set programs = config.programs["intent"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    Handle Program:
+    <select id="pipeline_handle_program">
+      <option value="">default</option>
+      {% set programs = config.programs["handle"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    TTS Program:
+    <select id="pipeline_tts_program">
+      <option value="">default</option>
+      {% set programs = config.programs["tts"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    Snd Program:
+    <select id="pipeline_snd_program">
+      <option value="">default</option>
+      {% set programs = config.programs["snd"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    <button onclick="pipeline_run()">Run</button>
+    starting after
+    <select id="pipeline_start_after">
+      <option value="">mic</option>
+      <option>wake</option>
+      <option>asr</option>
+      <option>intent</option>
+      <option>handle</option>
+      <option>tts</option>
+    </select>
+    stopping after
+    <select id="pipeline_stop_after">
+      <option value="">snd</option>
+      <option>wake</option>
+      <option>asr</option>
+      <option>intent</option>
+      <option>handle</option>
+      <option>tts</option>
+    </select>
+  </li>
+  <li>
+    Status: <span id="pipeline_status"></span>
+  </li>
+  <li>
+    Result: <span id="pipeline_result"></span>
+  </li>
+</ol>
+
+<script type="text/javascript">
+
+function pipeline_run() {
+    const pipelineName = q("#pipeline_name").value;
+
+    const micProgram = q("#pipeline_mic_program").value;
+    const wakeProgram = q("#pipeline_wake_program").value;
+    const asrProgram = q("#pipeline_asr_program").value;
+    const vadProgram = q("#pipeline_vad_program").value;
+    const intentProgram = q("#pipeline_intent_program").value;
+    const handleProgram = q("#pipeline_handle_program").value;
+    const ttsProgram = q("#pipeline_tts_program").value;
+    const sndProgram = q("#pipeline_snd_program").value;
+
+    const startAfter = q("#pipeline_start_after").value;
+    const stopAfter = q("#pipeline_stop_after").value;
+
+    const status = q("#pipeline_status");
+    status.innerText = "Listening";
+
+    const result = q("#pipeline_result");
+    result.innerText = "";
+
+    const startTime = performance.now();
+    fetch("{{ url_prefix }}" + "pipeline/run"
+          + "?pipeline=" + encodeURIComponent(pipelineName)
+          + "&mic_program=" + encodeURIComponent(micProgram)
+          + "&wake_program=" + encodeURIComponent(wakeProgram)
+          + "&asr_program=" + encodeURIComponent(asrProgram)
+          + "&vad_program=" + encodeURIComponent(vadProgram)
+          + "&intent_program=" + encodeURIComponent(intentProgram)
+          + "&handle_program=" + encodeURIComponent(handleProgram)
+          + "&tts_program=" + encodeURIComponent(ttsProgram)
+          + "&snd_program=" + encodeURIComponent(sndProgram)
+          + "&start_after=" + encodeURIComponent(startAfter)
+          + "&stop_after=" + encodeURIComponent(stopAfter),
+          {method: "POST"})
+        .then(response => {
+            const endTime = performance.now();
+            status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+            return response;
+        })
+        .then(response => response.json())
+        .then(result => {
+            pipeline_result.innerText = JSON.stringify(result);
+        })
+        .catch(error => alert(error));
+}
+
+</script>
+
+
+
+{% endblock %}

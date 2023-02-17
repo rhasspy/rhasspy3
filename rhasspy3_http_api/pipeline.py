@@ -5,7 +5,7 @@ import logging
 from enum import Enum
 from typing import IO, Optional, Union
 
-from quart import Quart, Response, jsonify, request, websocket
+from quart import Quart, Response, jsonify, request, websocket, render_template
 
 from rhasspy3.asr import DOMAIN as ASR_DOMAIN
 from rhasspy3.asr import Transcript
@@ -48,6 +48,10 @@ class StartAfterDomain(str, Enum):
 def add_pipeline(
     app: Quart, rhasspy: Rhasspy, pipeline: PipelineConfig, args: argparse.Namespace
 ) -> None:
+    @app.route("/pipeline.html", methods=["GET"])
+    async def http_pipeline() -> str:
+        return await render_template("pipeline.html", config=rhasspy.config)
+
     @app.route("/pipeline/run", methods=["POST"])
     async def http_pipeline_run() -> Response:
         running_pipeline = (
@@ -105,7 +109,7 @@ def add_pipeline(
         handle_result: Optional[Union[Handled, NotHandled]] = None
         tts_wav_in: Optional[IO[bytes]] = None
 
-        if start_after is not None:
+        if start_after:
             # Determine where to start in the pipeline
             start_after = StartAfterDomain(start_after)
             if start_after == StartAfterDomain.WAKE:

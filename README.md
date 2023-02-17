@@ -124,14 +124,16 @@ Some programs take a while to load, so it's best to leave them running as a serv
 In `bin/`:
 
 * `asr_transcribe.py`
-* `asr_transcribe_wav.py`
 * `asr_transcribe_stream.py`
+* `asr_transcribe_wav.py`
 * `handle_handle.py`
 * `intent_recognize.py`
 * `mic_record_sample.py`
+* `mic_test_energy.py`
 * `server_run.py`
 * `snd_play.py`
 * `tts_speak.py`
+* `tts_synthesize.py`
 * `wake_detect.py`
 
 ## HTTP API
