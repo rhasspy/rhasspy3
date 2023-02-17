@@ -13,6 +13,20 @@ Rhasspy focuses on:
 
 ## Core Concepts
 
+### Domains
+
+Rhasspy is organized by domain:
+
+* mic - audio input
+* wake - wake word detection
+* asr - speech to text
+* vad - voice activity detection
+* intent - intent recognition from text
+* handle - intent or text input handling
+* tts - text to speech
+* snd - audio output
+
+
 ### Programs
 
 Rhasspy talks to external programs using the [Wyoming protocol](docs/wyoming.md). You can add your own program by implementing the protocol or using an [adapter](#adapters).
@@ -20,14 +34,29 @@ Rhasspy talks to external programs using the [Wyoming protocol](docs/wyoming.md)
 
 ### Adapters
 
-Small scripts that live in `bin/` and bridge existing programs into the [Wyoming protocol](docs/wyoming.md).
+[Small scripts](docs/adapters.md) that live in `bin/` and bridge existing programs into the [Wyoming protocol](docs/wyoming.md).
 
 For example, a speech to text program (`asr`) that accepts a WAV file and outputs text can use `asr_adapter_wav2text.py`
 
 
 ### Pipelines
 
+Complete voice loop from microphone input (mic) to speaker output (snd). Stages are:
 
+1. detect (optional)
+    * Wait until wake word is detected in mic
+2. transcribe
+    * Listen until vad detects silence, then convert audio to text
+3. recognize (optional)
+    * Recognize an intent from text
+4. handle
+    * Handle an intent or text
+5. speak
+    * Convert handle output text to speech and speak through snd
+
+### Servers
+
+Some programs take a while to load, so it's best to leave them running as a server. Use `bin/server_run.py` or add `--server <domain> <name>` when running the HTTP server.
 
 ---
 
@@ -38,24 +67,27 @@ For example, a speech to text program (`asr`) that accepts a WAV file and output
     * arecord
     * gstreamer_udp
     * udp_raw
-    * sounddevice (TODO)
-    * pyaudio (TODO)
+    * sounddevice
+    * pyaudio
 * wake 
     * porcupine1
     * precise-lite
     * snowboy
 * vad
     * silero
-    * energy (TODO)
+    * energy
+    * webrtcvad
 * asr 
     * vosk
     * coqui-stt
     * whisper
     * whisper-cpp
+    * faster-whisper
     * pocketsphinx
 * intent
     * regex
 * handle
+    * home_assistant_conversation
 * tts 
     * larynx1 (TODO)
     * larynx2
@@ -78,44 +110,13 @@ For example, a speech to text program (`asr`) that accepts a WAV file and output
     * coqui-stt
     * whisper
     * whisper-cpp
+    * faster-whisper
     * pocketsphinx
 * tts
-    * larynx1
+    * larynx1 (TODO)
     * larynx2
     * coqui-tts
     * mimic3
-
-
-## Pipelines
-
-1. mic - audio is recorded from a microphone or satellite
-2. wake - wake word (or hotword) is detected in audio
-3. vad - start/end of voice command are detected in audio
-4. asr - audio is transcribed into text
-5. intent - user's intent is recognized from text
-6. handle - intent is handled and a text response is produced
-7. tts - text is synthesized into audio
-8. snd - synthesized audio is played through speakers or satellite
-
-
-## Adapters
-
-In `bin/`:
-
-* `asr_adapter_raw2text.py`
-    * Raw audio stream in, text or JSON out
-* `asr_adapter_wav2text.py`
-    * WAV file(s) in, text or JSON out (per file)
-* `handle_adapter_json.py`
-    * Intent JSON in, text response out
-* `handle_adapter_text.py`
-    * Transcription in, text response out
-* `mic_adapter_raw.py`
-    * Raw audio stream in
-* `snd_adapter_raw.py`
-    * Raw audio stream out
-* `client_unix_socket.py`
-    * Send/receive events over Unix domain socket
 
 
 ## Utilities
@@ -127,7 +128,7 @@ In `bin/`:
 * `asr_transcribe_stream.py`
 * `handle_handle.py`
 * `intent_recognize.py`
-* TODO `mic_record_wav.py`
+* `mic_record_sample.py`
 * `server_run.py`
 * `snd_play.py`
 * `tts_speak.py`
@@ -135,63 +136,83 @@ In `bin/`:
 
 ## HTTP API
 
-`http://localhost:12101/<endpoint>`
+`http://localhost:13331/<endpoint>`
 
-* `/api/run-pipeline`
+Unless overridden, the pipeline named "default" is used.
+
+* `/pipeline/run`
     * Runs a full pipeline from mic to snd
-    * Can accept WAV audio input
-    * Produces pipeline result JSON or tts WAV audio (skip snd)
-* `/api/listen-for-command`
-    * Runs a pipeline until intent is handled
-    * Can accept WAV audio input
-    * Produces intent JSON
-* `/api/wait-for-wake`
-    * Runs a pipeline until wake word is detected
-    * Can accept WAV audio input
-    * Produces detection JSON
-* `/api/speech-to-text`
-    * Runs a pipeline until speech is transcribed
-    * Can accept WAV audio input
-    * Produces transcription JSON
-* `/api/speech-to-intent`
-    * Runs a pipeline until intent is recognized
-    * Can accept WAV audio input
-    * Produces intent JSON
-* `/api/text-to-intent`
-    * Runs a pipeline until intent is recognized, skipping audio input
-    * Produces intent JSON
-* `/api/text-to-speech`
-    * Synthesizes audio from text
-    * Produces WAV output or plays via snd
-* `/api/play-wav`
+    * Produces JSON
+    * Override `pipeline` or:
+        * `wake_program`
+        * `asr_program`
+        * `intent_program`
+        * `handle_program`
+        * `tts_program`
+        * `snd_program`
+    * Skip stages with `start_after`
+        * `wake` - skip detection, body is detection name (text)
+        * `asr` - skip recording, body is transcript (text) or WAV audio
+        * `intent` - skip recognition, body is intent/not-recognized event (JSON)
+        * `handle` - skip handling, body is handle/not-handled event (JSON)
+        * `tts` - skip synthesis, body is WAV audio
+    * Stop early with `stop_after`
+        * `wake` - only detection
+        * `asr` - detection and transcription
+        * `intent` - detection, transcription, recognition
+        * `handle` - detection, transcription, recognition, handling
+        * `tts` - detection, transcription, recognition, handling, synthesis
+* `/wake/detect`
+    * Detect wake word in WAV input
+    * Produces JSON
+    * Override `wake_program` or `pipeline`
+* `/asr/transcribe`
+    * Transcribe audio from WAV input
+    * Produces JSON
+    * Override `asr_program` or `pipeline`
+* `/intent/recognize`
+    * Recognizes intent from text body (POST) or `text` (GET)
+    * Produces JSON
+    * Override `intent_program` or `pipeline`
+* `/handle/handle`
+    * Handles intent/text from body (POST) or `input` (GET)
+    * `Content-Type` must be `application/json` for intent input
+    * Override `handle_program` or `pipeline`
+* `/tts/synthesize`
+    * Synthesizes audio from text body (POST) or `text` (GET)
+    * Produces WAV audio
+    * Override `tts_program` or `pipeline`
+* `/tts/speak`
+    * Plays audio from text body (POST)  or `text` (GET)
+    * Produces JSON
+    * Override `tts_program`, `snd_program`, or `pipeline`
+* `/snd/play`
     * Plays WAV audio via snd
-* `/api/version`
+    * Override `snd_program` or `pipeline`
+* `/version`
     * Returns version info
 
 ## WebSocket API
 
-`ws://localhost:12101/<endpoint>`
+`ws://localhost:13331/<endpoint>`
 
-* `/api/stream-pipeline`
-    * Runs a full pipeline from mic to snd
-    * Audio from websocket as raw chunks
-    * Produces pipeline result JSON or tts audio (skip snd)
-* `/api/stream-command`
-    * Runs a pipeline until intent is handled
-    * Audio from websocket as raw chunks
-    * Produces intent JSON
-* `/api/stream-to-wake`
-    * Runs a pipeline until wake word is detected
-    * Audio from websocket as raw chunks
-    * Produces detection JSON
-* `/api/stream-to-text`
-    * Runs a pipeline until speech is transcribed
-    * Audio from websocket as raw chunks
-    * Produces transcription JSON
-* `/api/stream-to-intent`
-    * Runs a pipeline until intent is recognized
-    * Audio from websocket as raw chunks
-    * Produces intent JSON
-* `/api/play-stream`
-    * Plays raw audio via snd
-    * Audio from websocket as raw chunks
+Audio streams are raw PCM in binary messages.
+
+Use the `rate`, `width`, and `channels` parameters for sample rate (hertz), width (bytes), and channel count. By default, input audio is 16Khz 16-bit mono, and output audio is 22Khz 16-bit mono.
+
+The client can "end" the audio stream by sending an empty binary message.
+
+* `/wake/detect`
+    * Detect wake word from websocket audio stream
+    * Produces a JSON message when audio stream ends
+    * Override `wake_program` or `pipeline`
+* `/asr/transcribe`
+    * Transcribe a websocket audio stream
+    * Produces a JSON message when audio stream ends
+    * Override `asr_program` or `pipeline`
+* `/snd/play`
+    * Play a websocket audio stream
+    * Produces a JSON message when audio stream ends
+    * Override `snd_program` or `pipeline`
+    
+TODO: /pipeline/run /tts/speak
