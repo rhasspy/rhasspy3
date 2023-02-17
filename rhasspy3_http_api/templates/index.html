@@ -4,11 +4,256 @@
 
 <ul>
   <li>
-    <a href="{{ url_prefix }}/asr.html">Speech to Text</a>
+    <a href="#asr">Speech to Text (asr)</a>
   </li>
   <li>
-    <a href="{{ url_prefix }}/tts.html">Text to Speech</a>
+    <a href="#tts">Text to Speech (tts)</a>
   </li>
 </ul>
+
+<!-- ###################################################################### -->
+
+<h2 id="asr">Speech to Text (asr)</h2>
+
+<h3>Transcribe</h3>
+
+<ol>
+  <li>
+    Mic Program:
+    <select id="asr_mic_program" onchange="asr_mic_change()">
+      <option value="">WAV file</option>
+      <option value="">Browser</option>
+      <option value="">default</option>
+      {% set programs = config.programs["mic"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li id="asr_wav_li">
+    WAV file: <input id="asr_wav" type="file">
+  </li>
+  <li id="asr_vad_li" hidden>
+    VAD Program:
+    <select id="asr_vad_program">
+      <option value="">default</option>
+      {% set programs = config.programs["vad"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    ASR Program:
+    <select id="asr_program">
+      <option value="">default</option>
+      {% set programs = config.programs["asr"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    <button onclick="asr_transcribe()">Transcribe</button>
+  </li>
+  <li>
+    Status: <span id="asr_status"></span>
+  </li>
+  <li>
+    Transcript: <span id="asr_transcript"></span>
+  </li>
+</ol>
+
+<script type="text/javascript">
+
+function asr_mic_change() {
+    const micIndex = q("#asr_mic_program").selectedIndex;
+    q("#asr_wav_li").hidden = (micIndex != 0);
+    q("#asr_vad_li").hidden = (micIndex == 0);
+
+    if (micIndex == 1) {
+        // Browser mic
+    }
+}
+
+function asr_transcribe() {
+    const micIndex = q("#asr_mic_program").selectedIndex;
+    if (micIndex == 0) {
+        asr_transcribe_wav();
+        return;
+    } else if (micIndex == 1) {
+        asr_transcribe_mic();
+        return;
+    }
+
+    const micProgram = q("#asr_mic_program").value;
+    const asrProgram = q("#asr_program").value;
+
+    const status = q("#asr_status");
+    status.innerText = "Transcribing";
+
+    const transcript = q("#asr_transcript");
+    transcript.innerText = "";
+
+    const startTime = performance.now();
+        fetch("{{ url_prefix }}" + "asr/transcribe?asr_program="
+              + encodeURIComponent(asrProgram)
+              + "&mic_program=" + encodeURIComponent(micProgram))
+        .then(response => {
+            const endTime = performance.now();
+            status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+            return response;
+        })
+        .then(response => response.json())
+        .then(response => response.data.text)
+        .then(text => {
+            transcript.innerText = text;
+        })
+        .catch(error => alert(error));
+}
+
+function asr_transcribe_wav() {
+    const asrProgram = q("#asr_program").value;
+
+    const status = q("#asr_status");
+    status.innerText = "Loading";
+    
+    const transcript = q("#asr_transcript");
+    transcript.innerText = "";
+    
+    const files = q("#asr_wav").files;
+    if (files.length < 1) {
+        alert("No file");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function() {
+        const wavData = this.result;
+        status.innerText = "Transcribing";
+
+        const startTime = performance.now();
+        fetch("{{ url_prefix }}" + "asr/transcribe?asr_program=" + encodeURIComponent(asrProgram),
+              { method: "POST", body: wavData })
+            .then(response => {
+                const endTime = performance.now();
+                status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+                return response;
+            })
+            .then(response => response.json())
+            .then(response => response.data.text)
+            .then(text => {
+                transcript.innerText = text;
+            })
+            .catch(error => alert(error));
+    }
+
+    reader.readAsArrayBuffer(files[0]);
+}
+
+</script>
+
+<!-- ###################################################################### -->
+
+<h2 id="tts">Text to Speech (tts)</h2>
+
+<h3>Speak</h3>
+
+<ol>
+  <li>
+    Text: <input id="tts_text" type="text" onkeypress="tts_keypress(event)">
+  </li>
+  <li>
+    TTS Program:
+    <select id="tts_program">
+      <option value="">default</option>
+      {% set programs = config.programs["tts"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    Snd Program:
+    <select id="tts_snd_program">
+      <option value="">Browser</option>
+      <option value="">default</option>
+      {% set programs = config.programs["snd"] | sort %}
+      {% for program in programs: %}
+      <option>{{ program }}</option>
+      {% endfor %}
+    </select>
+  </li>
+  <li>
+    <button onclick="tts_speak()">Speak</button>
+  </li>
+  <li>
+    Status: <span id="tts_status"></span>
+  </li>
+  <li>
+    <audio id="tts_audio" preload="none" controls autoplay></audio>
+  </li>
+</ol>
+
+<script type="text/javascript">
+
+function tts_keypress(e) {
+    if (e.keyCode == 13) {
+        e.preventDefault();
+        tts_speak();
+    }
+}
+
+function tts_speak() {
+    if (q("#tts_snd_program").selectedIndex == 0) {
+        tts_synthesize();
+        return;
+    }
+
+    const ttsProgram = q("#tts_program").value;
+    const sndProgram = q("#tts_snd_program").value;
+
+    const status = q("#tts_status");
+    status.innerText = "Speaking";
+    
+    const text = q("#tts_text").value;
+    
+    const startTime = performance.now();
+    fetch("{{ url_prefix }}" + "tts/speak?tts_program="
+          + encodeURIComponent(ttsProgram)
+          + "&snd_program=" + encodeURIComponent(sndProgram),
+          { method: "POST", body: text })
+        .then(response => {
+            const endTime = performance.now();
+            status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+            return response;
+        })
+        .catch(error => alert(error));
+}
+
+function tts_synthesize() {
+    const ttsProgram = q("#tts_program").value;
+
+    const status = q("#tts_status");
+    status.innerText = "Synthesizing";
+    
+    const text = q("#tts_text").value;
+    
+    const startTime = performance.now();
+    fetch("{{ url_prefix }}" + "tts/synthesize?tts_program=" + encodeURIComponent(ttsProgram),
+          { method: "POST", body: text })
+        .then(response => {
+            const endTime = performance.now();
+            status.innerText = "Done in " + (endTime - startTime) / 1000 + " second(s)";
+            return response;
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            q('#tts_audio').src = URL.createObjectURL(blob);
+        })
+        .catch(error => alert(error));
+}
+
+</script>
 
 {% endblock %}

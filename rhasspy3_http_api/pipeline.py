@@ -1,8 +1,9 @@
 import argparse
 import asyncio
 import logging
-from collections import deque
-from typing import Optional, Deque, Union
+import io
+from enum import Enum
+from typing import Optional, Deque, Union, IO
 
 from quart import request, Quart, Response, jsonify, websocket
 
@@ -22,8 +23,8 @@ from rhasspy3.event import Event, async_read_event, async_write_event
 from rhasspy3.mic import DOMAIN as MIC_DOMAIN
 from rhasspy3.handle import Handled, NotHandled, handle
 from rhasspy3.program import create_process
-from rhasspy3.intent import recognize, Intent
-from rhasspy3.wake import detect
+from rhasspy3.intent import recognize, Intent, NotRecognized
+from rhasspy3.wake import Detection
 from rhasspy3.vad import segment, DOMAIN as VAD_DOMAIN, VoiceStopped, VoiceStarted
 from rhasspy3.tts import synthesize_stream
 from rhasspy3.pipeline import run as run_pipeline, StopAfterDomain
@@ -31,20 +32,34 @@ from rhasspy3.pipeline import run as run_pipeline, StopAfterDomain
 _LOGGER = logging.getLogger(__name__)
 
 
+class StartAfterDomain(str, Enum):
+    WAKE = "wake"
+    ASR = "asr"
+    INTENT = "intent"
+    HANDLE = "handle"
+    TTS = "tts"
+
+
 def add_pipeline(
     app: Quart, rhasspy: Rhasspy, pipeline: PipelineConfig, args: argparse.Namespace
 ) -> None:
-    @app.route("/api/listen-for-command", methods=["GET", "POST"])
-    async def api_listen_for_command() -> Response:
-        mic_program = request.args.get("mic_program", pipeline.mic)
-        wake_program = request.args.get("wake_program", pipeline.wake)
-        vad_program = request.args.get("vad_program", pipeline.vad)
-        asr_program = request.args.get("asr_program", pipeline.asr)
-        intent_program = request.args.get("intent_program", pipeline.intent)
-        handle_program = request.args.get("handle_program", pipeline.handle)
-        tts_program = request.args.get("tts_program", pipeline.tts)
-        snd_program = request.args.get("snd_program", pipeline.snd)
+    @app.route("/pipeline/run", methods=["POST"])
+    async def http_pipeline_run() -> Response:
+        running_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+        mic_program = request.args.get("mic_program") or running_pipeline.mic
+        wake_program = request.args.get("wake_program") or running_pipeline.wake
+        vad_program = request.args.get("vad_program") or running_pipeline.vad
+        asr_program = request.args.get("asr_program") or running_pipeline.asr
+        intent_program = request.args.get("intent_program") or running_pipeline.intent
+        handle_program = request.args.get("handle_program") or running_pipeline.handle
+        tts_program = request.args.get("tts_program") or running_pipeline.tts
+        snd_program = request.args.get("snd_program") or running_pipeline.snd
         #
+        start_after = request.args.get("start_after")
         stop_after = request.args.get("stop_after")
         #
         samples_per_chunk = int(
@@ -55,7 +70,7 @@ def add_pipeline(
         )
 
         _LOGGER.debug(
-            "listen-for-command: "
+            "run: "
             "mic=%s,"
             "wake=%s,"
             "vad=%s,"
@@ -64,6 +79,7 @@ def add_pipeline(
             "handle=%s,"
             "tts=%s,"
             "snd=%s,"
+            "start_after=%s "
             "stop_after=%s",
             mic_program,
             wake_program,
@@ -73,8 +89,59 @@ def add_pipeline(
             handle_program,
             tts_program,
             snd_program,
+            start_after,
             stop_after,
         )
+
+        wake_detection: Optional[Detection] = None
+        asr_wav_in: Optional[IO[bytes]] = None
+        asr_transcript: Optional[Transcript] = None
+        intent_result: Optional[Union[Intent, NotRecognized]] = None
+        handle_result: Optional[Union[Handled, NotHandled]] = None
+        tts_wav_in: Optional[IO[bytes]] = None
+
+        if start_after is not None:
+            # Determine where to start in the pipeline
+            start_after = StartAfterDomain(start_after)
+            if start_after == StartAfterDomain.WAKE:
+                # Body is detected wake name
+                name = (await request.data).decode()
+                wake_detection = Detection(name=name)
+            elif start_after == StartAfterDomain.ASR:
+                # Body is transcript or WAV
+                if request.content_type == "audio/wav":
+                    wav_bytes = await request.data
+                    asr_wav_in = io.BytesIO(wav_bytes)
+                else:
+                    text = (await request.data).decode()
+                    asr_transcript = Transcript(text=text)
+            elif start_after == StartAfterDomain.INTENT:
+                # Body is JSON
+                event = Event.from_dict(await request.json)
+                if Intent.is_type(event.type):
+                    intent_result = Intent.from_event(event)
+                elif NotRecognized.is_type(event.type):
+                    intent_result = NotRecognized.from_event(event)
+                else:
+                    raise ValueError(f"Unexpected event type: {event.type}")
+            elif start_after == StartAfterDomain.HANDLE:
+                # Body is text or JSON
+                if request.content_type == "application/json":
+                    event = Event.from_dict(await request.json)
+                    if Handled.is_type(event.type):
+                        handle_result = Handled.from_event(event)
+                    elif NotRecognized.is_type(event.type):
+                        handle_result = NotHandled.from_event(event)
+                    else:
+                        raise ValueError(f"Unexpected event type: {event.type}")
+                else:
+                    # Plain text
+                    text = (await request.data).decode()
+                    handle_result = Handled(text=text)
+            elif start_after == StartAfterDomain.TTS:
+                # Body is or WAV
+                wav_bytes = await request.data
+                tts_wav_in = io.BytesIO(wav_bytes)
 
         pipeline_result = await run_pipeline(
             rhasspy,
@@ -83,16 +150,22 @@ def add_pipeline(
             asr_chunks_to_buffer=asr_chunks_to_buffer,
             mic_program=mic_program,
             wake_program=wake_program,
+            wake_detection=wake_detection,
             asr_program=asr_program,
+            asr_transcript=asr_transcript,
+            asr_wav_in=asr_wav_in,
             vad_program=vad_program,
             intent_program=intent_program,
+            intent_result=intent_result,
             handle_program=handle_program,
+            handle_result=handle_result,
             tts_program=tts_program,
+            tts_wav_in=tts_wav_in,
             snd_program=snd_program,
-            stop_after=StopAfterDomain(stop_after) if args.stop_after else None,
+            stop_after=StopAfterDomain(stop_after) if stop_after else None,
         )
 
-        return jsonify(pipeline_result.to_dict())
+        return jsonify(pipeline_result.to_event_dict())
 
     @app.websocket("/api/stream-to-stream")
     async def ws_api_stream_to_stream() -> None:

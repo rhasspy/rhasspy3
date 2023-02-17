@@ -24,8 +24,14 @@ def add_snd(
 ) -> None:
     @app.route("/snd/play", methods=["POST"])
     async def http_snd_play() -> Response:
+        """Play WAV file."""
         wav_bytes = await request.data
-        snd_program = request.args.get("snd_program", pipeline.snd)
+        snd_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+        snd_program = request.args.get("snd_program") or snd_pipeline.snd
         assert snd_program, "Missing program for snd"
 
         samples_per_chunk = int(
@@ -46,7 +52,13 @@ def add_snd(
 
     @app.websocket("/snd/play")
     async def ws_snd_play():
-        snd_program = websocket.args.get("snd_program", pipeline.snd)
+        """Play websocket audio stream."""
+        snd_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+        snd_program = websocket.args.get("snd_program") or snd_pipeline.snd
         assert snd_program, "Missing program for snd"
 
         rate = int(websocket.args.get("rate", DEFAULT_OUT_RATE))

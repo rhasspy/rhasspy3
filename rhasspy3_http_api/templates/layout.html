@@ -5,10 +5,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="{{ url_prefix }}/img/favicon.png">
+    <link rel="stylesheet" href="{{ url_prefix }}/css/main.css">
     <title>Rhasspy</title>
   </head>
   <body>
-    <div>
+    <div id="header">
       <a href="{{ url_prefix }}/">
         <img id="banner" title="Banner" src="{{ url_prefix }}/img/banner.png">
       </a>
@@ -16,4 +17,10 @@
 
     {% block body %}{% endblock %}
   </body>
+
+  <script type="text/javascript">
+    function q(selector) {
+        return document.querySelector(selector);
+    }
+  </script>
 </html>

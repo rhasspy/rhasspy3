@@ -1,15 +1,15 @@
 import io
 import logging
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import Enum
-from typing import IO, Deque, Optional, Union
+from typing import IO, Any, Deque, Dict, Optional, Union
 
 from .asr import DOMAIN as ASR_DOMAIN
 from .asr import Transcript, transcribe
 from .config import CommandConfig, PipelineConfig, PipelineProgramConfig
 from .core import Rhasspy
-from .event import Event, async_read_event
+from .event import Event, Eventable, async_read_event
 from .handle import Handled, NotHandled, handle
 from .intent import Intent, NotRecognized, recognize
 from .mic import DOMAIN as MIC_DOMAIN
@@ -29,6 +29,18 @@ class PipelineResult(DataClassJsonMixin):
     asr_transcript: Optional[Transcript] = None
     intent_result: Optional[Union[Intent, NotRecognized]] = None
     handle_result: Optional[Union[Handled, NotHandled]] = None
+
+    def to_event_dict(self) -> Dict[str, Any]:
+        event_dict: Dict[str, Any] = {}
+        for field in fields(self):
+            value = getattr(self, field.name)
+            if value is None:
+                event_dict[field.name] = {}
+            else:
+                assert isinstance(value, Eventable)
+                event_dict[field.name] = value.event().to_dict()
+
+        return event_dict
 
 
 class StopAfterDomain(str, Enum):
@@ -79,63 +91,70 @@ async def run(
     tts_program = tts_program or pipeline.tts
     snd_program = snd_program or pipeline.snd
 
-    # Speech to text
-    if asr_wav_in is not None:
-        # WAV input
-        if stop_after == StopAfterDomain.WAKE:
-            return pipeline_result
+    skip_asr = (
+        (intent_result is not None)
+        or (handle_result is not None)
+        or (tts_wav_in is not None)
+    )
 
-        asr_wav_in.seek(0)
-        assert asr_program is not None, "No asr program"
-        asr_transcript = await transcribe(
-            rhasspy, asr_program, asr_wav_in, samples_per_chunk
-        )
+    if not skip_asr:
+        # Speech to text
+        if asr_wav_in is not None:
+            # WAV input
+            if stop_after == StopAfterDomain.WAKE:
+                return pipeline_result
 
-        if asr_after is not None:
-            await run_command(rhasspy, asr_after)
-    elif asr_transcript is None:
-        # Mic input
-        assert mic_program is not None, "No asr program"
-
-        if wake_program is None:
-            # No wake
+            asr_wav_in.seek(0)
             assert asr_program is not None, "No asr program"
-            assert vad_program is not None, "No vad program"
-            await _mic_asr(
-                rhasspy, mic_program, asr_program, vad_program, pipeline_result
-            )
-        elif stop_after == StopAfterDomain.WAKE:
-            # Audio input, wake word detection, segmentation, speech to text
-            assert wake_program is not None, "No vad program"
-            await _mic_wake(
-                rhasspy,
-                mic_program,
-                wake_program,
-                pipeline_result,
-                wake_detection=wake_detection,
-            )
-            return pipeline_result
-        else:
-            assert wake_program is not None, "No vad program"
-            assert asr_program is not None, "No asr program"
-            assert vad_program is not None, "No vad program"
-            await _mic_wake_asr(
-                rhasspy,
-                mic_program,
-                wake_program,
-                asr_program,
-                vad_program,
-                pipeline_result,
-                asr_chunks_to_buffer=asr_chunks_to_buffer,
-                wake_detection=wake_detection,
-                wake_after=wake_after,
+            asr_transcript = await transcribe(
+                rhasspy, asr_program, asr_wav_in, samples_per_chunk
             )
 
-        if asr_after is not None:
-            await run_command(rhasspy, asr_after)
+            if asr_after is not None:
+                await run_command(rhasspy, asr_after)
+        elif asr_transcript is None:
+            # Mic input
+            assert mic_program is not None, "No asr program"
 
-        asr_transcript = pipeline_result.asr_transcript
-        pipeline_result.asr_transcript = asr_transcript
+            if wake_program is None:
+                # No wake
+                assert asr_program is not None, "No asr program"
+                assert vad_program is not None, "No vad program"
+                await _mic_asr(
+                    rhasspy, mic_program, asr_program, vad_program, pipeline_result
+                )
+            elif stop_after == StopAfterDomain.WAKE:
+                # Audio input, wake word detection, segmentation, speech to text
+                assert wake_program is not None, "No vad program"
+                await _mic_wake(
+                    rhasspy,
+                    mic_program,
+                    wake_program,
+                    pipeline_result,
+                    wake_detection=wake_detection,
+                )
+                return pipeline_result
+            else:
+                assert wake_program is not None, "No vad program"
+                assert asr_program is not None, "No asr program"
+                assert vad_program is not None, "No vad program"
+                await _mic_wake_asr(
+                    rhasspy,
+                    mic_program,
+                    wake_program,
+                    asr_program,
+                    vad_program,
+                    pipeline_result,
+                    asr_chunks_to_buffer=asr_chunks_to_buffer,
+                    wake_detection=wake_detection,
+                    wake_after=wake_after,
+                )
+
+            if asr_after is not None:
+                await run_command(rhasspy, asr_after)
+
+            asr_transcript = pipeline_result.asr_transcript
+            pipeline_result.asr_transcript = asr_transcript
 
     if (stop_after == StopAfterDomain.ASR) or (
         (intent_program is None) and (handle_program is None)

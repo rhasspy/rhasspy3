@@ -17,12 +17,18 @@ def add_tts(
 ) -> None:
     @app.route("/tts/synthesize", methods=["GET", "POST"])
     async def http_tts_synthesize() -> Response:
+        """Synthesize a WAV file from text."""
         if request.method == "GET":
             text = request.args["text"]
         else:
             text = (await request.data).decode()
 
-        tts_program = request.args.get("tts_program", pipeline.tts)
+        tts_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+        tts_program = request.args.get("tts_program") or tts_pipeline.tts
         assert tts_program, "No tts program"
         _LOGGER.debug("synthesize: tts=%s, text='%s'", tts_program, text)
 
@@ -35,13 +41,19 @@ def add_tts(
 
     @app.route("/tts/speak", methods=["GET", "POST"])
     async def http_tts_speak() -> Response:
+        """Synthesize audio from text and play."""
         if request.method == "GET":
             text = request.args["text"]
         else:
             text = (await request.data).decode()
 
-        tts_program = request.args.get("tts_program", pipeline.tts)
-        snd_program = request.args.get("snd_program", pipeline.snd)
+        tts_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+        tts_program = request.args.get("tts_program") or tts_pipeline.tts
+        snd_program = request.args.get("snd_program") or tts_pipeline.snd
         samples_per_chunk = int(
             request.args.get("samples_per_chunk", args.samples_per_chunk)
         )

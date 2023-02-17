@@ -28,10 +28,16 @@ def add_wake(
 ) -> None:
     @app.route("/wake/detect", methods=["GET", "POST"])
     async def http_wake_detect() -> Response:
-        wake_program = request.args.get("wake_program", pipeline.wake)
+        """Detect wake word in WAV file."""
+        wav_bytes = await request.data
+        wake_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+        wake_program = request.args.get("wake_program") or wake_pipeline.wake
         assert wake_program, "Missing program for wake"
 
-        wav_bytes = await request.data
         if wav_bytes:
             # Detect from WAV
             samples_per_chunk = int(
@@ -62,7 +68,7 @@ def add_wake(
                     )
         else:
             # Detect from mic
-            mic_program = request.args.get("mic_program", pipeline.mic)
+            mic_program = request.args.get("mic_program") or wake_pipeline.mic
             assert mic_program, "Missing program for mic"
 
             _LOGGER.debug("detect: mic=%s, wake=%s", mic_program, wake_program)
@@ -78,7 +84,13 @@ def add_wake(
 
     @app.websocket("/wake/detect")
     async def ws_wake_detect():
-        wake_program = websocket.args.get("wake_program", pipeline.wake)
+        """Detect wake word in websocket audio stream."""
+        wake_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+        wake_program = websocket.args.get("wake_program") or wake_pipeline.wake
         assert wake_program, "Missing program for wake"
 
         rate = int(websocket.args.get("rate", DEFAULT_IN_RATE))

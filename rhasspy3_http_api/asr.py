@@ -24,8 +24,15 @@ def add_asr(
 ) -> None:
     @app.route("/asr/transcribe", methods=["POST"])
     async def http_asr_transcribe() -> Response:
+        """Transcribe a WAV file."""
         wav_bytes = await request.data
-        asr_program = request.args.get("asr_program", pipeline.asr)
+        asr_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+
+        asr_program = request.args.get("asr_program") or asr_pipeline.asr
         assert asr_program, "Missing program for asr"
 
         samples_per_chunk = int(
@@ -44,7 +51,13 @@ def add_asr(
 
     @app.websocket("/asr/transcribe")
     async def ws_asr_transcribe():
-        asr_program = websocket.args.get("asr_program", pipeline.asr)
+        """Transcribe a websocket audio stream."""
+        asr_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in request.args
+            else pipeline
+        )
+        asr_program = websocket.args.get("asr_program") or asr_pipeline.asr
         assert asr_program, "Missing program for asr"
 
         rate = int(websocket.args.get("rate", DEFAULT_IN_RATE))

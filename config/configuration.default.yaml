@@ -170,7 +170,7 @@ programs:
   intent:
     regex:
       command: |
-        bin/regex.py -i TurnOn turn on (the )?(?P<name>.+)
+        bin/regex.py -i TurnOn 'turn on (the )?(?P<name>.+)'
 
   handle:
     repeat:
