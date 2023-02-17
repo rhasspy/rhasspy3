@@ -45,6 +45,7 @@ CTRL+C to quit
 Install [Silero](https://github.com/snakers4/silero-vad/):
 
 ```sh
+mkdir -p config/programs/vad/
 cp -R programs/vad/silero config/programs/vad/
 config/programs/vad/silero/script/setup
 ```
@@ -81,6 +82,7 @@ Say something for a few seconds and then wait for the program to finish. Afterwa
 Install [Vosk](https://alphacephei.com/vosk/):
 
 ```sh
+mkdir -p config/programs/asr/
 cp -R programs/asr/vosk config/programs/asr/
 config/programs/asr/vosk/script/setup
 ```
@@ -210,6 +212,7 @@ script/http_server --debug --server asr vosk
 Install [Porcupine](https://github.com/Picovoice/porcupine):
 
 ```sh
+mkdir -p config/programs/wake/
 cp -R programs/wake/porcupine1 config/programs/wake/
 config/programs/wake/porcupine1/script/setup
 ```
@@ -322,6 +325,7 @@ pipelines:
 Install date time script:
 
 ```sh
+mkdir -p config/programs/handle/
 cp -R programs/handle/date_time config/programs/handle/
 ```
 
@@ -392,6 +396,7 @@ pipelines:
 Install [Larynx 2](https://github.com/rhasspy/larynx2):
 
 ```sh
+mkdir -p config/programs/tts/
 cp -R programs/tts/larynx2 config/programs/tts/
 config/programs/tts/larynx2/script/setup.py
 ```

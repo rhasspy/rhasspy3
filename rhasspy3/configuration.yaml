@@ -1,139 +1,28 @@
 programs:
-  asr:
-    vosk:
-      command: |
-        script/raw2text ${model}
-      adapter: |
-        asr_adapter_raw2text.py
-      template_args:
-        model: "share/vosk-model-small-en-us-0.15"
-    vosk.client:
-      command: |
-        client_unix_socket.py var/run/vosk.socket
-    coqui-stt:
-      command: |
-        script/raw2text ${model}
-      adapter: |
-        asr_adapter_raw2text.py
-      template_args:
-        model: "share/english_v1.0.0-large-vocab"
-    coqui-stt.client:
-      command: |
-        client_unix_socket.py var/run/coqui-stt.socket
-    pocketsphinx:
-      command: |
-        script/raw2text ${model}
-      adapter: |
-        asr_adapter_raw2text.py
-      template_args:
-        model: "share/en-us_pocketsphinx-cmu"
-    pocketsphinx.client:
-      command: |
-        client_unix_socket.py var/run/pocketsphinx.socket
-    whisper:
-      command: |
-        script/wav2text --language ${language} ${model} {wav_file}
-      adapter: |
-        asr_adapter_wav2text.py
-      template_args:
-        language: "en"
-        model: "tiny.en"
-    whisper.client:
-      command: |
-        client_unix_socket.py var/run/whisper.socket
-    whisper-cpp:
-      command: |
-        script/wav2text ${model} {wav_file}
-      adapter: |
-        asr_adapter_wav2text.py
-      template_args:
-        model: "share/ggml-tiny.en.bin"
-    whisper-cpp.client:
-      command: |
-        client_unix_socket.py var/run/whisper-cpp.socket
-    faster-whisper:
-      command: |
-        script/wav2text ${model} {wav_file}
-      adapter: |
-        asr_adapter_wav2text.py
-      template_args:
-        model: "share/tiny-int8"
-    faster-whisper.client:
-      command: |
-        client_unix_socket.py var/run/faster-whisper.socket
-  tts:
-    larynx2:
-      command: |
-        bin/larynx --model share/en-us-blizzard_lessac-medium.onnx --output_file -
-      adapter: |
-        tts_adapter_text2wav.py
-    larynx2.client:
-      command: |
-        client_unix_socket.py var/run/larynx2.socket
-    espeak-ng:
-      command: |
-        espeak-ng -v en-us --stdin -w ${temp_file}
-      adapter: |
-        tts_adapter_text2wav.py --temp_file
-    flite:
-      command: |
-        flite -voice ${voice} -o ${temp_file}
-      template_args:
-        voice: "cmu_us_slt"
-      adapter: |
-        tts_adapter_text2wav.py --temp_file
-    festival:
-      command: |
-        text2wave -o ${temp_file} -eval (voice_${voice})
-      template_args:
-        voice: "cmu_us_slt_arctic_hts"
-      adapter: |
-        tts_adapter_text2wav.py --temp_file
-    coqui-tts:
-      command: |
-        tts_adapter_http.py ${url} --param speaker_id ${speaker_id}
-      template_args:
-        url: "http://localhost:5002/api/tts"
-        speaker_id: ""
-    marytts:
-      command: |
-        bin/marytts.py ${url} ${voice}
-      template_args:
-        url: "http://localhost:59125/process"
-        voice: "cmu-slt-hsmm"
-      adapter: |
-        tts_adapter_text2wav.py
-    mimic3.client:
-      command: |
-        client_unix_socket.py var/run/mimic3.socket
-  vad:
-    silero:
-      command: |
-        script/speech_prob share/silero_vad.onnx
-      adapter: |
-        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 512
-    webrtcvad:
-      command: |
-        script/speech_prob 3
-      adapter: |
-        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 480
-    energy:
-      command: |
-        bin/energy_speech_prob.py --threshold 300 --width 2 --samples-per-chunk 1024
-      adapter: |
-        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 1024
+
+  # -----------
+  # Audio input
+  # -----------
   mic:
+
+    # apt-get install alsa-utils
     arecord:
       command: |
         arecord -q -r 16000 -c 1 -f S16_LE -t raw -
       adapter: |
         mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
+
+    # https://people.csail.mit.edu/hubert/pyaudio/docs/
     pyaudio:
       command: |
         script/events
+
+    # https://python-sounddevice.readthedocs.io
     sounddevice:
       command: |
         script/events
+
+    # apt-get install gstreamer1.0-tools gstreamer1.0-plugins-base
     gstreamer_udp:
       command: |
         gst-launch-1.0 -v udpsrc address=${address} port=${port} ! rawaudioparse use-sink-caps=false format=pcm pcm-format=${format} sample-rate=${rate} num-channels=${channels} ! audioconvert ! audioresample ! volume volume=3.0 ! level ! fdsink fd=1 sync=false
@@ -145,47 +34,291 @@ programs:
         port: 5000
       adapter: |
         mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
+
     udp_raw:
       command: |
         bin/udp_raw.py --host ${host} --port ${port}
       template_args:
         host: 0.0.0.0
         port: 5000
-    test_opus:
-      command: |
-        gst-launch-1.0 -v udpsrc address=192.168.1.18 port=5000 caps="application/x-rtp" ! rtpopusdepay ! opusdec ! audioconvert ! audioresample ! audio/x-raw, rate=16000, format=S16LE, channels=1 ! fdsink fd=1 sync=false
-      adapter: |
-        mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
 
+  # -------------------
+  # Wake word detection
+  # -------------------
   wake:
-    precise-lite:
-      command: |
-        .venv/bin/python3 bin/precise.py share/hey_mycroft.tflite
-      adapter: |
-        wake_adapter_raw.py
-    snowboy:
-      command: |
-        .venv/bin/python3 bin/snowboy_raw_text.py --model share/snowboy.umdl
-      adapter: |
-        wake_adapter_raw.py
+
+    # https://github.com/Picovoice/porcupine
+    # Models: see script/list_models
     porcupine1:
       command: |
         .venv/bin/python3 bin/porcupine_raw_text.py --model porcupine_linux.ppn
       adapter: |
         wake_adapter_raw.py
 
+    # https://github.com/Kitt-AI/snowboy
+    # Models included in share/
+    # Custom wake word: https://github.com/rhasspy/snowboy-seasalt
+    snowboy:
+      command: |
+        .venv/bin/python3 bin/snowboy_raw_text.py --model share/snowboy.umdl
+      adapter: |
+        wake_adapter_raw.py
+
+    # https://github.com/mycroftAI/mycroft-precise
+    # Model included in share/
+    precise-lite:
+      command: |
+        .venv/bin/python3 bin/precise.py share/hey_mycroft.tflite
+      adapter: |
+        wake_adapter_raw.py
+
+    # TODO: snowman
+    # https://github.com/Thalhammer/snowman/
+
+  # ------------------------
+  # Voice activity detection
+  # ------------------------
+  vad:
+
+    # https://github.com/snakers4/silero-vad
+    # Model included in share/
+    silero:
+      command: |
+        script/speech_prob share/silero_vad.onnx
+      adapter: |
+        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 512
+
+    # https://pypi.org/project/webrtcvad/
+    webrtcvad:
+      command: |
+        script/speech_prob 3
+      adapter: |
+        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 480
+
+    # Uses rms energy threshold.
+    # For testing only.
+    energy:
+      command: |
+        bin/energy_speech_prob.py --threshold 300 --width 2 --samples-per-chunk 1024
+      adapter: |
+        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 1024
+
+  # --------------
+  # Speech to text
+  # --------------
+  asr:
+
+    # https://alphacephei.com/vosk/
+    # Models: https://alphacephei.com/vosk/models
+    vosk:
+      command: |
+        script/raw2text ${model}
+      adapter: |
+        asr_adapter_raw2text.py
+      template_args:
+        model: "share/vosk-model-small-en-us-0.15"
+
+    # Run server: asr vosk
+    vosk.client:
+      command: |
+        client_unix_socket.py var/run/vosk.socket
+
+    # https://stt.readthedocs.io
+    # Models: https://coqui.ai/models/
+    coqui-stt:
+      command: |
+        script/raw2text ${model}
+      adapter: |
+        asr_adapter_raw2text.py
+      template_args:
+        model: "share/english_v1.0.0-large-vocab"
+
+    # Run server: asr coqui-stt
+    coqui-stt.client:
+      command: |
+        client_unix_socket.py var/run/coqui-stt.socket
+
+    # https://github.com/cmusphinx/pocketsphinx
+    # Models: https://github.com/synesthesiam/voice2json-profiles
+    pocketsphinx:
+      command: |
+        script/raw2text ${model}
+      adapter: |
+        asr_adapter_raw2text.py
+      template_args:
+        model: "share/en-us_pocketsphinx-cmu"
+
+    # Run server: asr pocketsphinx
+    pocketsphinx.client:
+      command: |
+        client_unix_socket.py var/run/pocketsphinx.socket
+
+    # https://github.com/openai/whisper
+    # Models: tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large-v1,large-v2,large
+    # Languages: af,am,ar,as,az,ba,be,bg,bn,bo,br,bs,ca,cs,cy,da,de,el,en,es,et,
+    # eu,fa,fi,fo,fr,gl,gu,ha,haw,he,hi,hr,ht,hu,hy,id,is,it,ja,jw,ka,kk,km,kn,
+    # ko,la,lb,ln,lo,lt,lv,mg,mi,mk,ml,mn,mr,ms,mt,my,ne,nl,nn,no,oc,pa,pl,ps,
+    # pt,ro,ru,sa,sd,si,sk,sl,sn,so,sq,sr,su,sv,sw,ta,te,tg,th,tk,tl,tr,tt,uk,
+    # ur,uz,vi,yi,yo,zh
+    whisper:
+      command: |
+        script/wav2text --language ${language} ${model} {wav_file}
+      adapter: |
+        asr_adapter_wav2text.py
+      template_args:
+        language: "en"
+        model: "tiny.en"
+
+    # Run server: asr whisper
+    whisper.client:
+      command: |
+        client_unix_socket.py var/run/whisper.socket
+
+    # https://github.com/ggerganov/whisper.cpp/
+    # Models: https://huggingface.co/datasets/ggerganov/whisper.cpp
+    whisper-cpp:
+      command: |
+        script/wav2text ${model} {wav_file}
+      adapter: |
+        asr_adapter_wav2text.py
+      template_args:
+        model: "share/ggml-tiny.en.bin"
+
+    # Run server: asr whisper-cpp
+    whisper-cpp.client:
+      command: |
+        client_unix_socket.py var/run/whisper-cpp.socket
+
+    # https://github.com/guillaumekln/faster-whisper/
+    # Models: https://github.com/rhasspy/models/releases/tag/v1.0
+    # (asr_faster-whisper-*)
+    faster-whisper:
+      command: |
+        script/wav2text ${model} {wav_file}
+      adapter: |
+        asr_adapter_wav2text.py
+      template_args:
+        model: "share/tiny-int8"
+
+    # Run server: asr faster-whisper
+    faster-whisper.client:
+      command: |
+        client_unix_socket.py var/run/faster-whisper.socket
+
+
+  # --------------
+  # Text to speech
+  # --------------
+  tts:
+
+    # https://github.com/rhasspy/larynx2/
+    # Models: https://github.com/rhasspy/larynx2/releases/tag/v0.0.2
+    larynx2:
+      command: |
+        bin/larynx --model share/en-us-blizzard_lessac-medium.onnx --output_file -
+      adapter: |
+        tts_adapter_text2wav.py
+
+    # Run server: tts larynx2
+    larynx2.client:
+      command: |
+        client_unix_socket.py var/run/larynx2.socket
+
+    # https://github.com/espeak-ng/espeak-ng/
+    # apt-get install espeak-ng
+    espeak-ng:
+      command: |
+        espeak-ng -v en-us --stdin -w ${temp_file}
+      adapter: |
+        tts_adapter_text2wav.py --temp_file
+
+    # http://www.festvox.org/flite/
+    # Models: https://github.com/rhasspy/models/releases/tag/v1.0
+    # (tts_flite-*)
+    flite:
+      command: |
+        flite -voice ${voice} -o ${temp_file}
+      template_args:
+        voice: "cmu_us_slt"
+      adapter: |
+        tts_adapter_text2wav.py --temp_file
+
+    # http://www.cstr.ed.ac.uk/projects/festival/
+    # apt-get install festival festival-<lang>
+    festival:
+      command: |
+        text2wave -o ${temp_file} -eval (voice_${voice})
+      template_args:
+        voice: "cmu_us_slt_arctic_hts"
+      adapter: |
+        tts_adapter_text2wav.py --temp_file
+
+    # https://tts.readthedocs.io
+    # Models: see script/list_models
+    coqui-tts:
+      command: |
+        tts_adapter_http.py ${url} --param speaker_id ${speaker_id}
+      template_args:
+        url: "http://localhost:5002/api/tts"
+        speaker_id: ""
+
+    # http://mary.dfki.de/
+    # Models: https://github.com/synesthesiam/opentts/releases/tag/v2.1
+    # (marytts-voices.tar.gz)
+    marytts:
+      command: |
+        bin/marytts.py ${url} ${voice}
+      template_args:
+        url: "http://localhost:59125/process"
+        voice: "cmu-slt-hsmm"
+      adapter: |
+        tts_adapter_text2wav.py
+
+    # Run server: tts mimic3
+    mimic3.client:
+      command: |
+        client_unix_socket.py var/run/mimic3.socket
+
+  # ------------------
+  # Intent recognition
+  # ------------------
   intent:
+
+    # Simple regex matching
     regex:
       command: |
-        bin/regex.py -i TurnOn 'turn on (the )?(?P<name>.+)'
+        bin/regex.py -i TurnOn "turn on (the )?(?P<name>.+)"
 
+    # TODO: fsticuffs
+    # https://github.com/rhasspy/rhasspy-nlu
+
+    # TODO: hassil
+    # https://github.com/home-assistant/hassil
+
+    # TODO: rapidfuzz
+    # https://github.com/rhasspy/rhasspy-fuzzywuzzy
+
+    # TODO: snips-nlu
+    # https://snips-nlu.readthedocs.io
+
+  # ---------------
+  # Intent Handling
+  # ---------------
   handle:
+
+    # Text only: repeats transcript back
     repeat:
       command: |
         cat
       shell: true
       adapter: |
         handle_adapter_text.py
+
+    # Text only: send to HA Assist
+    # https://www.home-assistant.io/docs/assist
+    #
+    # 1. Change server url
+    # 2. Put long-lived access token in etc/token
     home_assistant_conversation:
       command: |
         bin/converse.py ${url} ${token_file}
@@ -194,6 +327,8 @@ programs:
         token_file: "etc/token"
       adapter: |
         handle_adapter_text.py
+
+    # Intent only: produces canned response to regex intent system
     test:
       command: |
         name="$(jq -r .slots.name)"
@@ -202,12 +337,18 @@ programs:
       adapter: |
         handle_adapter_json.py
 
+  # ------------
+  # Audio output
+  # ------------
   snd:
+
+    # apt-get install alsa-utils
     aplay:
       command: |
         aplay -q -r 22050 -f S16_LE -c 1 -t raw
       adapter: |
         snd_adapter_raw.py --rate 22050 --width 2 --channels 1
+
     udp_raw:
       command: |
         bin/udp_raw.py --host ${host} --port ${port}
@@ -215,6 +356,7 @@ programs:
         host: 127.0.0.1
         port: 5001
 
+# -----------------------------------------------------------------------------
 
 servers:
   asr:
@@ -223,16 +365,19 @@ servers:
         script/server ${model}
       template_args:
         model: "share/vosk-model-small-en-us-0.15"
+
     coqui-stt:
       command: |
         script/server ${model}
       template_args:
         model: "share/english_v1.0.0-large-vocab"
+
     pocketsphinx:
       command: |
         script/server ${model}
       template_args:
         model: "share/en-us_pocketsphinx-cmu"
+
     whisper:
       command: |
         script/server --language ${language} --device ${device} ${model}
@@ -240,11 +385,13 @@ servers:
         language: "en"
         model: "tiny.en"
         device: "cpu"  # or cuda
+
     whisper-cpp:
       command: |
         script/server ${model}
       template_args:
         model: "share/ggml-tiny.en.bin"
+
     faster-whisper:
       command: |
         script/server --language ${language} --device ${device} ${model}
@@ -252,17 +399,21 @@ servers:
         language: "en"
         model: "share/tiny-int8"
         device: "cpu"  # or cuda
+
   tts:
     mimic3:
       command: |
         script/server --voice ${voice}
       template_args:
         voice: "en_US/ljspeech_low"
+
     larynx2:
       command: |
         script/server ${model}
       template_args:
         model: "share/en-us-blizzard_lessac-medium.onnx"
+
+# -----------------------------------------------------------------------------
 
 pipelines:
   default:
