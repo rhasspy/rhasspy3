@@ -23,7 +23,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--link-format",
-        default="https://github.com/rhasspy/larynx2/releases/download/v0.0.2/libwhisper_{platform}.tar.gz",
+        default="https://github.com/rhasspy/models/releases/download/v1.0/libwhisper_{platform}.tar.gz",
         help="Format string for download URLs",
     )
     args = parser.parse_args()

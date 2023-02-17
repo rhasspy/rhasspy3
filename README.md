@@ -204,6 +204,16 @@ Use the `rate`, `width`, and `channels` parameters for sample rate (hertz), widt
 
 The client can "end" the audio stream by sending an empty binary message.
 
+* `/pipeline/asr-tts`
+    * Run pipeline from asr (stream in) to tts (stream out)
+    * Produces JSON messages as events happen
+    * Override `pipeline` or:
+        * `asr_program`
+        * `vad_program`
+        * `handle_program`
+        * `tts_program`
+    * Use `in_rate`, `in_width`, `in_channels` for audio input format
+    * Use `out_rate`, `out_width`, `out_channels` for audio output format
 * `/wake/detect`
     * Detect wake word from websocket audio stream
     * Produces a JSON message when audio stream ends
@@ -216,5 +226,3 @@ The client can "end" the audio stream by sending an empty binary message.
     * Play a websocket audio stream
     * Produces a JSON message when audio stream ends
     * Override `snd_program` or `pipeline`
-    
-TODO: /pipeline/run /tts/speak

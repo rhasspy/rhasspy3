@@ -176,7 +176,7 @@ def add_pipeline(
 
         return jsonify(pipeline_result.to_event_dict())
 
-    @app.websocket("/pipeline/stream")
+    @app.websocket("/pipeline/asr-tts")
     async def ws_api_stream_to_stream() -> None:
         used_pipeline = pipeline
         pipeline_name = websocket.args.get("pipeline")
