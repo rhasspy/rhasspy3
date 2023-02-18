@@ -51,26 +51,32 @@ programs:
     # Models: see script/list_models
     porcupine1:
       command: |
-        .venv/bin/python3 bin/porcupine_raw_text.py --model porcupine_linux.ppn
+        .venv/bin/python3 bin/porcupine_raw_text.py --model ${model}
       adapter: |
         wake_adapter_raw.py
+      template_args:
+        model: porcupine_linux.ppn
 
     # https://github.com/Kitt-AI/snowboy
     # Models included in share/
     # Custom wake word: https://github.com/rhasspy/snowboy-seasalt
     snowboy:
       command: |
-        .venv/bin/python3 bin/snowboy_raw_text.py --model share/snowboy.umdl
+        .venv/bin/python3 bin/snowboy_raw_text.py --model ${model}
       adapter: |
         wake_adapter_raw.py
+      template_args:
+        model: share/snowboy.umdl
 
     # https://github.com/mycroftAI/mycroft-precise
     # Model included in share/
     precise-lite:
       command: |
-        .venv/bin/python3 bin/precise.py share/hey_mycroft.tflite
+        .venv/bin/python3 bin/precise.py ${model}
       adapter: |
         wake_adapter_raw.py
+      template_args:
+        model: share/hey_mycroft.tflite
 
     # TODO: snowman
     # https://github.com/Thalhammer/snowman/
@@ -84,24 +90,30 @@ programs:
     # Model included in share/
     silero:
       command: |
-        script/speech_prob share/silero_vad.onnx
+        script/speech_prob ${model}
       adapter: |
         vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 512
+      template_args:
+        model: share/silero_vad.onnx
 
     # https://pypi.org/project/webrtcvad/
     webrtcvad:
       command: |
-        script/speech_prob 3
+        script/speech_prob ${sensitivity}
       adapter: |
         vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 480
+      template_args:
+        sensitivity: 3
 
     # Uses rms energy threshold.
     # For testing only.
     energy:
       command: |
-        bin/energy_speech_prob.py --threshold 300 --width 2 --samples-per-chunk 1024
+        bin/energy_speech_prob.py --threshold ${threshold} --width 2 --samples-per-chunk 1024
       adapter: |
         vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 1024
+      template_args:
+        threshold: 300
 
   # --------------
   # Speech to text
@@ -321,10 +333,18 @@ programs:
     # 2. Put long-lived access token in etc/token
     home_assistant_conversation:
       command: |
-        bin/converse.py ${url} ${token_file}
+        bin/converse.py --language ${language} ${url} ${token_file}
+      adapter: |
+        handle_adapter_text.py
       template_args:
         url: "http://localhost:8123/api/conversation/process"
         token_file: "etc/token"
+        language: "en"
+
+    # Intent only: answer English date/time requests
+    date_time:
+      command: |
+        bin/date_time.py
       adapter: |
         handle_adapter_text.py
 
@@ -353,7 +373,7 @@ programs:
       command: |
         bin/udp_raw.py --host ${host} --port ${port}
       template_args:
-        host: 127.0.0.1
+        host: "127.0.0.1"
         port: 5001
 
 # -----------------------------------------------------------------------------
@@ -415,7 +435,10 @@ servers:
 
 # -----------------------------------------------------------------------------
 
+# Example pipelines
 pipelines:
+
+  # English (default)
   default:
     mic:
       name: arecord
@@ -424,12 +447,37 @@ pipelines:
     vad:
       name: silero
     asr:
-      name: vosk
+      name: faster-whisper
     # intent:
     #   name: regex
     handle:
       name: repeat
     tts:
       name: larynx2
+    snd:
+      name: aplay
+
+  # German
+  de:
+    mic:
+      name: arecord
+    wake:
+      name: porcupine1
+      template_args:
+        model: terminator_linux.ppn
+    vad:
+      name: silero
+    asr:
+      name: faster-whisper
+      template_args:
+        language: de
+    # intent:
+    #   name: regex
+    handle:
+      name: repeat
+    tts:
+      name: larynx2
+      template_args:
+        model: "share/de-thorsten-low.onnx"
     snd:
       name: aplay

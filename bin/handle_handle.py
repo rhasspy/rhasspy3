@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Handle text or intent."""
 import argparse
 import asyncio
 import json
@@ -33,9 +34,7 @@ async def main() -> None:
         "--handle-program", help="Name of handle program to use (overrides pipeline)"
     )
     parser.add_argument("input", nargs="*", help="Input to handle")
-    parser.add_argument(
-        "--output-json", action="store_true", help="Outputs JSON instead of text"
-    )
+    #
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )
@@ -54,7 +53,7 @@ async def main() -> None:
 
     for line in get_input(args):
         if line[0] == "{":
-            # Intent
+            # Intent JSON
             handle_input: Union[Intent, Transcript] = Intent.from_dict(json.loads(line))
         else:
             # Text
@@ -62,16 +61,15 @@ async def main() -> None:
 
         handle_result = await handle(rhasspy, handle_program, handle_input)
         if handle_result is None:
+            _LOGGER.warning("No result")
             continue
 
-        if args.output_json:
-            json.dump(handle_result.event().data, sys.stdout, ensure_ascii=False)
-            print("", flush=True)
-        else:
-            print(handle_result.text or "", flush=True)
+        _LOGGER.debug(handle_result)
+        json.dump(handle_result.event().to_dict(), sys.stdout, ensure_ascii=False)
 
 
 def get_input(args: argparse.Namespace) -> Iterable[str]:
+    """Get input from stdin or args."""
     if args.input:
         for text in args.input:
             yield text

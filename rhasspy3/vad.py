@@ -20,7 +20,10 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class VoiceStarted(Eventable):
+    """User has started speaking."""
+
     timestamp: Optional[int] = None
+    """Milliseconds"""
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -39,7 +42,10 @@ class VoiceStarted(Eventable):
 
 @dataclass
 class VoiceStopped(Eventable):
+    """User has stopped speaking."""
+
     timestamp: Optional[int] = None
+    """Milliseconds"""
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -58,25 +64,55 @@ class VoiceStopped(Eventable):
 
 @dataclass
 class Segmenter:
+    """Segments an audio stream by speech."""
+
     speech_seconds: float
+    """Seconds of speech before voice command has started."""
+
     silence_seconds: float
+    """Seconds of silence after voice command has ended."""
+
     timeout_seconds: float
+    """Maximum number of seconds before stopping with timeout=True."""
+
     reset_seconds: float
+    """Seconds before reset start/stop time counters."""
+
     started: bool = False
+    """True if user has started speaking"""
+
     start_timestamp: Optional[int] = None
+    """Timestamp when user started speaking."""
+
     stopped: bool = False
+    """True if user has stopped speaking"""
+
     stop_timestamp: Optional[int] = None
+    """Timestamp when user stopped speaking."""
+
     timeout: bool = False
+    """True if stopping was due to timeout."""
+
     _in_command: bool = False
+    """True if inside voice command."""
+
     _speech_seconds_left: float = 0.0
+    """Seconds left before considering voice command as started."""
+
     _silence_seconds_left: float = 0.0
+    """Seconds left before considering voice command as stopped."""
+
     _timeout_seconds_left: float = 0.0
+    """Seconds left before considering voice command timed out."""
+
     _reset_seconds_left: float = 0.0
+    """Seconds left before resetting start/stop time counters."""
 
     def __post_init__(self):
         self.reset()
 
     def reset(self):
+        """Resets all counters and state."""
         self._speech_seconds_left = self.speech_seconds
         self._silence_seconds_left = self.silence_seconds
         self._timeout_seconds_left = self.timeout_seconds
@@ -88,6 +124,7 @@ class Segmenter:
     def process(
         self, chunk: bytes, chunk_seconds: float, is_speech: bool, timestamp: int
     ):
+        """Process a single chunk of audio."""
         self._timeout_seconds_left -= chunk_seconds
         if self._timeout_seconds_left <= 0:
             self.stop_timestamp = timestamp
@@ -134,11 +171,13 @@ async def segment(
     asr_out: asyncio.StreamWriter,
     chunk_buffer: Optional[Iterable[Event]] = None,
 ):
+    """Segments an audio input stream, passing audio chunks to asr."""
     async with (await create_process(rhasspy, DOMAIN, program)) as vad_proc:
         assert vad_proc.stdin is not None
         assert vad_proc.stdout is not None
 
         if chunk_buffer:
+            # Buffered chunks from wake word detection
             for buffered_event in chunk_buffer:
                 await asyncio.gather(
                     async_write_event(buffered_event, vad_proc.stdin),

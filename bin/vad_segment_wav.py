@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+"""Prints voice start/stop in WAV file."""
 import argparse
 import asyncio
 import io
+import json
 import logging
 import sys
 import time
@@ -41,6 +43,10 @@ async def main() -> None:
         help="Samples to process at a time",
     )
     parser.add_argument("wav", nargs="*", help="Path(s) to WAV file(s)")
+    #
+    parser.add_argument(
+        "--debug", action="store_true", help="Print DEBUG messages to console"
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
@@ -98,19 +104,27 @@ async def main() -> None:
                     voice_started = VoiceStarted.from_event(event)
                     if voice_started.timestamp is None:
                         voice_started.timestamp = time.monotonic_ns()
+
+                    _LOGGER.debug(voice_started)
+                    json.dump(
+                        voice_started.event().to_dict(), sys.stdout, ensure_ascii=False
+                    )
+                    print("", flush=True)
                 elif VoiceStopped.is_type(event.type):
                     voice_stopped = VoiceStopped.from_event(event)
                     if voice_stopped.timestamp is None:
                         voice_stopped.timestamp = time.monotonic_ns()
-                    break
 
-            if (voice_started is not None) and (voice_stopped is not None):
-                print(voice_started.timestamp, voice_stopped.timestamp)
-            else:
-                print("")
+                    _LOGGER.debug(voice_stopped)
+                    json.dump(
+                        voice_stopped.event().to_dict(), sys.stdout, ensure_ascii=False
+                    )
+                    print("", flush=True)
+                    break
 
 
 def get_wav_bytes(args: argparse.Namespace) -> Iterable[bytes]:
+    """Yields WAV audio from stdin or args."""
     if args.wav:
         # WAV file path(s)
         for wav_path in args.wav:

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Prints microphone energy level to console for testing."""
 import argparse
 import asyncio
 import audioop
@@ -82,12 +83,14 @@ async def main() -> None:
                 max_energy = max(1, max_energy)
 
                 if args.numeric:
+                    # Print numbers
                     print(debiased_energy, "/", max_energy)
                 else:
+                    # Print graphic
                     energy_level = int(args.levels * (debiased_energy / max_energy))
                     energy_level = max(0, energy_level)
                     print(
-                        "\r",
+                        "\r",  # We still use typewriters!
                         "[",
                         "*" * energy_level,
                         " " * (args.levels - energy_level),

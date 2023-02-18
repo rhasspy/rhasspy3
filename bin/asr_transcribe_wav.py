@@ -131,6 +131,7 @@ async def main() -> None:
 
 
 def get_wav_bytes(args: argparse.Namespace) -> Iterable[bytes]:
+    """Yields WAV audio from stdin or args."""
     if args.wav:
         # WAV file path(s)
         for wav_path in args.wav:

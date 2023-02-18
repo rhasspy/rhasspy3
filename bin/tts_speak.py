@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+"""Synthesize and speak audio."""
 import argparse
 import asyncio
 import io
+import json
 import logging
 import os
 import sys
@@ -71,7 +73,14 @@ async def main() -> None:
         with io.BytesIO() as wav_io:
             await synthesize(rhasspy, tts_program, line, wav_io)
             wav_io.seek(0)
-            await play(rhasspy, snd_program, wav_io, args.samples_per_chunk)
+            play_result = await play(
+                rhasspy, snd_program, wav_io, args.samples_per_chunk
+            )
+            if play_result is not None:
+                json.dump(
+                    play_result.event().to_dict(), sys.stdout, ensure_ascii=False
+                )
+                print("", flush=True)
 
 
 if __name__ == "__main__":

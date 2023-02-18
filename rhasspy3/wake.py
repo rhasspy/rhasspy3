@@ -19,7 +19,10 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class Detection(Eventable):
+    """Wake word was detected."""
+
     name: Optional[str] = None
+    """Name of model."""
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -36,6 +39,8 @@ class Detection(Eventable):
 
 @dataclass
 class NotDetected(Eventable):
+    """Audio stream ended before wake word was detected."""
+
     @staticmethod
     def is_type(event_type: str) -> bool:
         return event_type == _NOT_DETECTED_TYPE
@@ -54,6 +59,7 @@ async def detect(
     mic_in: asyncio.StreamReader,
     chunk_buffer: Optional[MutableSequence[Event]] = None,
 ) -> Optional[Detection]:
+    """Try to detect wake word in an audio stream."""
     detection: Optional[Detection] = None
     async with (await create_process(rhasspy, DOMAIN, program)) as wake_proc:
         assert wake_proc.stdin is not None
@@ -80,6 +86,7 @@ async def detect(
 
                     await async_write_event(mic_event, wake_proc.stdin)
                     if chunk_buffer is not None:
+                        # Buffer chunks for asr
                         chunk_buffer.append(mic_event)
 
                 if detection is None:
@@ -116,6 +123,7 @@ async def detect_stream(
     width: int,
     channels: int,
 ) -> Optional[Detection]:
+    """Try to detect the wake word in a raw audio stream."""
     async with (await create_process(rhasspy, DOMAIN, program)) as wake_proc:
         assert wake_proc.stdin is not None
         assert wake_proc.stdout is not None

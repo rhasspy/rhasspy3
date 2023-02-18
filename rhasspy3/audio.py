@@ -24,11 +24,22 @@ DEFAULT_SAMPLES_PER_CHUNK = 1024
 
 @dataclass
 class AudioChunk(Eventable):
+    """Chunk of raw PCM audio."""
+
     rate: int
+    """Hertz"""
+
     width: int
+    """Bytes"""
+
     channels: int
+    """Mono = 1"""
+
     audio: bytes
+    """Raw audio"""
+
     timestamp: Optional[int] = None
+    """Milliseconds"""
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -74,10 +85,19 @@ class AudioChunk(Eventable):
 
 @dataclass
 class AudioStart(Eventable):
+    """Audio stream has started."""
+
     rate: int
+    """Hertz"""
+
     width: int
+    """Bytes"""
+
     channels: int
+    """Mono = 1"""
+
     timestamp: Optional[int] = None
+    """Milliseconds"""
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -108,7 +128,10 @@ class AudioStart(Eventable):
 
 @dataclass
 class AudioStop(Eventable):
+    """Audio stream has stopped."""
+
     timestamp: Optional[int] = None
+    """Milliseconds"""
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -135,6 +158,7 @@ class AudioChunkConverter:
     _ratecv_state = None
 
     def convert(self, chunk: AudioChunk) -> AudioChunk:
+        """Converts sample rate, width, and channels as necessary."""
         if (
             (chunk.rate == self.rate)
             and (chunk.width == self.width)
@@ -176,6 +200,7 @@ class AudioChunkConverter:
 def wav_to_chunks(
     wav_file: wave.Wave_read, samples_per_chunk: int, timestamp: int = 0
 ) -> Iterable[AudioChunk]:
+    """Splits WAV file into AudioChunks."""
     rate = wav_file.getframerate()
     width = wav_file.getsampwidth()
     channels = wav_file.getnchannels()
