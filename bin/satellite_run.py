@@ -73,7 +73,7 @@ async def main() -> None:
 
     if not wake_program:
         assert satellite is not None, f"No satellite named {args.satellite}"
-        wake_program = satellite.asr
+        wake_program = satellite.wake
 
     assert wake_program, "No wake program"
 
