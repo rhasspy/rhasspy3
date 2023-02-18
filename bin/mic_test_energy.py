@@ -52,7 +52,7 @@ async def main() -> None:
     pipeline = rhasspy.config.pipelines.get(args.pipeline)
 
     if not mic_program:
-        assert pipeline is not None, f"No pipline named {args.pipeline}"
+        assert pipeline is not None, f"No pipeline named {args.pipeline}"
         mic_program = pipeline.mic
 
     assert mic_program, "No mic program"

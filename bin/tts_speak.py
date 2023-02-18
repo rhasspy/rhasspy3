@@ -48,11 +48,11 @@ async def main() -> None:
     pipeline = rhasspy.config.pipelines.get(args.pipeline)
 
     if not tts_program:
-        assert pipeline is not None, f"No pipline named {args.pipeline}"
+        assert pipeline is not None, f"No pipeline named {args.pipeline}"
         tts_program = pipeline.tts
 
     if not snd_program:
-        assert pipeline is not None, f"No pipline named {args.pipeline}"
+        assert pipeline is not None, f"No pipeline named {args.pipeline}"
         snd_program = pipeline.snd
 
     assert tts_program, "No tts program"
@@ -77,9 +77,7 @@ async def main() -> None:
                 rhasspy, snd_program, wav_io, args.samples_per_chunk
             )
             if play_result is not None:
-                json.dump(
-                    play_result.event().to_dict(), sys.stdout, ensure_ascii=False
-                )
+                json.dump(play_result.event().to_dict(), sys.stdout, ensure_ascii=False)
                 print("", flush=True)
 
 

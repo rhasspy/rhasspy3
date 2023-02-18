@@ -1,3 +1,4 @@
+"""Full voice loop (pipeline)."""
 import io
 import logging
 from collections import deque
@@ -25,6 +26,8 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class PipelineResult(DataClassJsonMixin):
+    """Result of running all or part of a pipeline."""
+
     wake_detection: Optional[Detection] = None
     asr_transcript: Optional[Transcript] = None
     intent_result: Optional[Union[Intent, NotRecognized]] = None
@@ -72,6 +75,7 @@ async def run(
     snd_program: Optional[Union[str, PipelineProgramConfig]] = None,
     stop_after: Optional[StopAfterDomain] = None,
 ) -> PipelineResult:
+    """Run a full or partial pipeline."""
     pipeline_result = PipelineResult()
 
     if isinstance(pipeline, str):
@@ -217,6 +221,7 @@ async def _mic_wake(
     pipeline_result: PipelineResult,
     wake_detection: Optional[Detection] = None,
 ):
+    """Just wake word detection."""
     async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
         assert mic_proc.stdout is not None
         if wake_detection is None:
@@ -240,6 +245,7 @@ async def _mic_asr(
     pipeline_result: PipelineResult,
     asr_chunks_to_buffer: int = 0,
 ):
+    """Just asr transcription (+ silence detection)."""
     async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc, (
         await create_process(rhasspy, ASR_DOMAIN, asr_program)
     ) as asr_proc:
@@ -274,6 +280,7 @@ async def _mic_wake_asr(
     wake_detection: Optional[Detection] = None,
     wake_after: Optional[CommandConfig] = None,
 ):
+    """Wake word detect + asr transcription (+ silence detection)."""
     chunk_buffer: Optional[Deque[Event]] = (
         deque(maxlen=asr_chunks_to_buffer) if asr_chunks_to_buffer > 0 else None
     )

@@ -46,7 +46,7 @@ async def main() -> None:
     pipeline = rhasspy.config.pipelines.get(args.pipeline)
 
     if not handle_program:
-        assert pipeline is not None, f"No pipline named {args.pipeline}"
+        assert pipeline is not None, f"No pipeline named {args.pipeline}"
         handle_program = pipeline.handle
 
     assert handle_program, "No handle program"

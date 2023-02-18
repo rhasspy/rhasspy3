@@ -227,9 +227,11 @@ programs:
     # Models: https://github.com/rhasspy/larynx2/releases/tag/v0.0.2
     larynx2:
       command: |
-        bin/larynx --model share/en-us-blizzard_lessac-medium.onnx --output_file -
+        bin/larynx --model ${model} --output_file -
       adapter: |
         tts_adapter_text2wav.py
+      template_args:
+        model: share/en-us-blizzard_lessac-medium.onnx
 
     # Run server: tts larynx2
     larynx2.client:
@@ -240,9 +242,11 @@ programs:
     # apt-get install espeak-ng
     espeak-ng:
       command: |
-        espeak-ng -v en-us --stdin -w ${temp_file}
+        espeak-ng -v ${voice} --stdin -w ${temp_file}
       adapter: |
         tts_adapter_text2wav.py --temp_file
+      template_args:
+        voice: "en-us"
 
     # http://www.festvox.org/flite/
     # Models: https://github.com/rhasspy/models/releases/tag/v1.0
@@ -376,6 +380,19 @@ programs:
         host: "127.0.0.1"
         port: 5001
 
+  # -------------------
+  # Remote base station
+  # -------------------
+  remote:
+
+    # Sample tool to communicate with websocket API.
+    # Use rhasspy3/bin/satellite_run.py
+    websocket:
+      command: |
+        script/run ${uri}
+      template_args:
+        uri: "ws://localhost:13331/pipeline/asr-tts"
+
 # -----------------------------------------------------------------------------
 
 servers:
@@ -432,6 +449,23 @@ servers:
         script/server ${model}
       template_args:
         model: "share/en-us-blizzard_lessac-medium.onnx"
+
+
+# -----------------------------------------------------------------------------
+
+# Example satellites
+satellites:
+  default:
+    mic:
+      name: arecord
+    wake:
+      name: porcupine1
+      template_args:
+        model: grasshopper_linux.ppn
+    remote:
+      name: websocket
+    snd:
+      name: aplay
 
 # -----------------------------------------------------------------------------
 

@@ -70,18 +70,22 @@ async def main() -> None:
 
     wake_detection: Optional[Detection] = None
     if args.wake_name:
+        # Wake word detection will be skipped
         wake_detection = Detection(name=args.wake_name)
 
     asr_wav_in: Optional[IO[bytes]] = None
     if args.asr_wav:
+        # asr input will come from WAV file instead of mic
         asr_wav_in = open(args.asr_wav, "rb")
 
     asr_transcript: Optional[Transcript] = None
     if args.asr_text:
+        # asr transcription will be skipped
         asr_transcript = Transcript(text=args.asr_text)
 
     intent_result: Optional[Union[Intent, NotRecognized]] = None
     if args.intent_json:
+        # intent recognition will be skipped
         intent_event = Event.from_dict(json.loads(args.intent_json))
         if Intent.is_type(intent_event.type):
             intent_result = Intent.from_event(intent_event)
@@ -90,10 +94,12 @@ async def main() -> None:
 
     handle_result: Optional[Union[Handled, NotHandled]] = None
     if args.handle_text:
+        # text/intent handling will be skipped
         handle_result = Handled(text=args.handle_text)
 
     tts_wav_in: Optional[IO[bytes]] = None
     if args.tts_wav:
+        # tts synthesis will be skipped
         tts_wav_in = open(args.tts_wav, "rb")
 
     rhasspy = Rhasspy.load(args.config)

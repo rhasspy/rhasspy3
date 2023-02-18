@@ -1,3 +1,4 @@
+"""Utilities for creating processes."""
 import asyncio
 import logging
 import os
@@ -18,6 +19,8 @@ class MissingProgramConfigError(Exception):
 
 
 class ProcessContextManager:
+    """Wrapper for an async process that terminates on exit."""
+
     def __init__(self, proc: Process, name: str):
         self.proc = proc
         self.name = name
@@ -47,6 +50,11 @@ async def create_process(
 
     assert name, f"No program name for domain {domain}"
 
+    # The "." is special in program names:
+    # it means to use the directory of "base" in <base>.<name>.
+    #
+    # This is used for <base>.client programs, which are just scripts in the
+    # "base" directory that communicate with their respective servers.
     if "." in name:
         base_name = name.split(".", maxsplit=1)[0]
     else:
@@ -66,6 +74,7 @@ async def create_process(
             merge_dict(mapping, pipeline_config.template_args)
 
     if mapping:
+        # Substitute template args
         command_template = string.Template(command_str)
         command_str = command_template.safe_substitute(mapping)
 

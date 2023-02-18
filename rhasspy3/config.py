@@ -40,6 +40,14 @@ class PipelineConfig(DataClassJsonMixin):
 
 
 @dataclass
+class SatelliteConfig(DataClassJsonMixin):
+    mic: Optional[PipelineProgramConfig] = None
+    wake: Optional[PipelineProgramConfig] = None
+    remote: Optional[PipelineProgramConfig] = None
+    snd: Optional[PipelineProgramConfig] = None
+
+
+@dataclass
 class ServerConfig(DataClassJsonMixin):
     command: str
     shell: bool = False
@@ -52,6 +60,10 @@ class Config(DataClassJsonMixin):
     """domain -> name -> program"""
 
     pipelines: Dict[str, PipelineConfig] = field(default_factory=dict)
+    """name -> pipeline"""
+
+    satellites: Dict[str, SatelliteConfig] = field(default_factory=dict)
+    """name -> satellite"""
 
     servers: Dict[str, Dict[str, ServerConfig]] = field(default_factory=dict)
     """domain -> name -> server"""

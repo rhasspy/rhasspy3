@@ -5,7 +5,7 @@ import logging
 from enum import Enum
 from typing import IO, Optional, Union
 
-from quart import Quart, Response, jsonify, request, websocket, render_template
+from quart import Quart, Response, jsonify, render_template, request, websocket
 
 from rhasspy3.asr import DOMAIN as ASR_DOMAIN
 from rhasspy3.asr import Transcript

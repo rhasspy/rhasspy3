@@ -38,27 +38,30 @@ def main() -> None:
 
         wav_params_set = False
         wav_file: wave.Wave_write = wave.open(wav_io, "wb")
-        with wav_file:
-            while True:
-                event = read_event()
-                if event is None:
-                    break
+        try:
+            with wav_file:
+                while True:
+                    event = read_event()
+                    if event is None:
+                        break
 
-                if AudioChunk.is_type(event.type):
-                    chunk = AudioChunk.from_event(event)
-                    if not wav_params_set:
-                        wav_file.setframerate(chunk.rate)
-                        wav_file.setsampwidth(chunk.width)
-                        wav_file.setnchannels(chunk.channels)
-                        wav_params_set = True
+                    if AudioChunk.is_type(event.type):
+                        chunk = AudioChunk.from_event(event)
+                        if not wav_params_set:
+                            wav_file.setframerate(chunk.rate)
+                            wav_file.setsampwidth(chunk.width)
+                            wav_file.setnchannels(chunk.channels)
+                            wav_params_set = True
 
-                    wav_file.writeframes(chunk.audio)
-                elif AudioStop.is_type(event.type):
-                    break
+                        wav_file.writeframes(chunk.audio)
+                    elif AudioStop.is_type(event.type):
+                        break
 
-        wav_io.seek(0)
-        text = subprocess.check_output(command, shell=args.shell).decode()
-        write_event(Transcript(text=text.strip()).event())
+            wav_io.seek(0)
+            text = subprocess.check_output(command, shell=args.shell).decode()
+            write_event(Transcript(text=text.strip()).event())
+        except wave.Error:
+            pass
 
 
 if __name__ == "__main__":
