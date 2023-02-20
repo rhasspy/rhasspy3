@@ -238,6 +238,26 @@ programs:
       command: |
         client_unix_socket.py var/run/larynx2.socket
 
+    # https://github.com/rhasspy/larynx/
+    # Models: https://rhasspy.github.io/larynx/
+    larynx1:
+      command: |
+        .venv/bin/larynx --voice ${voice}
+      adapter: |
+        tts_adapter_text2wav.py
+      template_args:
+        voice: "en-us"
+
+    # Run server: tts larynx1
+    larynx1.client:
+      command: |
+        bin/larynx_client.py ${url} ${voice}
+      template_args:
+        url: "http://localhost:5002/process"
+        voice: "en-us"
+      adapter: |
+        tts_adapter_text2wav.py
+
     # https://github.com/espeak-ng/espeak-ng/
     # apt-get install espeak-ng
     espeak-ng:
@@ -289,6 +309,16 @@ programs:
         voice: "cmu-slt-hsmm"
       adapter: |
         tts_adapter_text2wav.py
+
+    # https://github.com/mycroftAI/mimic3
+    # Models: https://mycroftai.github.io/mimic3-voices/
+    mimic3:
+      command: |
+        .venv/bin/mimic3 --voice ${voice} --stdout
+      adapter: |
+        tts_adapter_text2wav.py
+      template_args:
+        voice: "apope"
 
     # Run server: tts mimic3
     mimic3.client:
@@ -450,6 +480,12 @@ servers:
       template_args:
         model: "share/en-us-blizzard_lessac-medium.onnx"
 
+    larynx1:
+      command: |
+        script/server --host ${host}
+      template_args:
+        host: "127.0.0.1"
+
 
 # -----------------------------------------------------------------------------
 
@@ -493,25 +529,48 @@ pipelines:
 
   # German
   de:
-    mic:
-      name: arecord
-    wake:
-      name: porcupine1
-      template_args:
-        model: terminator_linux.ppn
-    vad:
-      name: silero
+    inherit: default
     asr:
       name: faster-whisper
       template_args:
         language: de
-    # intent:
-    #   name: regex
-    handle:
-      name: repeat
     tts:
       name: larynx2
       template_args:
         model: "share/de-thorsten-low.onnx"
-    snd:
-      name: aplay
+
+  # French
+  fr:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: fr
+    tts:
+      name: mimic3
+      template_args:
+        voice: "fr_FR/siwis_low"
+
+  # Spanish
+  es:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: es
+    tts:
+      name: mimic3
+      template_args:
+        voice: "es_ES/carlfm_low"
+
+  # Italian
+  it:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: it
+    tts:
+      name: mimic3
+      template_args:
+        voice: "it_IT/riccardo-fasol_low"

@@ -10,7 +10,7 @@
     <select id="pipeline_name">
       <option value="default">default</option>
       {% set pipelines = config.pipelines | sort %}
-      {% for pipeline in pipeline: %}
+      {% for pipeline in pipelines: %}
       {% if pipeline != "default": %}
       <option>{{ pipeline }}</option>
       {% endif %}

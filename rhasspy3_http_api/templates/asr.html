@@ -8,6 +8,18 @@
 
 <ol>
   <li>
+    Pipeline:
+    <select id="pipeline_name">
+      <option value="default">default</option>
+      {% set pipelines = config.pipelines | sort %}
+      {% for pipeline in pipelines: %}
+      {% if pipeline != "default": %}
+      <option>{{ pipeline }}</option>
+      {% endif %}
+      {% endfor %}
+    </select>
+  </li>
+  <li>
     Mic Program:
     <select id="asr_mic_program" onchange="asr_mic_change()">
       <option value="">WAV file</option>
@@ -67,6 +79,7 @@ function asr_transcribe() {
         return;
     }
 
+    const pipelineName = q("#pipeline_name").value;
     const micProgram = q("#asr_mic_program").value;
     const asrProgram = q("#asr_program").value;
     const vadProgram = q("#asr_vad_program").value;
@@ -79,6 +92,7 @@ function asr_transcribe() {
 
     const startTime = performance.now();
     fetch("{{ url_prefix }}" + "pipeline/run?start_after=wake&stop_after=asr"
+          + "&pipeline=" + encodeURIComponent(pipelineName)
           + "&asr_program=" + encodeURIComponent(asrProgram)
           + "&mic_program=" + encodeURIComponent(micProgram)
           + "&vad_program=" + encodeURIComponent(vadProgram),

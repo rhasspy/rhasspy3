@@ -71,6 +71,8 @@ async def create_process(
 
     if pipeline_config is not None:
         if pipeline_config.template_args:
+            # Make a copy to avoid modifying the program config
+            mapping = dict(mapping)
             merge_dict(mapping, pipeline_config.template_args)
 
     if mapping:
@@ -95,6 +97,7 @@ async def create_process(
             args.append("--shell")
             args.append(command_str)
 
+            _LOGGER.debug("(shell): %s %s", program, args)
             proc = await asyncio.create_subprocess_exec(
                 program,
                 *args,
@@ -104,6 +107,7 @@ async def create_process(
                 env=env,
             )
         else:
+            _LOGGER.debug("(shell): %s %s", program, args)
             proc = await asyncio.create_subprocess_shell(
                 command_str,
                 stdin=PIPE,
@@ -118,6 +122,7 @@ async def create_process(
         else:
             program, *args = shlex.split(command_str)
 
+        _LOGGER.debug("%s %s", program, args)
         proc = await asyncio.create_subprocess_exec(
             program,
             *args,

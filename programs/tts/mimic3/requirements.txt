@@ -1,1 +1,1 @@
-mycroft-mimic3-tts
+mycroft-mimic3-tts[all]

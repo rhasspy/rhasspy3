@@ -11,6 +11,18 @@
     Text: <input id="tts_text" type="text" onkeypress="tts_keypress(event)">
   </li>
   <li>
+    Pipeline:
+    <select id="pipeline_name">
+      <option value="default">default</option>
+      {% set pipelines = config.pipelines | sort %}
+      {% for pipeline in pipelines: %}
+      {% if pipeline != "default": %}
+      <option>{{ pipeline }}</option>
+      {% endif %}
+      {% endfor %}
+    </select>
+  </li>
+  <li>
     TTS Program:
     <select id="tts_program">
       <option value="">default</option>
@@ -57,6 +69,7 @@ function tts_speak() {
         return;
     }
 
+    const pipelineName = q("#pipeline_name").value;
     const ttsProgram = q("#tts_program").value;
     const sndProgram = q("#tts_snd_program").value;
 
@@ -66,8 +79,9 @@ function tts_speak() {
     const text = q("#tts_text").value;
     
     const startTime = performance.now();
-    fetch("{{ url_prefix }}" + "tts/speak?tts_program="
-          + encodeURIComponent(ttsProgram)
+    fetch("{{ url_prefix }}" + "tts/speak"
+          + "?pipeline=" + encodeURIComponent(pipelineName)
+          + "&tts_program=" + encodeURIComponent(ttsProgram)
           + "&snd_program=" + encodeURIComponent(sndProgram),
           { method: "POST", body: text })
         .then(response => {
@@ -79,6 +93,7 @@ function tts_speak() {
 }
 
 function tts_synthesize() {
+    const pipelineName = q("#pipeline_name").value;
     const ttsProgram = q("#tts_program").value;
 
     const status = q("#tts_status");
@@ -87,7 +102,9 @@ function tts_synthesize() {
     const text = q("#tts_text").value;
     
     const startTime = performance.now();
-    fetch("{{ url_prefix }}" + "tts/synthesize?tts_program=" + encodeURIComponent(ttsProgram),
+    fetch("{{ url_prefix }}" + "tts/synthesize"
+          + "?pipeline=" + encodeURIComponent(pipelineName)
+          + "&tts_program=" + encodeURIComponent(ttsProgram),
           { method: "POST", body: text })
         .then(response => {
             const endTime = performance.now();
