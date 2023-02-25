@@ -15,6 +15,13 @@ An event is:
     * `payload_length` - number (optional)
 2. An optional binary payload of exactly `payload_length` bytes
 
+Example:
+
+```json
+{ "type": "audio-chunk", data: { "rate": 16000, "width", "channels": 1 }, "payload_length": 2048 }
+<2048 bytes>
+```
+
 
 ## Rhasspy Events
 

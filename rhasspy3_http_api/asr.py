@@ -57,18 +57,21 @@ def add_asr(
     async def ws_asr_transcribe():
         """Transcribe a websocket audio stream."""
         asr_pipeline = (
-            rhasspy.config.pipelines[request.args["pipeline"]]
-            if "pipeline" in request.args
+            rhasspy.config.pipelines[websocket.args["pipeline"]]
+            if "pipeline" in websocket.args
             else pipeline
         )
         asr_program = websocket.args.get("asr_program") or asr_pipeline.asr
         assert asr_program, "Missing program for asr"
 
+        vad_program = websocket.args.get("vad_program") or asr_pipeline.vad
+        assert vad_program, "Missing program for vad"
+
         rate = int(websocket.args.get("rate", DEFAULT_IN_RATE))
         width = int(websocket.args.get("width", DEFAULT_IN_WIDTH))
         channels = int(websocket.args.get("channels", DEFAULT_IN_CHANNELS))
 
-        _LOGGER.debug("transcribe: asr=%s", asr_program)
+        _LOGGER.debug("transcribe: asr=%s, vad=%s", asr_program, vad_program)
 
         async def audio_stream():
             while True:
@@ -87,7 +90,7 @@ def add_asr(
                         break
 
         transcript = await transcribe_stream(
-            rhasspy, asr_program, audio_stream(), rate, width, channels
+            rhasspy, asr_program, vad_program, audio_stream(), rate, width, channels
         )
 
         _LOGGER.debug("transcribe: transcript='%s'", transcript)
