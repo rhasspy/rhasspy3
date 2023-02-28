@@ -51,9 +51,7 @@ programs:
     # Models: see script/list_models
     porcupine1:
       command: |
-        .venv/bin/python3 bin/porcupine_raw_text.py --model "${model}"
-      adapter: |
-        wake_adapter_raw.py
+        .venv/bin/python3 bin/porcupine_stream.py --model "${model}"
       template_args:
         model: "porcupine_linux.ppn"
 
@@ -206,7 +204,7 @@ programs:
     # (asr_faster-whisper-*)
     faster-whisper:
       command: |
-        script/wav2text "${model}" "{wav_file}"
+        script/wav2text --language "en" "${model}" "{wav_file}"
       adapter: |
         asr_adapter_wav2text.py
       template_args:
@@ -470,7 +468,7 @@ servers:
 
     faster-whisper:
       command: |
-        script/server --language ${language} --device ${device} ${model}
+        script/server --language ${language} --device ${device} "${model}"
       template_args:
         language: "en"
         model: "${data_dir}/tiny-int8"

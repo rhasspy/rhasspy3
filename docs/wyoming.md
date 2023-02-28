@@ -4,6 +4,8 @@ An interprocess event protocol over stdin/stdout.
 
 Effectively [JSONL](https://jsonlines.org/) with an optional binary payload.
 
+![Wyoming protocol](img/wyoming.png)
+
 
 ## Event Format
 
@@ -30,7 +32,7 @@ Example:
 | audio  | audio-start    | timestamp, rate, width, channels |         |
 | audio  | audio-chunk    | timestamp, rate, width, channels | PCM     |
 | audio  | audio-stop     | timestamp                        |         |
-| wake   | detection      | name                             |         |
+| wake   | detection      | name, timestamp                  |         |
 | wake   | not-detected   |                                  |         |
 | vad    | voice-started  | timestamp                        |         |
 | vad    | voice-stopped  | timestamp                        |         |

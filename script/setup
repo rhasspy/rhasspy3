@@ -9,11 +9,8 @@ base_dir="$(realpath "${this_dir}/..")"
 
 # Copy default config
 config_dir="${base_dir}/config"
-config_file="${config_dir}/configuration.yaml"
 
-if [ ! -f "${config_file}" ]; then
-    cp "${config_dir}/configuration.default.yaml" "${config_file}"
-fi
+mkdir -p "${config_dir}"
 
 # -----------------------------------------------------------------------------
 

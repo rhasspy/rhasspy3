@@ -1,18 +1,38 @@
 # Tutorial
 
+Welcome to Rhasspy 3! This is a developer preview, so many of the manual steps here will be replaced with something more user-friendly in the future.
+
 
 ## Installing Rhasspy 3
+
+To get started, just clone the repo. Rhasspy's core does not currently have any dependencies outside the Python standard library.
 
 ```sh
 git clone https://github.com/rhasspy/rhasspy3
 cd rhasspy3
-script/setup
 ```
+
+
+## Layout
+
+Installed programs and downloaded models are stored in the `config` directory, which is empty by default:
+
+* `rhasspy3/config/`
+    * `configuration.yaml` - overrides `rhasspy3/configuration.yaml`
+    * `programs/` - installed programs
+        * `<domain>/`
+            * `<name>/`
+    * `data/` - downloaded models
+        * `<domain>/`
+            * `<name>/`
+            
+Programs in Rhasspy are divided into [domains](domains.md).
 
 
 ## Microphone
 
-configuration.yaml:
+Programs that were not designed for Rhasspy can be used with [adapters](adapters.md).
+For example, add the following to your `configuration.yaml` (in the `config` directory):
 
 ```yaml
 programs:
@@ -29,7 +49,7 @@ pipelines:
       name: arecord
 ```
 
-Mic test:
+Now you can run a microphone test:
 
 ```sh
 script/run bin/mic_test_energy.py
@@ -37,12 +57,25 @@ script/run bin/mic_test_energy.py
 
 When speaking, you should see the bar change with volume. If not, check the available devices with `arecord -L` and update the `arecord` command in `configuration.yaml` with `-D <device_name>` (prefer devices that start with `plughw:`).
 
-CTRL+C to quit
+Press CTRL+C to quit.
+
+Pipelines will be discussed later. For now, know that the pipeline named `default` will be run if you don't specify one. The mic test script can do this:
+
+```sh
+script/run bin/mic_test_energy.py --pipeline my-pipeline
+```
+
+You can also override the mic program:
+
+```sh
+script/run bin/mic_test_energy.py --mic-program other-program-from-config
+```
 
 
 ## Voice Activity Detection
 
-Install [Silero](https://github.com/snakers4/silero-vad/):
+Let's install our first program, [Silero VAD](https://github.com/snakers4/silero-vad/).
+Start by copying from `programs/` to `config/programs`, then run the setup script:
 
 ```sh
 mkdir -p config/programs/vad/
@@ -50,7 +83,7 @@ cp -R programs/vad/silero config/programs/vad/
 config/programs/vad/silero/script/setup
 ```
 
-configuration.yaml:
+Once the setup script completes, add the following to your `configuration.yaml`:
 
 ```yaml
 programs:
@@ -58,7 +91,9 @@ programs:
   vad:
     silero:
       command: |
-        .venv/bin/python3 bin/silero_stream.py share/silero_vad.onnx
+        script/speech_prob "share/silero_vad.onnx"
+      adapter: |
+        vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 512
 
 pipelines:
   default:
@@ -68,7 +103,9 @@ pipelines:
 ```
 
 
-VAD test:
+This calls a command inside `config/programs/vad/silero` and uses an adapter. Notice that the command's working directory will always be `config/programs/<domain>/<name>`.
+
+You can test out the voice activity detection (VAD) by recording an audio sample:
 
 ```sh
 script/run bin/mic_record_sample.py sample.wav
@@ -79,137 +116,147 @@ Say something for a few seconds and then wait for the program to finish. Afterwa
 
 ## Speech to Text
 
-Install [Vosk](https://alphacephei.com/vosk/):
+Now for the fun part! We'll be installing [faster-whisper](https://github.com/guillaumekln/faster-whisper/), an optimized version of Open AI's [Whisper](https://github.com/openai/whisper) model.
+
 
 ```sh
 mkdir -p config/programs/asr/
-cp -R programs/asr/vosk config/programs/asr/
-config/programs/asr/vosk/script/setup
+cp -R programs/asr/faster-whisper config/programs/asr/
+config/programs/asr/faster-whisper/script/setup
 ```
 
-Download small English model:
+Before using faster-whisper, we need to download a model:
 
 ```sh
-config/programs/asr/vosk/script/download.py en_small
+config/programs/asr/faster-whisper/script/download.py tiny-int8
 ```
 
-Put models in `config/programs/asr/vosk/share`
+Notice that the model was downloaded to `config/data/asr/faster-whisper`:
 
-configuration.yaml:
+```sh
+tree config/data/asr/faster-whisper/
+config/data/asr/faster-whisper/
+└── tiny-int8
+    ├── config.json
+    ├── model.bin
+    └── vocabulary.txt
+```
+
+The `tiny-int8` model is the smallest and fastest model, but may not give the best transcriptions. Run `download.py` without any arguments to see the available models, or follow [the instructions](https://github.com/guillaumekln/faster-whisper/#model-conversion) to make your own!
+
+Add the following to `configuration.yaml`:
 
 ```yaml
 programs:
   mic: ...
   vad: ...
   asr:
-    vosk:
+    faster-whisper:
       command: |
-        script/raw2text ${model}
+        script/wav2text "${data_dir}/tiny-int8" "{wav_file}"
       adapter: |
-        asr_adapter_raw2text.py
-      template_args:
-        model: "share/vosk-model-small-en-us-0.15"
+        asr_adapter_wav2text.py
 
 pipelines:
   default:
     mic: ...
     vad: ...
     asr:
-      name: vosk
+      name: faster-whisper
 ```
 
-Transcribe WAV:
+You can now transcribe a voice command:
 
 ```sh
-script/run bin/asr_transcribe_wav.py --debug etc/what_time_is_it.wav
-```
-
-Transcribe stream:
-
-```sh
-script/run bin/pipeline_run.py --debug --stop-after asr
+script/run bin/asr_transcribe.py
 ```
 
 (say something)
 
-Verify transcription is correct. If not, try a different model or a different ASR system like `whisper`.
+You should see a transcription of what you said as part of an [event](wyoming.md).
 
-Set up HTTP server:
+### Client/Server
+
+Speech to text systems can take a while to load their models, so a lot of time is wasted if we start from scratch each time.
+
+Some speech to text and text to speech programs have included servers. These usually use [Unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket) to communicate with a small client program.
+
+Add the following to your `configuration.yaml`:
+
+
+```yaml
+programs:
+  mic: ...
+  vad: ...
+  asr:
+    faster-whisper: ...
+    faster-whisper.client:
+      command: |
+        client_unix_socket.py var/run/faster-whisper.socket
+
+servers:
+  asr:
+    faster-whisper:
+      command: |
+        script/server --language "en" "${data_dir}/tiny-int8"
+
+pipelines:
+  default:
+    mic: ...
+    vad: ...
+    asr:
+      name: faster-whisper.client
+```
+
+Start the server in a separate terminal:
+
+```sh
+script/run bin/server_run.py asr faster-whisper
+```
+
+When it prints "Ready", transcribe yourself speaking again:
+
+```sh
+script/run bin/asr_transcribe.py
+```
+
+(say something)
+
+You should receive your transcription a bit faster than before.
+
+
+### HTTP Server
+
+Rhasspy includes a small HTTP server that allows you to access programs and pipelines over a web API. To get started, run the setup script:
 
 ```sh
 script/setup_http_server
 ```
 
-Run HTTP server:
+Run HTTP server in a separate terminal:
 
 ```sh
 script/http_server --debug
 ```
 
-Transcribe WAV over HTTP:
+Now you can transcribe a WAV file over HTTP:
 
 ```sh
-curl -X POST -H 'Content-Type: audio/wav' --data-binary @etc/what_time_is_it.wav 'localhost:12101/api/speech-to-text'
+curl -X POST -H 'Content-Type: audio/wav' --data-binary @etc/what_time_is_it.wav 'localhost:13331/asr/transcribe'
 ```
 
-Install websocket tool:
+You can run one or more program servers along with the HTTP server:
 
 ```sh
-tools/asr/websocket-client/script/setup
+script/http_server --debug --server asr faster-whisper
 ```
 
-Transcribe WAV over WebSocket:
-
-```sh
-tools/asr/websocket-client/script/wav2text 'ws://localhost:12101/api/stream-to-text' etc/what_time_is_it.wav
-```
-
-### Client/Server
-
-configuration.yaml:
-
-```yaml
-programs:
-  mic: ...
-  vad: ...
-  asr:
-    vosk: ...
-    vosk.client:
-      command: |
-        client_unix_socket.py var/run/vosk.socket
-
-servers:
-  asr:
-    vosk:
-      command: |
-        script/server ${model}
-      template_args:
-        model: "share/vosk-model-small-en-us-0.15"
-
-pipelines:
-  default:
-    mic: ...
-    vad: ...
-    asr:
-      name: vosk.client
-```
-
-Run server standalone:
-
-```sh
-script/run bin/server_run.py asr vosk
-```
-
-Run with HTTP server:
-
-```sh
-script/http_server --debug --server asr vosk
-```
+**NOTE:** You will need to restart the HTTP server when you change `configuration.yaml`
 
 
 ## Wake Word Detection
 
-Install [Porcupine](https://github.com/Picovoice/porcupine):
+Next, we'll install [Porcupine](https://github.com/Picovoice/porcupine):
 
 ```sh
 mkdir -p config/programs/wake/
@@ -217,7 +264,33 @@ cp -R programs/wake/porcupine1 config/programs/wake/
 config/programs/wake/porcupine1/script/setup
 ```
 
-configuration.yaml:
+Check available wake word models with:
+
+```sh
+config/programs/wake/porcupine1/script/list_models
+alexa_linux.ppn
+americano_linux.ppn
+blueberry_linux.ppn
+bumblebee_linux.ppn
+computer_linux.ppn
+grapefruit_linux.ppn
+grasshopper_linux.ppn
+hey google_linux.ppn
+hey siri_linux.ppn
+jarvis_linux.ppn
+ok google_linux.ppn
+pico clock_linux.ppn
+picovoice_linux.ppn
+porcupine_linux.ppn
+smart mirror_linux.ppn
+snowboy_linux.ppn
+terminator_linux.ppn
+view glass_linux.ppn
+```
+
+**NOTE:** These will be slightly different on a Raspberry Pi (`_raspberry-pi.ppn` instead of `_linux.ppn`).
+
+Add to `configuration.yaml`:
 
 ```yaml
 programs:
@@ -227,9 +300,9 @@ programs:
   wake:
     porcupine1:
       command: |
-        .venv/bin/python3 bin/porcupine_raw_text.py --model porcupine_linux.ppn
-      adapter: |
-        wake_adapter_raw.py
+        .venv/bin/python3 bin/porcupine_stream.py --model "${model}"
+      template_args:
+        model: "porcupine_linux.ppn"
 
 servers:
   asr: ...
@@ -243,7 +316,7 @@ pipelines:
       name: porcupine1
 ```
 
-Use `_raspberry-pi.ppn` instead of `_linux.ppn` on Raspberry Pi.
+Notice that we include `template_args` in the `programs` section. This lets us change specific settings in `pipelines`, which will be demonstrated in a moment.
 
 Test wake word detection:
 
@@ -253,42 +326,52 @@ script/run bin/wake_detect.py --debug
 
 (say "porcupine")
 
-See available models:
+Now change the model in `configuration.yaml`:
 
-```sh
-find config/programs/wake/porcupine1 -name '*.ppn'
+```yaml
+programs:
+  mic: ...
+  vad: ...
+  asr: ...
+  wake: ...
+
+servers:
+  asr: ...
+
+pipelines:
+  default:
+    mic: ...
+    vad: ...
+    asr: ...
+    wake:
+      name: porcupine1
+      template_args:
+        model: "grasshopper_linux.ppn"
 ```
 
-Run wake + speech to text:
+Test wake word detection again:
 
 ```sh
-script/run bin/pipeline_run.py --debug --stop-after asr
+script/run bin/wake_detect.py --debug
 ```
 
-(say "porcupine", *pause*, voice command)
-
-Reduce the pause length:
-
-```sh
-script/run bin/pipeline_run.py --debug --stop-after asr --asr-chunks-to-buffer 5
-```
+(say "grasshopper")
 
 Test over HTTP server (restart server):
 
 ```sh
-curl -X POST 'localhost:12101/api/wait-for-wake'
+curl -X POST 'localhost:13331/pipeline/run?stop_after=wake'
 ```
 
-(say "porcupine")
+(say "grasshopper")
 
 Test full voice command:
 
 ```sh
-curl -X POST 'localhost:12101/api/listen-for-command'
+curl -X POST 'localhost:13331/pipeline/run?stop_after=asr'
 ```
 
-(say "porcupine", *pause*, voice command)
-
+(say "grasshopper", *pause*, voice command, *wait*)
 
 
 ## Intent Handling

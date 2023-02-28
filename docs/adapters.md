@@ -18,4 +18,4 @@ Scripts in `bin/`:
     * Send/receive events over Unix domain socket
 
 
-
+![Wyoming protocol adapter](img/adapter.png)
