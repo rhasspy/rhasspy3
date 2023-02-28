@@ -20,9 +20,7 @@ def main() -> None:
         choices=list(itertools.chain(MODELS.keys(), MODELS.values())),
         help="Pocketsphinx model(s) to download",
     )
-    parser.add_argument(
-        "--destination", help="Path to destination directory (default: share)"
-    )
+    parser.add_argument("--destination", help="Path to destination directory")
     parser.add_argument(
         "--link-format",
         default="https://github.com/rhasspy/models/releases/download/v1.0/asr_pocketsphinx-{model}.tar.gz",
@@ -31,8 +29,12 @@ def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
-    if not args.destination:
-        args.destination = _DIR.parent / "share"
+    if args.destination:
+        args.destination = Path(args.destination)
+    else:
+        # Assume we're in programs/asr/pocketsphinx/script
+        data_dir = _DIR.parent.parent.parent.parent / "data"
+        args.destination = data_dir / "asr" / "pocketsphinx"
 
     args.destination.parent.mkdir(parents=True, exist_ok=True)
 

@@ -18,8 +18,19 @@ class Rhasspy:
     config_dir: Path
     base_dir: Path
 
+    @property
+    def programs_dir(self) -> Path:
+        """Directory where programs are installed."""
+        return self.config_dir / "programs"
+
+    @property
+    def data_dir(self) -> Path:
+        """Directory where models are downloaded."""
+        return self.config_dir / "data"
+
     @staticmethod
     def load(config_dir: Union[str, Path]) -> "Rhasspy":
+        """Load and merge configuration.yaml files from rhasspy3 and config dir."""
         config_dir = Path(config_dir)
         config_paths = [
             _DEFAULT_CONFIG,

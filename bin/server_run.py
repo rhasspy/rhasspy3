@@ -35,15 +35,29 @@ def main() -> None:
     rhasspy = Rhasspy.load(args.config)
     server = rhasspy.config.servers[args.domain][args.server]
 
+    program_dir = rhasspy.programs_dir / args.domain / args.server
+    data_dir = rhasspy.data_dir / args.domain / args.server
+
+    # ${variables} available within command and template args
+    default_mapping = {
+        "program_dir": str(program_dir.absolute()),
+        "data_dir": str(data_dir.absolute()),
+    }
+
     command_str = server.command
-    mapping = server.template_args or {}
+    command_mapping = dict(default_mapping)
 
     if server.template_args:
-        merge_dict(mapping, server.template_args)
+        # Substitute within template args
+        args_mapping = dict(server.template_args)
+        for arg_name, arg_str in args_mapping.items():
+            arg_template = string.Template(arg_str)
+            args_mapping[arg_name] = arg_template.safe_substitute(default_mapping)
 
-    if mapping:
-        command_template = string.Template(command_str)
-        command_str = command_template.safe_substitute(mapping)
+        merge_dict(command_mapping, server.template_args)
+
+    command_template = string.Template(command_str)
+    command_str = command_template.safe_substitute(command_mapping)
 
     env = dict(os.environ)
 
@@ -53,7 +67,7 @@ def main() -> None:
     # Ensure stdout is flushed for Python programs
     env["PYTHONUNBUFFERED"] = "1"
 
-    server_dir = rhasspy.config_dir / "programs" / args.domain / args.server
+    server_dir = rhasspy.programs_dir / args.domain / args.server
     cwd = server_dir if server_dir.is_dir() else rhasspy.base_dir
 
     if server.shell:

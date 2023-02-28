@@ -30,8 +30,12 @@ def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
-    if not args.destination:
-        args.destination = _DIR.parent / "share"
+    if args.destination:
+        args.destination = Path(args.destination)
+    else:
+        # Assume we're in programs/asr/whisper-cpp/script
+        data_dir = _DIR.parent.parent.parent.parent / "data"
+        args.destination = data_dir / "asr" / "whisper-cpp"
 
     args.destination.parent.mkdir(parents=True, exist_ok=True)
 

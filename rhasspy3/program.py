@@ -66,21 +66,44 @@ async def create_process(
     assert program_config is not None, f"No config for program {domain}/{name}"
     assert isinstance(program_config, ProgramConfig)
 
+    # Directory where this program is installed
+    program_dir = rhasspy.programs_dir / domain / base_name
+
+    # Directory where this program should store data
+    data_dir = rhasspy.data_dir / domain / base_name
+
+    # ${variables} available within program/pipeline template_args
+    default_mapping = {
+        "program_dir": str(program_dir.absolute()),
+        "data_dir": str(data_dir.absolute()),
+    }
+
     command_str = program_config.command.strip()
-    mapping = program_config.template_args or {}
+    command_mapping = dict(default_mapping)
+    if program_config.template_args:
+        # Substitute within program template args
+        args_mapping = dict(program_config.template_args)
+        for arg_name, arg_str in args_mapping.items():
+            arg_template = string.Template(arg_str)
+            args_mapping[arg_name] = arg_template.safe_substitute(default_mapping)
+
+        command_mapping.update(args_mapping)
 
     if pipeline_config is not None:
         if pipeline_config.template_args:
-            # Make a copy to avoid modifying the program config
-            mapping = dict(mapping)
-            merge_dict(mapping, pipeline_config.template_args)
+            # Substitute within pipeline template args
+            args_mapping = dict(pipeline_config.template_args)
+            for arg_name, arg_str in args_mapping.items():
+                arg_template = string.Template(arg_str)
+                args_mapping[arg_name] = arg_template.safe_substitute(default_mapping)
 
-    if mapping:
-        # Substitute template args
-        command_template = string.Template(command_str)
-        command_str = command_template.safe_substitute(mapping)
+            merge_dict(command_mapping, args_mapping)
 
-    working_dir = rhasspy.config_dir / "programs" / domain / base_name
+    # Substitute template args
+    command_template = string.Template(command_str)
+    command_str = command_template.safe_substitute(command_mapping)
+
+    working_dir = rhasspy.programs_dir / domain / base_name
     env = dict(os.environ)
 
     # Add rhasspy3/bin to $PATH

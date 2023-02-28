@@ -55,7 +55,7 @@ programs:
       adapter: |
         wake_adapter_raw.py
       template_args:
-        model: porcupine_linux.ppn
+        model: "porcupine_linux.ppn"
 
     # https://github.com/Kitt-AI/snowboy
     # Models included in share/
@@ -66,7 +66,7 @@ programs:
       adapter: |
         wake_adapter_raw.py
       template_args:
-        model: share/snowboy.umdl
+        model: "share/snowboy.umdl"
 
     # https://github.com/mycroftAI/mycroft-precise
     # Model included in share/
@@ -76,7 +76,7 @@ programs:
       adapter: |
         wake_adapter_raw.py
       template_args:
-        model: share/hey_mycroft.tflite
+        model: "share/hey_mycroft.tflite"
 
     # TODO: snowman
     # https://github.com/Thalhammer/snowman/
@@ -94,7 +94,7 @@ programs:
       adapter: |
         vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 512
       template_args:
-        model: share/silero_vad.onnx
+        model: "share/silero_vad.onnx"
 
     # https://pypi.org/project/webrtcvad/
     webrtcvad:
@@ -128,7 +128,7 @@ programs:
       adapter: |
         asr_adapter_raw2text.py
       template_args:
-        model: "share/vosk-model-small-en-us-0.15"
+        model: "${data_dir}/vosk-model-small-en-us-0.15"
 
     # Run server: asr vosk
     vosk.client:
@@ -143,7 +143,7 @@ programs:
       adapter: |
         asr_adapter_raw2text.py
       template_args:
-        model: "share/english_v1.0.0-large-vocab"
+        model: "${data_dir}/english_v1.0.0-large-vocab"
 
     # Run server: asr coqui-stt
     coqui-stt.client:
@@ -158,7 +158,7 @@ programs:
       adapter: |
         asr_adapter_raw2text.py
       template_args:
-        model: "share/en-us_pocketsphinx-cmu"
+        model: "${data_dir}/en-us_pocketsphinx-cmu"
 
     # Run server: asr pocketsphinx
     pocketsphinx.client:
@@ -174,7 +174,7 @@ programs:
     # ur,uz,vi,yi,yo,zh
     whisper:
       command: |
-        script/wav2text --language ${language} ${model} {wav_file}
+        script/wav2text --language ${language} --model-directory ${data_dir} ${model} {wav_file}
       adapter: |
         asr_adapter_wav2text.py
       template_args:
@@ -194,7 +194,7 @@ programs:
       adapter: |
         asr_adapter_wav2text.py
       template_args:
-        model: "share/ggml-tiny.en.bin"
+        model: "${data_dir}/ggml-tiny.en.bin"
 
     # Run server: asr whisper-cpp
     whisper-cpp.client:
@@ -210,7 +210,7 @@ programs:
       adapter: |
         asr_adapter_wav2text.py
       template_args:
-        model: "share/tiny-int8"
+        model: "${data_dir}/tiny-int8"
 
     # Run server: asr faster-whisper
     faster-whisper.client:
@@ -431,23 +431,23 @@ servers:
       command: |
         script/server ${model}
       template_args:
-        model: "share/vosk-model-small-en-us-0.15"
+        model: "${data_dir}/vosk-model-small-en-us-0.15"
 
     coqui-stt:
       command: |
         script/server ${model}
       template_args:
-        model: "share/english_v1.0.0-large-vocab"
+        model: "${data_dir}/english_v1.0.0-large-vocab"
 
     pocketsphinx:
       command: |
         script/server ${model}
       template_args:
-        model: "share/en-us_pocketsphinx-cmu"
+        model: "${data_dir}/en-us_pocketsphinx-cmu"
 
     whisper:
       command: |
-        script/server --language ${language} --device ${device} ${model}
+        script/server --model-directory ${data_dir} --language ${language} --device ${device} ${model}
       template_args:
         language: "en"
         model: "tiny.en"
@@ -457,14 +457,14 @@ servers:
       command: |
         script/server ${model}
       template_args:
-        model: "share/ggml-tiny.en.bin"
+        model: "${data_dir}/ggml-tiny.en.bin"
 
     faster-whisper:
       command: |
         script/server --language ${language} --device ${device} ${model}
       template_args:
         language: "en"
-        model: "share/tiny-int8"
+        model: "${data_dir}/tiny-int8"
         device: "cpu"  # or cuda
 
   tts:

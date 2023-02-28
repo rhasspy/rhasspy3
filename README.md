@@ -6,7 +6,7 @@ An open source toolkit for building voice assistants.
 
 Rhasspy focuses on:
 
-* Privacy - no data leaves your computer
+* Privacy - no data leaves your computer unless you want it to
 * Broad language support - more than just English
 * Customization - everything can be changed
 
@@ -50,13 +50,15 @@ Complete voice loop from microphone input (mic) to speaker output (snd). Stages 
 3. recognize (optional)
     * Recognize an intent from text
 4. handle
-    * Handle an intent or text
+    * Handle an intent or text, producing a text response
 5. speak
-    * Convert handle output text to speech and speak through snd
+    * Convert handle output text to speech, and speak through snd
 
 ### Servers
 
 Some programs take a while to load, so it's best to leave them running as a server. Use `bin/server_run.py` or add `--server <domain> <name>` when running the HTTP server.
+
+See `servers` section of `configuration.yaml` file.
 
 ---
 
@@ -75,8 +77,8 @@ Some programs take a while to load, so it's best to leave them running as a serv
     * snowboy
 * vad
     * silero
-    * energy
     * webrtcvad
+    * energy
 * asr 
     * vosk
     * coqui-stt
@@ -89,7 +91,7 @@ Some programs take a while to load, so it's best to leave them running as a serv
 * handle
     * home_assistant_conversation
 * tts 
-    * larynx1 (TODO)
+    * larynx1
     * larynx2
     * mimic3
     * coqui-tts

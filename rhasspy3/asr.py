@@ -10,7 +10,8 @@ from .config import PipelineProgramConfig
 from .core import Rhasspy
 from .event import Event, Eventable, async_read_event, async_write_event
 from .program import create_process
-from .vad import DOMAIN as VAD_DOMAIN, VoiceStopped, VoiceStarted
+from .vad import DOMAIN as VAD_DOMAIN
+from .vad import VoiceStarted, VoiceStopped
 
 DOMAIN = "asr"
 _TRANSCRIPT_TYPE = "transcript"
