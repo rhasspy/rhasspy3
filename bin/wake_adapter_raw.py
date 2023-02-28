@@ -74,7 +74,9 @@ def write_proc(reader: IO[bytes], state: State):
         for line in reader:
             line = line.strip()
             if line:
-                write_event(Detection(name=line.decode()).event())
+                write_event(
+                    Detection(name=line.decode(), timestamp=state.timestamp).event()
+                )
                 state.detected = True
                 break
     except Exception:
