@@ -51,7 +51,7 @@ programs:
     # Models: see script/list_models
     porcupine1:
       command: |
-        .venv/bin/python3 bin/porcupine_raw_text.py --model ${model}
+        .venv/bin/python3 bin/porcupine_raw_text.py --model "${model}"
       adapter: |
         wake_adapter_raw.py
       template_args:
@@ -62,7 +62,7 @@ programs:
     # Custom wake word: https://github.com/rhasspy/snowboy-seasalt
     snowboy:
       command: |
-        .venv/bin/python3 bin/snowboy_raw_text.py --model ${model}
+        .venv/bin/python3 bin/snowboy_raw_text.py --model "${model}"
       adapter: |
         wake_adapter_raw.py
       template_args:
@@ -72,7 +72,7 @@ programs:
     # Model included in share/
     precise-lite:
       command: |
-        .venv/bin/python3 bin/precise.py ${model}
+        .venv/bin/python3 bin/precise.py "${model}"
       adapter: |
         wake_adapter_raw.py
       template_args:
@@ -90,7 +90,7 @@ programs:
     # Model included in share/
     silero:
       command: |
-        script/speech_prob ${model}
+        script/speech_prob "${model}"
       adapter: |
         vad_adapter_raw.py --rate 16000 --width 2 --channels 1 --samples-per-chunk 512
       template_args:
@@ -124,7 +124,7 @@ programs:
     # Models: https://alphacephei.com/vosk/models
     vosk:
       command: |
-        script/raw2text ${model}
+        script/raw2text "${model}"
       adapter: |
         asr_adapter_raw2text.py
       template_args:
@@ -139,7 +139,7 @@ programs:
     # Models: https://coqui.ai/models/
     coqui-stt:
       command: |
-        script/raw2text ${model}
+        script/raw2text "${model}"
       adapter: |
         asr_adapter_raw2text.py
       template_args:
@@ -154,7 +154,7 @@ programs:
     # Models: https://github.com/synesthesiam/voice2json-profiles
     pocketsphinx:
       command: |
-        script/raw2text ${model}
+        script/raw2text "${model}"
       adapter: |
         asr_adapter_raw2text.py
       template_args:
@@ -174,7 +174,7 @@ programs:
     # ur,uz,vi,yi,yo,zh
     whisper:
       command: |
-        script/wav2text --language ${language} --model-directory ${data_dir} ${model} {wav_file}
+        script/wav2text --language ${language} --model-directory "${data_dir}" "${model}" "{wav_file}"
       adapter: |
         asr_adapter_wav2text.py
       template_args:
@@ -190,7 +190,7 @@ programs:
     # Models: https://huggingface.co/datasets/ggerganov/whisper.cpp
     whisper-cpp:
       command: |
-        script/wav2text ${model} {wav_file}
+        script/wav2text "${model}" "{wav_file}"
       adapter: |
         asr_adapter_wav2text.py
       template_args:
@@ -206,7 +206,7 @@ programs:
     # (asr_faster-whisper-*)
     faster-whisper:
       command: |
-        script/wav2text ${model} {wav_file}
+        script/wav2text "${model}" "{wav_file}"
       adapter: |
         asr_adapter_wav2text.py
       template_args:
@@ -227,7 +227,7 @@ programs:
     # Models: https://github.com/rhasspy/larynx2/releases/tag/v0.0.2
     larynx2:
       command: |
-        bin/larynx --model ${model} --output_file -
+        bin/larynx --model "${model}" --output_file -
       adapter: |
         tts_adapter_text2wav.py
       template_args:
@@ -242,7 +242,7 @@ programs:
     # Models: https://rhasspy.github.io/larynx/
     larynx1:
       command: |
-        .venv/bin/larynx --voices-dir ${data_dir} --voice ${voice}
+        .venv/bin/larynx --voices-dir "${data_dir}" --voice "${voice}"
       adapter: |
         tts_adapter_text2wav.py
       template_args:
@@ -262,7 +262,7 @@ programs:
     # apt-get install espeak-ng
     espeak-ng:
       command: |
-        espeak-ng -v ${voice} --stdin -w ${temp_file}
+        espeak-ng -v "${voice}" --stdin -w "{temp_file}"
       adapter: |
         tts_adapter_text2wav.py --temp_file
       template_args:
@@ -273,7 +273,7 @@ programs:
     # (tts_flite-*)
     flite:
       command: |
-        flite -voice ${voice} -o ${temp_file}
+        flite -voice "${voice}" -o "{temp_file}"
       template_args:
         voice: "cmu_us_slt"
       adapter: |
@@ -283,7 +283,7 @@ programs:
     # apt-get install festival festival-<lang>
     festival:
       command: |
-        text2wave -o ${temp_file} -eval (voice_${voice})
+        text2wave -o "{temp_file}" -eval "(voice_${voice})"
       template_args:
         voice: "cmu_us_slt_arctic_hts"
       adapter: |
@@ -293,7 +293,16 @@ programs:
     # Models: see script/list_models
     coqui-tts:
       command: |
-        tts_adapter_http.py ${url} --param speaker_id ${speaker_id}
+        .venv/bin/tts --model_name "${model}" --out_path "{temp_file}" --text "{text}"
+      adapter: |
+        tts_adapter_text2wav.py --temp_file --text
+      template_args:
+        model: "tts_models/en/ljspeech/vits"
+        speaker_id: ""
+
+    coqui-tts.client:
+      command: |
+        tts_adapter_http.py "${url}" --param speaker_id "${speaker_id}"
       template_args:
         url: "http://localhost:5002/api/tts"
         speaker_id: ""
@@ -303,7 +312,7 @@ programs:
     # (marytts-voices.tar.gz)
     marytts:
       command: |
-        bin/marytts.py ${url} ${voice}
+        bin/marytts.py "${url}" "${voice}"
       template_args:
         url: "http://localhost:59125/process"
         voice: "cmu-slt-hsmm"
@@ -314,7 +323,7 @@ programs:
     # Models: https://mycroftai.github.io/mimic3-voices/
     mimic3:
       command: |
-        .venv/bin/mimic3 --voices-dir ${data_dir} --voice ${voice} --stdout
+        .venv/bin/mimic3 --voices-dir "${data_dir}" --voice "${voice}" --stdout
       adapter: |
         tts_adapter_text2wav.py
       template_args:
@@ -367,7 +376,7 @@ programs:
     # 2. Put long-lived access token in etc/token
     home_assistant_conversation:
       command: |
-        bin/converse.py --language ${language} ${url} ${token_file}
+        bin/converse.py --language "${language}" "${url}" "${token_file}"
       adapter: |
         handle_adapter_text.py
       template_args:
@@ -405,7 +414,7 @@ programs:
 
     udp_raw:
       command: |
-        bin/udp_raw.py --host ${host} --port ${port}
+        bin/udp_raw.py --host "${host}" --port ${port}
       template_args:
         host: "127.0.0.1"
         port: 5001
@@ -419,7 +428,7 @@ programs:
     # Use rhasspy3/bin/satellite_run.py
     websocket:
       command: |
-        script/run ${uri}
+        script/run "${uri}"
       template_args:
         uri: "ws://localhost:13331/pipeline/asr-tts"
 
@@ -429,25 +438,25 @@ servers:
   asr:
     vosk:
       command: |
-        script/server ${model}
+        script/server "${model}"
       template_args:
         model: "${data_dir}/vosk-model-small-en-us-0.15"
 
     coqui-stt:
       command: |
-        script/server ${model}
+        script/server "${model}"
       template_args:
         model: "${data_dir}/english_v1.0.0-large-vocab"
 
     pocketsphinx:
       command: |
-        script/server ${model}
+        script/server "${model}"
       template_args:
         model: "${data_dir}/en-us_pocketsphinx-cmu"
 
     whisper:
       command: |
-        script/server --model-directory ${data_dir} --language ${language} --device ${device} ${model}
+        script/server --model-directory "${data_dir}" --language ${language} --device ${device} ${model}
       template_args:
         language: "en"
         model: "tiny.en"
@@ -455,7 +464,7 @@ servers:
 
     whisper-cpp:
       command: |
-        script/server ${model}
+        script/server "${model}"
       template_args:
         model: "${data_dir}/ggml-tiny.en.bin"
 
@@ -470,7 +479,7 @@ servers:
   tts:
     mimic3:
       command: |
-        script/server --voice ${voice} ${data_dir}
+        script/server --voice "${voice}" "${data_dir}"
       template_args:
         voice: "en_US/ljspeech_low"
 
@@ -482,9 +491,13 @@ servers:
 
     larynx1:
       command: |
-        script/server --voices-dir ${data_dir} --host ${host}
+        script/server --voices-dir "${data_dir}" --host "${host}"
       template_args:
         host: "127.0.0.1"
+
+    coqui-tts:
+      command: |
+        script/server
 
 
 # -----------------------------------------------------------------------------

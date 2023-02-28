@@ -28,10 +28,12 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
+    params = {}
     if args.param:
-        params = dict(args.param)
-    else:
-        params = {}
+        for key, value in params.items():
+            # Don't include empty parameters
+            if value:
+                params[key] = value
 
     try:
         while True:

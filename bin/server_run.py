@@ -51,6 +51,9 @@ def main() -> None:
         # Substitute within template args
         args_mapping = dict(server.template_args)
         for arg_name, arg_str in args_mapping.items():
+            if not isinstance(arg_str, str):
+                continue
+
             arg_template = string.Template(arg_str)
             args_mapping[arg_name] = arg_template.safe_substitute(default_mapping)
 

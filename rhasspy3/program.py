@@ -84,6 +84,9 @@ async def create_process(
         # Substitute within program template args
         args_mapping = dict(program_config.template_args)
         for arg_name, arg_str in args_mapping.items():
+            if not isinstance(arg_str, str):
+                continue
+
             arg_template = string.Template(arg_str)
             args_mapping[arg_name] = arg_template.safe_substitute(default_mapping)
 
@@ -94,6 +97,9 @@ async def create_process(
             # Substitute within pipeline template args
             args_mapping = dict(pipeline_config.template_args)
             for arg_name, arg_str in args_mapping.items():
+                if not isinstance(arg_str, str):
+                    continue
+
                 arg_template = string.Template(arg_str)
                 args_mapping[arg_name] = arg_template.safe_substitute(default_mapping)
 

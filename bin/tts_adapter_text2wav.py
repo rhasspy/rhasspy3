@@ -6,7 +6,6 @@ import argparse
 import io
 import logging
 import shlex
-import string
 import subprocess
 import tempfile
 import wave
@@ -28,7 +27,12 @@ def main():
     parser.add_argument(
         "--temp_file",
         action="store_true",
-        help="Command has ${temp_file} and will write output to it",
+        help="Command has {temp_file} and will write output to it",
+    )
+    parser.add_argument(
+        "--text",
+        action="store_true",
+        help="Command has {text} argument",
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
@@ -63,17 +67,28 @@ def main():
 
 
 def text_to_wav(args: argparse.Namespace, text: str) -> bytes:
+    command_str = args.command
+    format_args = {}
+    if args.text:
+        format_args["text"] = text
+        text = ""  # Pass as arg instead
+
     if args.temp_file:
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".wav") as wav_file:
-            template = string.Template(args.command)
-            command_str = template.safe_substitute(temp_file=wav_file.name)
+            format_args["temp_file"] = wav_file.name
+            command_str = command_str.format(**format_args)
             command = shlex.split(command_str)
-            subprocess.run(command, check=True, input=text.encode())
+
+            # Send stdout to devnull so it doesn't interfere with our events
+            subprocess.run(
+                command, check=True, stdout=subprocess.DEVNULL, input=text.encode()
+            )
             wav_file.seek(0)
             return Path(wav_file.name).read_bytes()
 
     else:
-        command = shlex.split(args.command)
+        command_str = command_str.format(**format_args)
+        command = shlex.split(command_str)
         return subprocess.check_output(command, input=text.encode())
 
 
