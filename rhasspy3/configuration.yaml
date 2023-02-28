@@ -231,7 +231,7 @@ programs:
       adapter: |
         tts_adapter_text2wav.py
       template_args:
-        model: share/en-us-blizzard_lessac-medium.onnx
+        model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
 
     # Run server: tts larynx2
     larynx2.client:
@@ -242,7 +242,7 @@ programs:
     # Models: https://rhasspy.github.io/larynx/
     larynx1:
       command: |
-        .venv/bin/larynx --voice ${voice}
+        .venv/bin/larynx --voices-dir ${data_dir} --voice ${voice}
       adapter: |
         tts_adapter_text2wav.py
       template_args:
@@ -314,7 +314,7 @@ programs:
     # Models: https://mycroftai.github.io/mimic3-voices/
     mimic3:
       command: |
-        .venv/bin/mimic3 --voice ${voice} --stdout
+        .venv/bin/mimic3 --voices-dir ${data_dir} --voice ${voice} --stdout
       adapter: |
         tts_adapter_text2wav.py
       template_args:
@@ -470,19 +470,19 @@ servers:
   tts:
     mimic3:
       command: |
-        script/server --voice ${voice}
+        script/server --voice ${voice} ${data_dir}
       template_args:
         voice: "en_US/ljspeech_low"
 
     larynx2:
       command: |
-        script/server ${model}
+        script/server "${model}"
       template_args:
-        model: "share/en-us-blizzard_lessac-medium.onnx"
+        model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
 
     larynx1:
       command: |
-        script/server --host ${host}
+        script/server --voices-dir ${data_dir} --host ${host}
       template_args:
         host: "127.0.0.1"
 

@@ -54,7 +54,7 @@ def main() -> None:
             arg_template = string.Template(arg_str)
             args_mapping[arg_name] = arg_template.safe_substitute(default_mapping)
 
-        merge_dict(command_mapping, server.template_args)
+        merge_dict(command_mapping, args_mapping)
 
     command_template = string.Template(command_str)
     command_str = command_template.safe_substitute(command_mapping)

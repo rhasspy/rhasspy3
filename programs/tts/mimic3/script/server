@@ -17,4 +17,4 @@ fi
 socket_dir="${base_dir}/var/run"
 mkdir -p "${socket_dir}"
 
-python3 "${base_dir}/bin/mimic3_server.py" "${base_dir}/share" --socketfile "${socket_dir}/mimic3.socket" "$@"
+python3 "${base_dir}/bin/mimic3_server.py" --socketfile "${socket_dir}/mimic3.socket" "$@"
