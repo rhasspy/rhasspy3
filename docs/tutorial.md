@@ -374,9 +374,12 @@ curl -X POST 'localhost:13331/pipeline/run?stop_after=asr'
 (say "grasshopper", *pause*, voice command, *wait*)
 
 
+
 ## Intent Handling
 
-configuration.yaml:
+There are two types of intent handlers in Rhasspy, ones that handle transcripts directly (text) and others that handle structured intents (name + entities). For this example, we will be handling text directly from `asr`.
+
+In `configuration.yaml`:
 
 ```yaml
 programs:
@@ -405,40 +408,59 @@ pipelines:
 
 ```
 
-Install date time script:
+Install date time demo script:
 
 ```sh
 mkdir -p config/programs/handle/
 cp -R programs/handle/date_time config/programs/handle/
 ```
 
-Test input:
+This script just looks for the words "date" and "time" in the text, and responds appropriately.
+
+You can test it on some text:
 
 ```sh
 echo 'What time is it?' | script/run bin/handle_handle.py --debug
 ```
 
-Test full voice command + handling:
+Now let's test it with a full voice command:
 
 ```sh
 script/run bin/pipeline_run.py --debug --stop-after handle
 ```
 
-(say "porcupine", *pause*, "what time is it?")
+(say "grasshopper", *pause*, "what time is it?")
 
-Test over HTTP (restart server):
+It works too over HTTP (restart server):
 
 ```sh
-curl -X POST 'localhost:12101/api/listen-for-command'
+curl -X POST 'localhost:13331/pipeline/run?stop_after=handle'
 ```
 
-(say "porcupine", *pause*, "what's the date?")
-
+(say "grasshopper", *pause*, "what's the date?")
 
 
 ## Text to Speech and Sound
 
-configuration.yaml:
+The final stages of our pipeline will be text to speech (`tts`) and audio output (`snd`).
+
+Install [Larynx 2](https://github.com/rhasspy/larynx2):
+
+```sh
+mkdir -p config/programs/tts/
+cp -R programs/tts/larynx2 config/programs/tts/
+config/programs/tts/larynx2/script/setup.py
+```
+
+and download an English voice:
+
+```sh
+config/programs/tts/larynx2/script/download.py english
+```
+
+Call `download.py` without any arguments to see available voices.
+
+Add to `configuration.yaml`:
 
 ```yaml
 programs:
@@ -450,9 +472,11 @@ programs:
   tts:
     larynx2:
       command: |
-        bin/larynx --model share/en-us-blizzard_lessac-medium.onnx --output_file -
+        bin/larynx --model "${model}" --output_file -
       adapter: |
         tts_adapter_text2wav.py
+      template_args:
+        model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
   snd:
     aplay:
       command: |
@@ -476,49 +500,38 @@ pipelines:
       name: aplay
 ```
 
-Install [Larynx 2](https://github.com/rhasspy/larynx2):
 
-```sh
-mkdir -p config/programs/tts/
-cp -R programs/tts/larynx2 config/programs/tts/
-config/programs/tts/larynx2/script/setup.py
-```
-
-```sh
-config/programs/tts/larynx2/script/download.py english
-```
-
-Download English voice:
-
-```sh
-config/programs/tts/larynx2/script/download.py english
-```
-
-Put voices in `config/programs/tts/larynx2/share`
-
-Test text to speech:
+We can test the text to speech and audio output programs:
 
 ```sh
 script/run bin/tts_speak.py 'Welcome to the world of speech synthesis.'
 ```
 
-Use `bin/tts_synthesize.py` to get WAV.
-
-Test over HTTP (restart server):
+The `bin/tts_synthesize.py` can be used if you want to just output a WAV file.
 
 ```sh
-curl -X POST --data 'Welcome to the world of speech synthesis.' 'localhost:12101/api/speak-text'
+script/run bin/tts_synthesize.py 'Welcome to the world of speech synthesis.' > welcome.wav
 ```
 
-To get WAV file over HTTP:
+This also works over HTTP (restart server):
 
 ```sh
-curl -X POST --data 'Welcome to the world of speech synthesis.' --output welcome.wav 'localhost:12101/api/text-to-speech'
+curl -X POST \
+  --data 'Welcome to the world of speech synthesis.' \
+  --output welcome.wav \
+  'localhost:13331/tts/synthesize'
 ```
 
-Listen to `welcome.wav`
+Or to speak over HTTP:
+
+```sh
+curl -X POST --data 'Welcome to the world of speech synthesis.' 'localhost:13331/tts/speak'
+```
+
 
 ### Client/Server
+
+Like speech to text, text to speech models can take a while to load. Let's add a server for Larynx to `configuration.yaml`:
 
 ```yaml
 programs:
@@ -538,9 +551,9 @@ servers:
   tts:
     larynx2:
       command: |
-        script/server ${model}
+        script/server "${model}"
       template_args:
-        model: "share/en-us-blizzard_lessac-medium.onnx"
+        model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
 
 pipelines:
   default:
@@ -554,19 +567,33 @@ pipelines:
     snd: ...
 ```
 
-Restart server:
+Now we can run both servers with the HTTP server:
 
 ```sh
-script/http_server --debug --server asr vosk --server tts larynx2
+script/http_server --debug --server asr faster-whisper --server tts larynx2
 ```
+
+Text to speech requests should be faster now.
 
 
 ## Complete Pipeline
 
+As a final example, let's run a complete pipeline from wake word detection to text to speech response:
+
 ```sh
-curl -X POST 'localhost:12101/api/listen-for-command'
+script/run bin/pipeline_run.py --debug
 ```
 
-(say "porcupine", *pause*, "what time is it?")
+(say "grasshopper", *pause*, "what time is it?", *wait*)
 
-(speaks time)
+Rhasspy should speak the current time.
+
+This also works over HTTP:
+
+```sh
+curl -X POST 'localhost:13331/pipeline/run'
+```
+
+(say "grasshopper", *pause*, "what is the date?", *wait*)
+
+Rhasspy should speak the current date.

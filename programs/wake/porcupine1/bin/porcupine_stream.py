@@ -89,7 +89,11 @@ def main() -> None:
                 )
                 keyword_index = porcupine.process(unpacked_chunk)
                 if keyword_index >= 0:
-                    write_event(Detection(name=names[keyword_index]).event())
+                    write_event(
+                        Detection(
+                            name=names[keyword_index], timestamp=chunk.timestamp
+                        ).event()
+                    )
                     is_detected = True
 
                 audio_bytes = audio_bytes[bytes_per_chunk:]

@@ -17,6 +17,7 @@ _LOGGER = logging.getLogger(_FILE.stem)
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("text", help="Text to speak")
     parser.add_argument(
         "-c",
         "--config",
@@ -25,7 +26,6 @@ async def main() -> None:
     )
     parser.add_argument("-p", "--pipeline", default="default", help="Name of pipeline")
     parser.add_argument("--tts-program", help="TTS program name")
-    parser.add_argument("-t", "--text", required=True, help="Text to speak")
     parser.add_argument("-f", "--file", help="Write to file instead of stdout")
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
