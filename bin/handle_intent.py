@@ -7,9 +7,8 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Iterable
 
-from rhasspy3.asr import Transcript
 from rhasspy3.core import Rhasspy
 from rhasspy3.handle import handle
 from rhasspy3.intent import Intent
@@ -33,7 +32,7 @@ async def main() -> None:
     parser.add_argument(
         "--handle-program", help="Name of handle program to use (overrides pipeline)"
     )
-    parser.add_argument("input", nargs="*", help="Input to handle")
+    parser.add_argument("intent", nargs="*", help="Intent JSON event(s) to handle")
     #
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
@@ -52,13 +51,8 @@ async def main() -> None:
     assert handle_program, "No handle program"
 
     for line in get_input(args):
-        if line[0] == "{":
-            # Intent JSON
-            handle_input: Union[Intent, Transcript] = Intent.from_dict(json.loads(line))
-        else:
-            # Text
-            handle_input = Transcript(text=line)
-
+        # Intent JSON
+        handle_input: Intent = Intent.from_dict(json.loads(line))
         handle_result = await handle(rhasspy, handle_program, handle_input)
         if handle_result is None:
             _LOGGER.warning("No result")
@@ -70,9 +64,9 @@ async def main() -> None:
 
 def get_input(args: argparse.Namespace) -> Iterable[str]:
     """Get input from stdin or args."""
-    if args.input:
-        for text in args.input:
-            yield text
+    if args.intent:
+        for event_json in args.intent:
+            yield event_json
     else:
         if os.isatty(sys.stdin.fileno()):
             print("Reading input from stdin", file=sys.stderr)

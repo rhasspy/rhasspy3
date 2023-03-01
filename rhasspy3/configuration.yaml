@@ -372,14 +372,14 @@ programs:
     #
     # 1. Change server url
     # 2. Put long-lived access token in etc/token
-    home_assistant_conversation:
+    home_assistant:
       command: |
         bin/converse.py --language "${language}" "${url}" "${token_file}"
       adapter: |
         handle_adapter_text.py
       template_args:
         url: "http://localhost:8123/api/conversation/process"
-        token_file: "etc/token"
+        token_file: "${data_dir}/token"
         language: "en"
 
     # Intent only: answer English date/time requests

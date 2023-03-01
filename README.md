@@ -10,7 +10,11 @@ Rhasspy focuses on:
 * Broad language support - more than just English
 * Customization - everything can be changed
 
-See the [tutorial.md](docs/tutorial.md) for more information.
+## Getting Started
+
+* Check out the [tutorial.md](docs/tutorial.md)
+* Connect Rhasspy to [Home Assistant](docs/home_assistant.md)
+* Run one or more [satellites](docs/satellite.md)
 
 
 ## Core Concepts

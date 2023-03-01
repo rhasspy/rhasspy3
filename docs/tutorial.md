@@ -597,3 +597,9 @@ curl -X POST 'localhost:13331/pipeline/run'
 (say "grasshopper", *pause*, "what is the date?", *wait*)
 
 Rhasspy should speak the current date.
+
+
+## Next Steps
+
+* Connect Rhasspy to [Home Assistant](home_assistant.md)
+* Run one or more [satellites](satellite.md)
