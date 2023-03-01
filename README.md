@@ -10,12 +10,14 @@ Rhasspy focuses on:
 * Broad language support - more than just English
 * Customization - everything can be changed
 
+See the [tutorial.md](docs/tutorial.md) for more information.
+
 
 ## Core Concepts
 
 ### Domains
 
-Rhasspy is organized by domain:
+Rhasspy is organized by [domain](docs/domains.md):
 
 * mic - audio input
 * wake - wake word detection
@@ -29,7 +31,7 @@ Rhasspy is organized by domain:
 
 ### Programs
 
-Rhasspy talks to external programs using the [Wyoming protocol](docs/wyoming.md). You can add your own program by implementing the protocol or using an [adapter](#adapters).
+Rhasspy talks to external programs using the [Wyoming protocol](docs/wyoming.md). You can add your own programs by implementing the protocol or using an [adapter](#adapters).
 
 
 ### Adapters
@@ -63,80 +65,45 @@ See `servers` section of `configuration.yaml` file.
 ---
 
 
-## Programs
+## Supported Programs
 
 * mic
-    * arecord
-    * gstreamer_udp
-    * udp_raw
-    * sounddevice
-    * pyaudio
+    * [arecord](https://alsa-project.org/wiki/Main_Page)
+    * [gstreamer_udp](https://gstreamer.freedesktop.org/)
+    * [sounddevice](https://python-sounddevice.readthedocs.io)
+    * [pyaudio](https://people.csail.mit.edu/hubert/pyaudio/docs/)
 * wake 
-    * porcupine1
-    * precise-lite
-    * snowboy
+    * [porcupine1](https://github.com/Picovoice/porcupine)
+    * [precise-lite](https://github.com/mycroftAI/mycroft-precise)
+    * [snowboy](https://github.com/Kitt-AI/snowboy)
 * vad
-    * silero
-    * webrtcvad
-    * energy
+    * [silero](https://github.com/snakers4/silero-vad)
+    * [webrtcvad](https://pypi.org/project/webrtcvad/)
 * asr 
-    * vosk
-    * coqui-stt
-    * whisper
-    * whisper-cpp
-    * faster-whisper
-    * pocketsphinx
-* intent
-    * regex
+    * [whisper](https://github.com/openai/whisper)
+    * [whisper-cpp](https://github.com/ggerganov/whisper.cpp/)
+    * [faster-whisper](https://github.com/guillaumekln/faster-whisper/)
+    * [vosk](https://alphacephei.com/vosk/)
+    * [coqui-stt](https://stt.readthedocs.io)
+    * [pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
 * handle
-    * home_assistant_conversation
+    * [home_assistant_conversation](https://www.home-assistant.io/docs/assist)
 * tts 
-    * larynx1
-    * larynx2
-    * mimic3
-    * coqui-tts
-    * marytts
-    * flite
-    * festival
-    * espeak-ng
+    * [larynx2](https://github.com/rhasspy/larynx2/)
+    * [mimic3](https://github.com/mycroftAI/mimic3)
+    * [larynx1](https://github.com/rhasspy/larynx/)
+    * [coqui-tts](https://tts.readthedocs.io)
+    * [marytts](http://mary.dfki.de/)
+    * [flite](http://www.festvox.org/flite/)
+    * [festival](http://www.cstr.ed.ac.uk/projects/festival/)
+    * [espeak-ng](https://github.com/espeak-ng/espeak-ng/)
 * snd
-    * aplay
-    * gstreamer_udp
-    * udp_raw
+    * [aplay](https://alsa-project.org/wiki/Main_Page)
+    * [gstreamer_udp](https://gstreamer.freedesktop.org/)
     
     
-## Servers
+---
 
-* asr
-    * vosk
-    * coqui-stt
-    * whisper
-    * whisper-cpp
-    * faster-whisper
-    * pocketsphinx
-* tts
-    * larynx1 (TODO)
-    * larynx2
-    * coqui-tts
-    * mimic3
-
-
-## Utilities
-
-In `bin/`:
-
-* `asr_transcribe.py`
-* `asr_transcribe_stream.py`
-* `asr_transcribe_wav.py`
-* `handle_handle.py`
-* `intent_recognize.py`
-* `mic_record_sample.py`
-* `mic_test_energy.py`
-* `server_run.py`
-* `snd_play.py`
-* `tts_speak.py`
-* `tts_synthesize.py`
-* `wake_detect.py`
 
 ## HTTP API
 
@@ -193,8 +160,11 @@ Unless overridden, the pipeline named "default" is used.
 * `/snd/play`
     * Plays WAV audio via snd
     * Override `snd_program` or `pipeline`
+* `/config`
+    * Returns JSON config
 * `/version`
     * Returns version info
+
 
 ## WebSocket API
 
