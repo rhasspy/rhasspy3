@@ -380,7 +380,6 @@ programs:
       template_args:
         url: "http://localhost:8123/api/conversation/process"
         token_file: "${data_dir}/token"
-        language: "en"
 
     # Intent only: answer English date/time requests
     date_time:

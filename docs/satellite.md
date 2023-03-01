@@ -82,4 +82,4 @@ script/run bin/satellite_run.py --debug --loop
 
 (say "porcupine", *pause*, say voice command, *wait*)
 
-If everything is working, you should hear a response being spoken.
+If everything is working, you should hear a response being spoken. Press CTRL+C to quit.

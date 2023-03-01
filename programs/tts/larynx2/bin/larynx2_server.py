@@ -20,6 +20,9 @@ def main() -> None:
     parser.add_argument(
         "--socketfile", required=True, help="Path to Unix domain socket file"
     )
+    parser.add_argument(
+        "--auto-punctuation", default=".?!", help="Automatically add punctuation"
+    )
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
 
@@ -58,7 +61,7 @@ def main() -> None:
                     try:
                         connection, client_address = sock.accept()
                         _LOGGER.debug("Connection from %s", client_address)
-                        handle_connection(connection, proc)
+                        handle_connection(connection, proc, args)
                     except KeyboardInterrupt:
                         break
                     except Exception:
@@ -67,7 +70,9 @@ def main() -> None:
         os.unlink(args.socketfile)
 
 
-def handle_connection(connection: socket.socket, proc: subprocess.Popen) -> None:
+def handle_connection(
+    connection: socket.socket, proc: subprocess.Popen, args: argparse.Namespace
+) -> None:
     assert proc.stdin is not None
     assert proc.stdout is not None
 
@@ -79,8 +84,19 @@ def handle_connection(connection: socket.socket, proc: subprocess.Popen) -> None
             if event_type != "synthesize":
                 continue
 
-            text = event_info["data"]["text"]
-            _LOGGER.debug("synthesize: text='%s'", text)
+            raw_text = event_info["data"]["text"]
+            text = raw_text.strip()
+            if args.auto_punctuation and text:
+                has_punctuation = False
+                for punc_char in args.auto_punctuation:
+                    if text[-1] == punc_char:
+                        has_punctuation = True
+                        break
+
+                if not has_punctuation:
+                    text = text + args.auto_punctuation[0]
+
+            _LOGGER.debug("synthesize: raw_text=%s, text='%s'", raw_text, text)
 
             # Text in, file path out
             print(text.strip(), file=proc.stdin, flush=True)
