@@ -17,6 +17,7 @@ outer_a:  # Inline comment
     world
   inner_a:
     name: inner_a
+  empty_string: ""
 
 outer_b:
   name: inner_b
@@ -36,6 +37,7 @@ def test_safe_load():
                 "prop_str_2quotes": "hello: world",
                 "prop_str_literal": "hello:\nworld",
                 "inner_a": {"name": "inner_a"},
+                "empty_string": "",
             },
             "outer_b": {"name": "inner_b"},
         }

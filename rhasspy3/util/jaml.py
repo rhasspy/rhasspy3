@@ -76,10 +76,15 @@ class JamlLoader:
 
         assert not key.startswith("-"), "Lists are not supported"
 
+        value_is_string = False
+
         if value:
             if value[0] in ("'", '"'):
                 # Remove quotes
                 value = value[1:-1]
+
+                # Ensure we process the value as a string, even if it's empty
+                value_is_string = True
             elif value == "|":
                 self.literal = ""
                 self.target_stack.append(key)
@@ -97,7 +102,7 @@ class JamlLoader:
                     except ValueError:
                         pass
 
-        if value:
+        if value or value_is_string:
             target[key] = value
         else:
             new_target: Dict[str, Any] = {}
