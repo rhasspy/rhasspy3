@@ -206,11 +206,12 @@ programs:
     # (asr_faster-whisper-*)
     faster-whisper:
       command: |
-        script/wav2text --language "en" "${model}" "{wav_file}"
+        script/wav2text --language ${language} "${model}" "{wav_file}"
       adapter: |
         asr_adapter_wav2text.py
       template_args:
         model: "${data_dir}/tiny-int8"
+        language: "en"
 
     # Run server: asr faster-whisper
     faster-whisper.client:
@@ -552,7 +553,7 @@ pipelines:
     tts:
       name: larynx2
       template_args:
-        model: "share/de-thorsten-low.onnx"
+        model: "${data_dir}/de-thorsten-low.onnx"
 
   # French
   fr:
@@ -562,9 +563,9 @@ pipelines:
       template_args:
         language: fr
     tts:
-      name: mimic3
+      name: larynx2
       template_args:
-        voice: "fr_FR/siwis_low"
+        model: "${data_dir}/fr-siwis-low.onnx"
 
   # Spanish
   es:
@@ -574,9 +575,9 @@ pipelines:
       template_args:
         language: es
     tts:
-      name: mimic3
+      name: larynx2
       template_args:
-        voice: "es_ES/carlfm_low"
+        model: "${data_dir}/es-carlfm-low.onnx"
 
   # Italian
   it:
@@ -586,6 +587,90 @@ pipelines:
       template_args:
         language: it
     tts:
-      name: mimic3
+      name: larynx2
       template_args:
-        voice: "it_IT/riccardo-fasol_low"
+        model: "${data_dir}/it-riccardo_fasol-low.onnx"
+
+  # Catalan
+  ca:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: ca
+    tts:
+      name: larynx2
+      template_args:
+        model: "${data_dir}/ca-upc_ona-low.onnx"
+
+  # Danish
+  da:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: da
+    tts:
+      name: larynx2
+      template_args:
+        model: "${data_dir}/da-nst_talesyntese-medium.onnx"
+
+  # Dutch
+  nl:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: nl
+    tts:
+      name: larynx2
+      template_args:
+        model: "${data_dir}/nl-nathalie-low.onnx"
+
+  # Norwegian
+  no:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: no
+    tts:
+      name: larynx2
+      template_args:
+        model: "${data_dir}/no-talesyntese-medium.onnx"
+
+  # Ukrainian
+  uk:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: uk
+    tts:
+      name: larynx2
+      template_args:
+        model: "${data_dir}/uk-lada-low.onnx"
+
+  # Vietnamese
+  vi:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: vi
+    tts:
+      name: larynx2
+      template_args:
+        model: "${data_dir}/vi-vivos-low.onnx"
+
+  # Chinese
+  zh:
+    inherit: default
+    asr:
+      name: faster-whisper
+      template_args:
+        language: zh
+    tts:
+      name: larynx2
+      template_args:
+        model: "${data_dir}/zh-cn-huayan-low.onnx"

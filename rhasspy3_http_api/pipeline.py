@@ -177,23 +177,24 @@ def add_pipeline(
         return jsonify(pipeline_result.to_event_dict())
 
     @app.websocket("/pipeline/asr-tts")
-    async def ws_api_stream_to_stream() -> None:
-        used_pipeline = pipeline
-        pipeline_name = websocket.args.get("pipeline")
-        if pipeline_name:
-            used_pipeline = rhasspy.config.pipelines[pipeline_name]
+    async def ws_api_asr_tts() -> None:
+        running_pipeline = (
+            rhasspy.config.pipelines[request.args["pipeline"]]
+            if "pipeline" in websocket.args
+            else pipeline
+        )
 
-        asr_program = websocket.args.get("asr_program", used_pipeline.asr)
-        assert asr_program, "Missing program for asr"
+        asr_program = websocket.args.get("asr_program") or running_pipeline.asr
+        assert asr_program, "Missing asr program"
 
-        vad_program = websocket.args.get("vad_program", used_pipeline.vad)
-        assert vad_program, "Missing program for vad"
+        vad_program = websocket.args.get("vad_program") or running_pipeline.vad
+        assert vad_program, "Missing vad program"
 
-        handle_program = websocket.args.get("handle_program", used_pipeline.handle)
-        assert handle_program, "Missing program for handle"
+        handle_program = websocket.args.get("handle_program") or running_pipeline.handle
+        assert handle_program, "Missing handle program"
 
-        tts_program = websocket.args.get("tts_program", used_pipeline.tts)
-        assert tts_program, "Missing program for tts"
+        tts_program = websocket.args.get("tts_program") or running_pipeline.tts
+        assert tts_program, "Missing tts program"
 
         in_rate = int(websocket.args.get("in_rate", DEFAULT_IN_RATE))
         in_width = int(websocket.args.get("in_width", DEFAULT_IN_WIDTH))

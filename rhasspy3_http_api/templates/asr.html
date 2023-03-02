@@ -22,6 +22,7 @@
   <li>
     Mic Program:
     <select id="asr_mic_program" onchange="asr_mic_change()">
+      <option value="">Browser</option>
       <option value="">WAV file</option>
       <option value="">default</option>
       {% set programs = config.programs["mic"] | sort %}
@@ -68,13 +69,18 @@
 
 function asr_mic_change() {
     const micIndex = q("#asr_mic_program").selectedIndex;
-    q("#asr_wav_li").hidden = (micIndex != 0);
-    q("#asr_vad_li").hidden = (micIndex == 0);
+    q("#asr_wav_li").hidden = (micIndex != 1);
+    q("#asr_vad_li").hidden = (micIndex == 1);
 }
 
 function asr_transcribe() {
     const micIndex = q("#asr_mic_program").selectedIndex;
     if (micIndex == 0) {
+        asr_transcribe_stream();
+        return;
+    }
+
+    if (micIndex == 1) {
         asr_transcribe_wav();
         return;
     }
@@ -111,6 +117,7 @@ function asr_transcribe() {
 }
 
 function asr_transcribe_wav() {
+    const pipelineName = q("#pipeline_name").value;
     const asrProgram = q("#asr_program").value;
 
     const status = q("#asr_status");
@@ -131,7 +138,9 @@ function asr_transcribe_wav() {
         status.innerText = "Transcribing";
 
         const startTime = performance.now();
-        fetch("{{ url_prefix }}" + "asr/transcribe?asr_program=" + encodeURIComponent(asrProgram),
+        fetch("{{ url_prefix }}" + "asr/transcribe"
+              + "&pipeline=" + encodeURIComponent(pipelineName)
+              + "&asr_program=" + encodeURIComponent(asrProgram),
               { method: "POST", body: wavData })
             .then(response => {
                 const endTime = performance.now();
@@ -147,6 +156,48 @@ function asr_transcribe_wav() {
     }
 
     reader.readAsArrayBuffer(files[0]);
+}
+
+async function asr_transcribe_stream() {
+    const pipelineName = q("#pipeline_name").value;
+    const asrProgram = q("#asr_program").value;
+    const vadProgram = q("#asr_vad_program").value;
+
+    const status = q("#asr_status");
+    status.innerText = "Connecting";
+
+    const transcript = q("#asr_transcript");
+    transcript.innerText = "";
+
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    await context.audioWorklet.addModule("/js/recorder.worklet.js");
+
+    const websocket = new WebSocket("ws://" + location.host + "/asr/transcribe"
+                                    + "?rate=" + encodeURIComponent(context.sampleRate)
+                                    + "&pipeline=" + encodeURIComponent(pipelineName)
+                                    + "&asr_program=" + encodeURIComponent(asrProgram)
+                                    + "&vad_program=" + encodeURIComponent(vadProgram));
+
+    websocket.binaryType = "arraybuffer";
+    websocket.onopen = function() {
+        status.innerText = "Connected";
+
+        const source = context.createMediaStreamSource(stream);
+        const recorder = new AudioWorkletNode(context, "recorder.worklet");
+        source.connect(recorder).connect(context.destination);
+        recorder.port.onmessage = function(e) {
+            websocket.send(e.data);
+        };
+    };
+
+    let audioArrayBuffers = [];
+    let numAudioBytes = 0;
+    websocket.onmessage = function(e) {
+        status.innerText = "Done";
+        transcript.innerText = JSON.parse(e.data).data.text;
+    };
+
 }
 
 </script>

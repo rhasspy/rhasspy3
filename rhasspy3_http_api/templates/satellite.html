@@ -60,11 +60,15 @@
     </select>
   </li>
   <li>
-    <button id="enable_mic" onclick="enable_mic()">Enable Microphone</button>
-    <button id="click_to_talk" onclick="click_to_talk()" hidden>Click to Talk</button>
+    <button onclick="asr_tts()">Run</button>
   </li>
   <li>
-    Status: <span id="pipeline_status">Microphone disabled</span>
+    Status: <span id="pipeline_status"></span>
+  </li>
+  <li>
+    Events:
+    <ul id="events">
+    </ul>
   </li>
   <li>
     <audio id="tts_audio" preload="none" controls autoplay></audio>
@@ -73,79 +77,18 @@
 
 <script type="text/javascript">
 
-function enable_mic() {
-    navigator.mediaDevices
-        .getUserMedia({ video: false, audio: true })
-        .then((stream) => {
-            q("#enable_mic").hidden = true;
-            q("#click_to_talk").hidden = false;
-        })
-        .catch((err) => {
-            alert(err);
-        });
-}
-
-// https://stackoverflow.com/questions/62093473/how-to-play-raw-audio-files
-function buildWaveHeader(opts) {
-  const numFrames =      opts.numFrames;
-  const numChannels =    opts.numChannels || 2;
-  const sampleRate =     opts.sampleRate || 44100;
-  const bytesPerSample = opts.bytesPerSample || 2;
-  const format =         opts.format
-
-  const blockAlign = numChannels * bytesPerSample;
-  const byteRate = sampleRate * blockAlign;
-  const dataSize = numFrames * blockAlign;
-
-  const buffer = new ArrayBuffer(44);
-  const dv = new DataView(buffer);
-
-  let p = 0;
-
-  function writeString(s) {
-    for (let i = 0; i < s.length; i++) {
-      dv.setUint8(p + i, s.charCodeAt(i));
-    }
-    p += s.length;
-  }
-
-  function writeUint32(d) {
-    dv.setUint32(p, d, true);
-    p += 4;
-  }
-
-  function writeUint16(d) {
-    dv.setUint16(p, d, true);
-    p += 2;
-  }
-
-  writeString('RIFF');              // ChunkID
-  writeUint32(dataSize + 36);       // ChunkSize
-  writeString('WAVE');              // Format
-  writeString('fmt ');              // Subchunk1ID
-  writeUint32(16);                  // Subchunk1Size
-  writeUint16(format);              // AudioFormat
-  writeUint16(numChannels);         // NumChannels
-  writeUint32(sampleRate);          // SampleRate
-  writeUint32(byteRate);            // ByteRate
-  writeUint16(blockAlign);          // BlockAlign
-  writeUint16(bytesPerSample * 8);  // BitsPerSample
-  writeString('data');              // Subchunk2ID
-  writeUint32(dataSize);            // Subchunk2Size
-
-  return buffer;
-}
-
-async function click_to_talk() {
+async function asr_tts() {
     const pipelineName = q("#pipeline_name").value;
-
-    // const asrProgram = q("#pipeline_asr_program").value;
-    // const vadProgram = q("#pipeline_vad_program").value;
-    // const handleProgram = q("#pipeline_handle_program").value;
-    // const ttsProgram = q("#pipeline_tts_program").value;
+    const asrProgram = q("#pipeline_asr_program").value;
+    const vadProgram = q("#pipeline_vad_program").value;
+    const handleProgram = q("#pipeline_handle_program").value;
+    const ttsProgram = q("#pipeline_tts_program").value;
 
     const status = q("#pipeline_status");
     status.innerText = "Connecting";
+
+    const eventsList = q("#events");
+    eventsList.innerHTML = "";
 
     const context = new (window.AudioContext || window.webkitAudioContext)();
     const stream = await navigator.mediaDevices.getUserMedia({audio: true});
@@ -153,7 +96,11 @@ async function click_to_talk() {
 
     const websocket = new WebSocket("ws://" + location.host + "/pipeline/asr-tts"
                                     + "?in_rate=" + encodeURIComponent(context.sampleRate)
-                                    + "&out_rate=" + encodeURIComponent(22050));
+                                    + "&out_rate=" + encodeURIComponent(22050)
+                                    + "&asr_program=" + encodeURIComponent(asrProgram)
+                                    + "&vad_program=" + encodeURIComponent(vadProgram)
+                                    + "&handle_program=" + encodeURIComponent(handleProgram)
+                                    + "&tts_program=" + encodeURIComponent(ttsProgram));
 
     websocket.binaryType = "arraybuffer";
     websocket.onopen = function() {
@@ -171,7 +118,7 @@ async function click_to_talk() {
     let numAudioBytes = 0;
     websocket.onmessage = function(e) {
         if (typeof e.data === "string") {
-            status.innerText = e.data;
+            eventsList.innerHTML += "<li>" + e.data + "</li>";
         } else {
             audioArrayBuffers.push(e.data);
             numAudioBytes += e.data.byteLength;
@@ -204,6 +151,7 @@ async function click_to_talk() {
         const blob = new Blob([wavBytes], { "type": "audio/wav" });
 
         q("#tts_audio").src = window.URL.createObjectURL(blob);
+        status.innerText = "Done";
     };
 
 }
