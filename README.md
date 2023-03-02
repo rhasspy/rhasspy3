@@ -1,8 +1,10 @@
-# Rhasspy 3
+![Rhasspy 3](img/banner.png)
 
 **NOTE: This is a very early developer preview!**
 
 An open source toolkit for building voice assistants.
+
+![Voice assistant pipeline](img/pipeline.png)
 
 Rhasspy focuses on:
 
@@ -14,7 +16,19 @@ Rhasspy focuses on:
 
 * Check out the [tutorial.md](docs/tutorial.md)
 * Connect Rhasspy to [Home Assistant](docs/home_assistant.md)
+   * Install the [Rhasspy 3 add-on](https://github.com/rhasspy/hassio-addons)
 * Run one or more [satellites](docs/satellite.md)
+
+
+## Missing Pieces
+
+This is a developer preview, so there are lots of things missing:
+
+* A user friendly web UI
+* An automated method for installing programs/services and downloading models
+* Support for custom speech to text grammars
+* Intent systems besides Home Assistant
+* The ability to accumulate context within a pipeline
 
 
 ## Core Concepts
