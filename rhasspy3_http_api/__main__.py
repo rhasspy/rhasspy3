@@ -65,6 +65,7 @@ def main():
     template_dir = _DIR / "templates"
     img_dir = _DIR / "img"
     css_dir = _DIR / "css"
+    js_dir = _DIR / "js"
 
     app = Quart("rhasspy3", template_folder=str(template_dir))
     app.secret_key = str(uuid4())
@@ -98,6 +99,11 @@ def main():
         """Render main web page."""
         return await render_template("index.html", config=rhasspy.config)
 
+    @app.route("/satellite.html", methods=["GET"])
+    async def page_satellite() -> str:
+        """Render satellite web page."""
+        return await render_template("satellite.html", config=rhasspy.config)
+
     @app.route("/img/<path:filename>", methods=["GET"])
     async def img(filename) -> Response:
         """Image static endpoint."""
@@ -107,6 +113,11 @@ def main():
     async def css(filename) -> Response:
         """css static endpoint."""
         return await send_from_directory(css_dir, filename)
+
+    @app.route("/js/<path:filename>", methods=["GET"])
+    async def js(filename) -> Response:
+        """Javascript static endpoint."""
+        return await send_from_directory(js_dir, filename)
 
     @app.route("/config", methods=["GET"])
     async def http_config() -> Response:
