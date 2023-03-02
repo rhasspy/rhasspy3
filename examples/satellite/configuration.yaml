@@ -1,0 +1,18 @@
+satellites:
+  default:
+    mic:
+      name: arecord
+      template_args:
+        device: "default"
+    wake:
+      name: porcupine1
+      template_args:
+        model: "porcupine_raspberry-pi.ppn"
+    remote:
+      name: websocket
+      template_args:
+        uri: "ws://homeassistant.local:13331/pipeline/asr-tts"
+    snd:
+      name: aplay
+      template_args:
+        device: "default"

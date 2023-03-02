@@ -8,9 +8,11 @@ programs:
     # apt-get install alsa-utils
     arecord:
       command: |
-        arecord -q -r 16000 -c 1 -f S16_LE -t raw -
+        arecord -q -D "${device}" -r 16000 -c 1 -f S16_LE -t raw -
       adapter: |
         mic_adapter_raw.py --samples-per-chunk 1024 --rate 16000 --width 2 --channels 1
+      template_args:
+        device: "default"
 
     # https://people.csail.mit.edu/hubert/pyaudio/docs/
     pyaudio:
@@ -406,9 +408,11 @@ programs:
     # apt-get install alsa-utils
     aplay:
       command: |
-        aplay -q -r 22050 -f S16_LE -c 1 -t raw
+        aplay -q -D "${device}" -r 22050 -f S16_LE -c 1 -t raw
       adapter: |
         snd_adapter_raw.py --rate 22050 --width 2 --channels 1
+      template_args:
+        device: "default"
 
     udp_raw:
       command: |
