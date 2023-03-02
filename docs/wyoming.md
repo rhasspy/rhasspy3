@@ -39,7 +39,7 @@ Each **event** in the Wyoming protocol is:
 Example:
 
 ```json
-{ "type": "audio-chunk", data: { "rate": 16000, "width", "channels": 1 }, "payload_length": 2048 }
+{ "type": "audio-chunk", "data": { "rate": 16000, "width", "channels": 1 }, "payload_length": 2048 }
 <2048 bytes>
 ```
 
