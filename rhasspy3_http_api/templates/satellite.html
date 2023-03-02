@@ -97,6 +97,7 @@ async function asr_tts() {
     const websocket = new WebSocket("ws://" + location.host + "/pipeline/asr-tts"
                                     + "?in_rate=" + encodeURIComponent(context.sampleRate)
                                     + "&out_rate=" + encodeURIComponent(22050)
+                                    + "&pipeline=" + encodeURIComponent(pipelineName)
                                     + "&asr_program=" + encodeURIComponent(asrProgram)
                                     + "&vad_program=" + encodeURIComponent(vadProgram)
                                     + "&handle_program=" + encodeURIComponent(handleProgram)

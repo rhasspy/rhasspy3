@@ -179,7 +179,7 @@ def add_pipeline(
     @app.websocket("/pipeline/asr-tts")
     async def ws_api_asr_tts() -> None:
         running_pipeline = (
-            rhasspy.config.pipelines[request.args["pipeline"]]
+            rhasspy.config.pipelines[websocket.args["pipeline"]]
             if "pipeline" in websocket.args
             else pipeline
         )
