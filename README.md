@@ -14,7 +14,7 @@ Rhasspy focuses on:
 
 ## Getting Started
 
-* Check out the [tutorial.md](docs/tutorial.md)
+* Check out the [tutorial](docs/tutorial.md)
 * Connect Rhasspy to [Home Assistant](docs/home_assistant.md)
    * Install the [Rhasspy 3 add-on](https://github.com/rhasspy/hassio-addons)
 * Run one or more [satellites](docs/satellite.md)
