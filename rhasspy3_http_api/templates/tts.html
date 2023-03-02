@@ -26,10 +26,13 @@
     TTS Program:
     <select id="tts_program">
       <option value="">default</option>
-      {% set programs = config.programs["tts"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["tts"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>
@@ -37,10 +40,13 @@
     <select id="tts_snd_program">
       <option value="">Browser</option>
       <option value="">default</option>
-      {% set programs = config.programs["snd"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["snd"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>

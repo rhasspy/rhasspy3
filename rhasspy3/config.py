@@ -2,6 +2,7 @@ import argparse
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
+from .util import merge_dict
 from .util.dataclasses_json import DataClassJsonMixin
 from .util.jaml import safe_load
 
@@ -12,6 +13,7 @@ class ProgramConfig(DataClassJsonMixin):
     adapter: Optional[str] = None
     shell: bool = False
     template_args: Optional[Dict[str, Any]] = None
+    installed: bool = True
 
 
 @dataclass
@@ -99,11 +101,13 @@ class Config(DataClassJsonMixin):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("config", help="Path to YAML configuration file")
+    parser.add_argument("config", nargs="+", help="Path to YAML configuration file")
     args = parser.parse_args()
 
-    with open(args.config, "r", encoding="utf-8") as config_file:
-        config_dict = safe_load(config_file)
+    config_dict: Dict[str, Any] = {}
+    for config_path in args.config:
+        with open(config_path, "r", encoding="utf-8") as config_file:
+            merge_dict(config_dict, safe_load(config_file))
 
     config = Config.from_dict(config_dict)
     print(config)

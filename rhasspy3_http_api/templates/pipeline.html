@@ -21,9 +21,11 @@
     Mic Program:
     <select id="pipeline_mic_program">
       <option value="">default</option>
-      {% set programs = config.programs["mic"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["mic"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
     </select>
   </li>
@@ -31,9 +33,11 @@
     Wake Program:
     <select id="pipeline_wake_program">
       <option value="">default</option>
-      {% set programs = config.programs["wake"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["wake"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
     </select>
   </li>
@@ -41,60 +45,78 @@
     ASR Program:
     <select id="pipeline_asr_program">
       <option value="">default</option>
-      {% set programs = config.programs["asr"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["asr"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>
     VAD Program:
     <select id="pipeline_vad_program">
       <option value="">default</option>
-      {% set programs = config.programs["vad"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["vad"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>
     Intent Program:
     <select id="pipeline_intent_program">
       <option value="">default</option>
-      {% set programs = config.programs["intent"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["intent"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>
     Handle Program:
     <select id="pipeline_handle_program">
       <option value="">default</option>
-      {% set programs = config.programs["handle"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["handle"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>
     TTS Program:
     <select id="pipeline_tts_program">
       <option value="">default</option>
-      {% set programs = config.programs["tts"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["tts"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>
     Snd Program:
     <select id="pipeline_snd_program">
       <option value="">default</option>
-      {% set programs = config.programs["snd"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["snd"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>

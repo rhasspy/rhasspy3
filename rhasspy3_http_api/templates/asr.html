@@ -25,10 +25,13 @@
       <option value="">Browser</option>
       <option value="">WAV file</option>
       <option value="">default</option>
-      {% set programs = config.programs["mic"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["mic"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li id="asr_wav_li">
@@ -38,20 +41,26 @@
     VAD Program:
     <select id="asr_vad_program">
       <option value="">default</option>
-      {% set programs = config.programs["vad"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["vad"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>
     ASR Program:
     <select id="asr_program">
       <option value="">default</option>
-      {% set programs = config.programs["asr"] | sort %}
-      {% for program in programs: %}
-      <option>{{ program }}</option>
+      {% set programs = config.programs["asr"].items() | sort %}
+      {% for name, program in programs: %}
+      {% if program.installed: %}
+      <option>{{ name }}</option>
+      {% endif %}
       {% endfor %}
+    </select>
     </select>
   </li>
   <li>

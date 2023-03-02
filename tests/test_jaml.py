@@ -9,6 +9,7 @@ outer_a:  # Inline comment
   prop_int: 1
   prop_float: 1.23
   prop_bool: true
+  prop_bool2: false
   prop_str_noquotes: hello: world
   prop_str_1quotes: 'hello: world'
   prop_str_2quotes: "hello: world"
@@ -32,6 +33,7 @@ def test_safe_load():
                 "prop_int": 1,
                 "prop_float": 1.23,
                 "prop_bool": True,
+                "prop_bool2": False,
                 "prop_str_noquotes": "hello: world",
                 "prop_str_1quotes": "hello: world",
                 "prop_str_2quotes": "hello: world",
