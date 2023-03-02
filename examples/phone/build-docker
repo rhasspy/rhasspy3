@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-this_dir="$( cd "$( dirname "$0" )" && pwd )"
-
-repo_dir="${this_dir}/../../"
-
-docker buildx build \
-    "${repo_dir}" \
-    -f "${this_dir}/Dockerfile" \
-    --tag rhasspy3-phone "$@"
