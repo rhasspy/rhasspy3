@@ -29,6 +29,20 @@ Installed programs and downloaded models are stored in the `config` directory, w
 Programs in Rhasspy are divided into [domains](domains.md).
 
 
+## Configuration
+
+Rhasspy loads two configuration files:
+
+1. `rhasspy3/configuration.yaml` (base)
+2. `config/configuration.yaml` (user)
+
+The file in `config` will override the base configuration. You can see what the final configuration looks like with:
+
+```sh
+script/run bin/config_print.py
+```
+
+
 ## Microphone
 
 Programs that were not designed for Rhasspy can be used with [adapters](adapters.md).

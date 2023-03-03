@@ -17,6 +17,7 @@ class Rhasspy:
     config: Config
     config_dir: Path
     base_dir: Path
+    config_dict: Dict[str, Any]
 
     @property
     def programs_dir(self) -> Path:
@@ -49,5 +50,6 @@ class Rhasspy:
         return Rhasspy(
             config=Config.from_dict(config_dict),
             config_dir=config_dir,
+            config_dict=config_dict,
             base_dir=_DIR.parent,
         )
