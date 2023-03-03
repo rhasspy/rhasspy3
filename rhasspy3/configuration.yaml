@@ -506,16 +506,16 @@ servers:
 # -----------------------------------------------------------------------------
 
 # Example satellites
-satellites:
-  default:
-    mic:
-      name: arecord
-    wake:
-      name: porcupine1
-    remote:
-      name: websocket
-    snd:
-      name: aplay
+# satellites:
+#   default:
+#     mic:
+#       name: arecord
+#     wake:
+#       name: porcupine1
+#     remote:
+#       name: websocket
+#     snd:
+#       name: aplay
 
 # -----------------------------------------------------------------------------
 
