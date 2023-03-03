@@ -22,14 +22,14 @@ if [ ! -d "${venv}" ]; then
     "${PYTHON}" -m venv "${venv}"
     source "${venv}/bin/activate"
 
-    # Install Python dependencies
-    echo 'Installing Python dependencies'
     pip3 install --upgrade pip
     pip3 install --upgrade wheel setuptools
 else
     source "${venv}/bin/activate"
 fi
 
+# Install Python dependencies
+echo 'Installing Python dependencies'
 pip3 install -r "${base_dir}/requirements.txt"
 
 # Install rhasspy3
