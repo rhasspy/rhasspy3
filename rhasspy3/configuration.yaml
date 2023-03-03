@@ -512,8 +512,6 @@ satellites:
       name: arecord
     wake:
       name: porcupine1
-      template_args:
-        model: grasshopper_linux.ppn
     remote:
       name: websocket
     snd:
