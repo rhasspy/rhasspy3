@@ -9,6 +9,6 @@ Text to speech service for Rhasspy based on [Larynx 2](https://github.com/rhassp
 2. Run `script/setup`
 3. Download a model with `script/download.py`
     * Example: `script/download.py english`
-    * Models are downloaded to `share` directory
+    * Models are downloaded to `config/data/tts/larynx2` directory
 4. Test with `bin/larynx`
-    * Example `echo 'Welcome to the world of speech synthesis.' | bin/larynx --model share/en-us-blizzard_lessac-medium.onnx --output_file welcome.wav`
+    * Example `echo 'Welcome to the world of speech synthesis.' | bin/larynx --model /path/to/en-us-blizzard_lessac-medium.onnx --output_file welcome.wav`
