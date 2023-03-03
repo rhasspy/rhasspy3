@@ -10,20 +10,21 @@ import sys
 import time
 import wave
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 from rhasspy3.asr import DOMAIN, Transcript
 from rhasspy3.audio import (
     DEFAULT_IN_CHANNELS,
     DEFAULT_IN_RATE,
     DEFAULT_IN_WIDTH,
-    AudioChunk,
+    DEFAULT_SAMPLES_PER_CHUNK,
     AudioChunkConverter,
     AudioStart,
     AudioStop,
+    wav_to_chunks,
 )
 from rhasspy3.core import Rhasspy
-from rhasspy3.event import async_read_event, async_write_events
+from rhasspy3.event import async_read_event, async_write_event
 from rhasspy3.program import create_process
 
 _FILE = Path(__file__)
@@ -55,6 +56,9 @@ async def main() -> None:
     parser.add_argument(
         "--channels", type=int, default=DEFAULT_IN_CHANNELS, help="Sample channel count"
     )
+    parser.add_argument(
+        "--samples-per-chunk", type=int, default=DEFAULT_SAMPLES_PER_CHUNK
+    )
     #
     parser.add_argument("wav", nargs="*", help="Path to WAV file(s)")
     #
@@ -81,17 +85,7 @@ async def main() -> None:
 
         with io.BytesIO(wav_bytes) as wav_io:
             with wave.open(wav_io, "rb") as wav_file:
-                rate = wav_file.getframerate()
-                width = wav_file.getsampwidth()
-                channels = wav_file.getnchannels()
-
-                num_frames = wav_file.getnframes()
-                wav_seconds = num_frames / rate
-                timestamp = int(wav_seconds * 1_000)
-                audio_bytes = wav_file.readframes(num_frames)
-
-                chunk = AudioChunk(rate, width, channels, audio_bytes, timestamp=0)
-                chunk = converter.convert(chunk)
+                chunks = list(wav_to_chunks(wav_file, args.samples_per_chunk))
 
         async with (await create_process(rhasspy, DOMAIN, asr_program)) as asr_proc:
             assert asr_proc.stdin is not None
@@ -99,12 +93,19 @@ async def main() -> None:
 
             # Write audio
             start_time = time.monotonic_ns()
-            await async_write_events(
-                (
-                    AudioStart(rate, width, channels, timestamp=0).event(),
-                    chunk.event(),
-                    AudioStop(timestamp=timestamp).event(),
-                ),
+            await async_write_event(
+                AudioStart(args.rate, args.width, args.channels, timestamp=0).event(),
+                asr_proc.stdin,
+            )
+
+            last_timestamp: Optional[int] = None
+            for chunk in chunks:
+                chunk = converter.convert(chunk)
+                await async_write_event(chunk.event(), asr_proc.stdin)
+                last_timestamp = chunk.timestamp
+
+            await async_write_event(
+                AudioStop(timestamp=last_timestamp).event(),
                 asr_proc.stdin,
             )
 
