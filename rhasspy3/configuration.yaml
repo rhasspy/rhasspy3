@@ -126,7 +126,7 @@ programs:
       command: |
         script/raw2text "${model}"
       adapter: |
-        asr_adapter_raw2text.py
+        asr_adapter_raw2text.py --rate 16000 --width 2 --channels 1
       template_args:
         model: "${data_dir}/vosk-model-small-en-us-0.15"
 
@@ -141,7 +141,7 @@ programs:
       command: |
         script/raw2text "${model}"
       adapter: |
-        asr_adapter_raw2text.py
+        asr_adapter_raw2text.py --rate 16000 --width 2 --channels 1
       template_args:
         model: "${data_dir}/english_v1.0.0-large-vocab"
 
@@ -156,7 +156,7 @@ programs:
       command: |
         script/raw2text "${model}"
       adapter: |
-        asr_adapter_raw2text.py
+        asr_adapter_raw2text.py --rate 16000 --width 2 --channels 1
       template_args:
         model: "${data_dir}/en-us_pocketsphinx-cmu"
 

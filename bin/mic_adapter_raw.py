@@ -22,6 +22,7 @@ def main() -> None:
         help="Command to run",
     )
     parser.add_argument("--shell", action="store_true", help="Run command with shell")
+    #
     parser.add_argument(
         "--samples-per-chunk",
         type=int,
@@ -46,6 +47,7 @@ def main() -> None:
         required=True,
         help="Sample channel count",
     )
+    #
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )

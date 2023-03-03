@@ -71,7 +71,14 @@ def add_asr(
         width = int(websocket.args.get("width", DEFAULT_IN_WIDTH))
         channels = int(websocket.args.get("channels", DEFAULT_IN_CHANNELS))
 
-        _LOGGER.debug("transcribe: asr=%s, vad=%s", asr_program, vad_program)
+        _LOGGER.debug(
+            "transcribe: asr=%s, vad=%s, rate=%s, width=%s, channels=%s",
+            asr_program,
+            vad_program,
+            rate,
+            width,
+            channels,
+        )
 
         async def audio_stream():
             while True:

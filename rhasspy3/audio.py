@@ -152,49 +152,54 @@ class AudioStop(Eventable):
 class AudioChunkConverter:
     """Converts audio chunks using audioop."""
 
-    rate: int
-    width: int
-    channels: int
+    rate: Optional[int] = None
+    width: Optional[int] = None
+    channels: Optional[int] = None
     _ratecv_state = None
 
     def convert(self, chunk: AudioChunk) -> AudioChunk:
         """Converts sample rate, width, and channels as necessary."""
         if (
-            (chunk.rate == self.rate)
-            and (chunk.width == self.width)
-            and (chunk.channels == self.channels)
+            ((self.rate is None) or (chunk.rate == self.rate))
+            and ((self.width is None) or (chunk.width == self.width))
+            and ((self.channels is None) or (chunk.channels == self.channels))
         ):
             return chunk
 
         audio_bytes = chunk.audio
+        width = chunk.width
 
-        if chunk.width != self.width:
+        if (self.width is not None) and (chunk.width != self.width):
             # Convert sample width
             audio_bytes = audioop.lin2lin(audio_bytes, chunk.width, self.width)
+            width = self.width
 
-        if chunk.channels != self.channels:
+        channels = chunk.channels
+        if (self.channels is not None) and (chunk.channels != self.channels):
             # Convert to mono or stereo
             if self.channels == 1:
-                audio_bytes = audioop.tomono(audio_bytes, self.width, 1.0, 1.0)
+                audio_bytes = audioop.tomono(audio_bytes, width, 1.0, 1.0)
             elif self.channels == 2:
-                audio_bytes = audioop.tostereo(audio_bytes, self.width, 1.0, 1.0)
+                audio_bytes = audioop.tostereo(audio_bytes, width, 1.0, 1.0)
             else:
                 raise ValueError(f"Cannot convert to channels: {self.channels}")
 
-        if chunk.rate != self.rate:
+            channels = self.channels
+
+        rate = chunk.rate
+        if (self.rate is not None) and (chunk.rate != self.rate):
             # Resample
             audio_bytes, self._ratecv_state = audioop.ratecv(
                 audio_bytes,
-                self.width,
-                self.channels,
+                width,
+                channels,
                 chunk.rate,
                 self.rate,
                 self._ratecv_state,
             )
+            rate = self.rate
 
-        return AudioChunk(
-            self.rate, self.width, self.channels, audio_bytes, timestamp=chunk.timestamp
-        )
+        return AudioChunk(rate, width, channels, audio_bytes, timestamp=chunk.timestamp)
 
 
 def wav_to_chunks(
