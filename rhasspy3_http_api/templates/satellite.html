@@ -104,6 +104,9 @@ async function asr_tts() {
     const stream = await navigator.mediaDevices.getUserMedia({audio: true});
     await context.audioWorklet.addModule("/js/recorder.worklet.js");
 
+    const source = context.createMediaStreamSource(stream);
+    const recorder = new AudioWorkletNode(context, "recorder.worklet");
+
     const websocket = new WebSocket("ws://" + location.host + "/pipeline/asr-tts"
                                     + "?in_rate=" + encodeURIComponent(context.sampleRate)
                                     + "&out_rate=" + encodeURIComponent(22050)
@@ -117,8 +120,6 @@ async function asr_tts() {
     websocket.onopen = function() {
         status.innerText = "Connected";
 
-        const source = context.createMediaStreamSource(stream);
-        const recorder = new AudioWorkletNode(context, "recorder.worklet");
         source.connect(recorder).connect(context.destination);
         recorder.port.onmessage = function(e) {
             websocket.send(e.data);
@@ -137,6 +138,9 @@ async function asr_tts() {
     };
 
     websocket.onclose = function() {
+        // Stop streaming audio
+        source.disconnect();
+        
         const audioBytes = new Uint8Array(numAudioBytes);
 
         // Copy to single buffer

@@ -4,6 +4,10 @@ class RecorderProcessor extends AudioWorkletProcessor {
   }
 
   process(inputList, outputList, parameters) {
+    if (inputList[0].length < 1) {
+      return true;
+    }
+
     const float32Data = inputList[0][0];
     const int16Data = new Int16Array(float32Data.length);
 

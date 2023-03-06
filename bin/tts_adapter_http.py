@@ -2,14 +2,17 @@
 import argparse
 import logging
 import wave
+from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK, AudioChunk, AudioStart, AudioStop
 from rhasspy3.event import read_event, write_event
 from rhasspy3.tts import Synthesize
 
-_LOGGER = logging.getLogger("tts_adapter_http")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 
 def main():
@@ -25,8 +28,16 @@ def main():
         metavar=("name", "value"),
         help="Name/value of query parameter",
     )
+    #
+    parser.add_argument(
+        "--samples-per-chunk", type=int, default=DEFAULT_SAMPLES_PER_CHUNK
+    )
+    #
+    parser.add_argument(
+        "--debug", action="store_true", help="Print DEBUG messages to console"
+    )
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     params = {}
     if args.param:
@@ -54,14 +65,25 @@ def main():
                         channels = wav_file.getnchannels()
 
                         num_frames = wav_file.getnframes()
-                        wav_seconds = num_frames / rate
-                        timestamp = int(wav_seconds * 1_000)
                         audio_bytes = wav_file.readframes(num_frames)
 
-                write_event(AudioStart(rate, width, channels, timestamp=0).event())
+                bytes_per_chunk = args.samples_per_chunk * width
+                timestamp = 0
                 write_event(
-                    AudioChunk(rate, width, channels, audio_bytes, timestamp=0).event()
+                    AudioStart(rate, width, channels, timestamp=timestamp).event()
                 )
+                while audio_bytes:
+                    chunk = AudioChunk(
+                        rate,
+                        width,
+                        channels,
+                        audio_bytes[:bytes_per_chunk],
+                        timestamp=timestamp,
+                    )
+                    write_event(chunk.event())
+                    timestamp += chunk.milliseconds
+                    audio_bytes = audio_bytes[bytes_per_chunk:]
+
                 write_event(AudioStop(timestamp=timestamp).event())
     except KeyboardInterrupt:
         pass

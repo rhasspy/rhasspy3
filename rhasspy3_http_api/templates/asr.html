@@ -182,6 +182,9 @@ async function asr_transcribe_stream() {
     const stream = await navigator.mediaDevices.getUserMedia({audio: true});
     await context.audioWorklet.addModule("/js/recorder.worklet.js");
 
+    const source = context.createMediaStreamSource(stream);
+    const recorder = new AudioWorkletNode(context, "recorder.worklet");
+
     const websocket = new WebSocket("ws://" + location.host + "/asr/transcribe"
                                     + "?rate=" + encodeURIComponent(context.sampleRate)
                                     + "&pipeline=" + encodeURIComponent(pipelineName)
@@ -192,8 +195,6 @@ async function asr_transcribe_stream() {
     websocket.onopen = function() {
         status.innerText = "Connected";
 
-        const source = context.createMediaStreamSource(stream);
-        const recorder = new AudioWorkletNode(context, "recorder.worklet");
         source.connect(recorder).connect(context.destination);
         recorder.port.onmessage = function(e) {
             websocket.send(e.data);
@@ -203,6 +204,7 @@ async function asr_transcribe_stream() {
     let audioArrayBuffers = [];
     let numAudioBytes = 0;
     websocket.onmessage = function(e) {
+        source.disconnect();
         status.innerText = "Done";
         transcript.innerText = JSON.parse(e.data).data.text;
     };

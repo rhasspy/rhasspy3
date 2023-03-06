@@ -244,6 +244,9 @@ def add_pipeline(
                     if vad_event is None:
                         break
 
+                    # Forward to websocket
+                    await websocket.send_json(vad_event.to_dict())
+
                     if VoiceStarted.is_type(vad_event.type):
                         _LOGGER.debug("stream-to-stream: voice started")
                     elif VoiceStopped.is_type(vad_event.type):
@@ -253,8 +256,6 @@ def add_pipeline(
                     vad_task = asyncio.create_task(async_read_event(vad_proc.stdout))
                     pending.add(vad_task)
 
-            await websocket.send_json(VoiceStopped().event().to_dict())
-
             # Get transcript from asr
             await async_write_event(AudioStop().event(), asr_proc.stdin)
             transcript: Optional[Transcript] = None
@@ -262,6 +263,9 @@ def add_pipeline(
                 asr_event = await async_read_event(asr_proc.stdout)
                 if asr_event is None:
                     break
+
+                # Forward to websocket
+                await websocket.send_json(asr_event.to_dict())
 
                 if Transcript.is_type(asr_event.type):
                     transcript = Transcript.from_event(asr_event)
@@ -274,6 +278,9 @@ def add_pipeline(
                 _LOGGER.debug("stream-to-stream: handle=%s", handle_result)
 
             if (handle_result is not None) and handle_result.text:
+                # Forward to websocket
+                await websocket.send_json(handle_result.event().to_dict())
+
                 _LOGGER.debug("stream-to-stream: sending tts")
                 await websocket.send_json(
                     AudioStart(out_rate, out_width, out_channels).event().to_dict()
