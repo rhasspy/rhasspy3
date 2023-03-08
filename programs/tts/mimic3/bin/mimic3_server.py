@@ -50,12 +50,15 @@ def main() -> None:
             )
         )
 
-        _LOGGER.debug("Preloading voice: %s", args.voice)
         if "#" in args.voice:
             # Case to handle a multi-speaker voice definition
-            mimic3.preload_voice(args.voice[0:args.voice.index('#')])
+            voice, _speaker = args.voice.split("#", maxsplit=1)
+            _LOGGER.debug("Preloading voice: %s", voice)
+            mimic3.preload_voice(voice)
         else:
+            _LOGGER.debug("Preloading voice: %s", args.voice)
             mimic3.preload_voice(args.voice)
+
         _LOGGER.info("Ready")
 
         mimic3.voice = args.voice
