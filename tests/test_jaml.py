@@ -19,6 +19,7 @@ outer_a:  # Inline comment
   inner_a:
     name: inner_a
   empty_string: ""
+  string_with_hash: "#test"
 
 outer_b:
   name: inner_b
@@ -40,6 +41,7 @@ def test_safe_load():
                 "prop_str_literal": "hello:\nworld",
                 "inner_a": {"name": "inner_a"},
                 "empty_string": "",
+                "string_with_hash": "#test",
             },
             "outer_b": {"name": "inner_b"},
         }

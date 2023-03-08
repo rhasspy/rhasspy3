@@ -65,16 +65,22 @@ class JamlLoader:
         target = self.target_stack[-1]
         assert isinstance(target, Mapping)
 
-        # Remove inline comments
-        line = line.split("#", maxsplit=1)[0]
-        line = line.rstrip()
-
         parts = line.split(":", maxsplit=1)
         assert len(parts) == 2
         key = parts[0].strip()
         value = parts[1].strip()
 
         assert not key.startswith("-"), "Lists are not supported"
+
+        # Remove inline comments
+        if value and (value[0] in ("'", '"')):
+            # Just keep what's in quotes.
+            # This doesn't take escapes, etc. into account.
+            end_quote = value.find(value[0], 1)
+            value = value[: end_quote + 1]
+        else:
+            # Remove comment
+            value = value.split("#", maxsplit=1)[0]
 
         value_is_dict = True
 
