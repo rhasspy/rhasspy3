@@ -8,18 +8,30 @@ from .util.jaml import safe_load
 
 
 @dataclass
-class ProgramConfig(DataClassJsonMixin):
-    command: str
-    adapter: Optional[str] = None
-    shell: bool = False
-    template_args: Optional[Dict[str, Any]] = None
-    installed: bool = True
-
-
-@dataclass
 class CommandConfig(DataClassJsonMixin):
     command: str
     shell: bool = False
+
+
+@dataclass
+class ProgramDownloadConfig(DataClassJsonMixin):
+    description: Optional[str] = None
+    check_file: Optional[str] = None
+
+
+@dataclass
+class ProgramInstallConfig(CommandConfig):
+    check_file: Optional[str] = None
+    download: Optional[CommandConfig] = None
+    downloads: Optional[Dict[str, ProgramDownloadConfig]] = None
+
+
+@dataclass
+class ProgramConfig(CommandConfig):
+    adapter: Optional[str] = None
+    template_args: Optional[Dict[str, Any]] = None
+    installed: bool = True
+    install: Optional[ProgramInstallConfig] = None
 
 
 @dataclass

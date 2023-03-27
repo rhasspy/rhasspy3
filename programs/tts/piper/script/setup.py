@@ -38,6 +38,8 @@ def main() -> None:
 
     if not args.destination:
         args.destination = _DIR.parent / "bin"
+    else:
+        args.destination = Path(args.destination)
 
     args.destination.mkdir(parents=True, exist_ok=True)
 
