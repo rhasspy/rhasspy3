@@ -224,24 +224,24 @@ programs:
   # --------------
   tts:
 
-    # https://github.com/rhasspy/larynx2/
-    # Models: https://github.com/rhasspy/larynx2/releases/tag/v0.0.2
-    larynx2:
+    # https://github.com/rhasspy/piper/
+    # Models: https://github.com/piper/piper/releases/tag/v0.0.2
+    piper:
       command: |
-        bin/larynx --model "${model}" --output_file -
+        bin/piper --model "${model}" --output_file -
       adapter: |
         tts_adapter_text2wav.py
       template_args:
         model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
 
-    # Run server: tts larynx2
-    larynx2.client:
+    # Run server: tts piper
+    piper.client:
       command: |
-        client_unix_socket.py var/run/larynx2.socket
+        client_unix_socket.py var/run/piper.socket
 
     # https://github.com/rhasspy/larynx/
     # Models: https://rhasspy.github.io/larynx/
-    larynx1:
+    larynx:
       command: |
         .venv/bin/larynx --voices-dir "${data_dir}" --voice "${voice}"
       adapter: |
@@ -249,8 +249,8 @@ programs:
       template_args:
         voice: "en-us"
 
-    # Run server: tts larynx1
-    larynx1.client:
+    # Run server: tts larynx
+    larynx.client:
       command: |
         bin/larynx_client.py ${url} ${voice}
       template_args:
@@ -486,13 +486,13 @@ servers:
       template_args:
         voice: "en_US/ljspeech_low"
 
-    larynx2:
+    piper:
       command: |
         script/server "${model}"
       template_args:
         model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
 
-    larynx1:
+    larynx:
       command: |
         script/server --voices-dir "${data_dir}" --host "${host}"
       template_args:
@@ -537,7 +537,7 @@ pipelines:
     handle:
       name: repeat
     tts:
-      name: larynx2
+      name: piper
     snd:
       name: aplay
 
@@ -549,7 +549,7 @@ pipelines:
   #     template_args:
   #       language: de
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/de-thorsten-low.onnx"
 
@@ -561,7 +561,7 @@ pipelines:
   #     template_args:
   #       language: fr
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/fr-siwis-low.onnx"
 
@@ -573,7 +573,7 @@ pipelines:
   #     template_args:
   #       language: es
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/es-carlfm-low.onnx"
 
@@ -585,7 +585,7 @@ pipelines:
   #     template_args:
   #       language: it
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/it-riccardo_fasol-low.onnx"
 
@@ -597,7 +597,7 @@ pipelines:
   #     template_args:
   #       language: ca
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/ca-upc_ona-low.onnx"
 
@@ -609,7 +609,7 @@ pipelines:
   #     template_args:
   #       language: da
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/da-nst_talesyntese-medium.onnx"
 
@@ -621,7 +621,7 @@ pipelines:
   #     template_args:
   #       language: nl
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/nl-nathalie-low.onnx"
 
@@ -633,7 +633,7 @@ pipelines:
   #     template_args:
   #       language: no
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/no-talesyntese-medium.onnx"
 
@@ -645,7 +645,7 @@ pipelines:
   #     template_args:
   #       language: uk
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/uk-lada-low.onnx"
 
@@ -657,7 +657,7 @@ pipelines:
   #     template_args:
   #       language: vi
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/vi-vivos-low.onnx"
 
@@ -669,6 +669,6 @@ pipelines:
   #     template_args:
   #       language: zh
   #   tts:
-  #     name: larynx2
+  #     name: piper
   #     template_args:
   #       model: "${data_dir}/zh-cn-huayan-low.onnx"

@@ -17,4 +17,4 @@ fi
 socket_dir="${base_dir}/var/run"
 mkdir -p "${socket_dir}"
 
-python3 "${base_dir}/bin/larynx2_server.py" --socketfile "${socket_dir}/larynx2.socket" "$@"
+python3 "${base_dir}/bin/piper_server.py" --socketfile "${socket_dir}/piper.socket" "$@"

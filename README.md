@@ -108,9 +108,9 @@ See `servers` section of `configuration.yaml` file.
 * handle
     * [home_assistant_conversation](https://www.home-assistant.io/docs/assist)
 * tts 
-    * [larynx2](https://github.com/rhasspy/larynx2/)
+    * [piper](https://github.com/rhasspy/piper/)
     * [mimic3](https://github.com/mycroftAI/mimic3)
-    * [larynx1](https://github.com/rhasspy/larynx/)
+    * [larynx](https://github.com/rhasspy/larynx/)
     * [coqui-tts](https://tts.readthedocs.io)
     * [marytts](http://mary.dfki.de/)
     * [flite](http://www.festvox.org/flite/)

@@ -82,7 +82,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--link-format",
-        default="https://github.com/rhasspy/larynx2/releases/download/v0.0.2/voice-{name}.tar.gz",
+        default="https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-{name}.tar.gz",
         help="Format string for download URLs",
     )
     args = parser.parse_args()
@@ -91,9 +91,9 @@ def main() -> None:
     if args.destination:
         args.destination = Path(args.destination)
     else:
-        # Assume we're in programs/tts/larynx2/script
+        # Assume we're in programs/tts/piper/script
         data_dir = _DIR.parent.parent.parent.parent / "data"
-        args.destination = data_dir / "tts" / "larynx2"
+        args.destination = data_dir / "tts" / "piper"
 
     args.destination.parent.mkdir(parents=True, exist_ok=True)
 

@@ -42,7 +42,7 @@ def main() -> None:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             command = [
-                str(_DIR / "larynx"),
+                str(_DIR / "piper"),
                 "--model",
                 str(args.model),
                 "--output_dir",

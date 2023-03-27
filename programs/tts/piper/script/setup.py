@@ -25,7 +25,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--link-format",
-        default="https://github.com/rhasspy/larynx2/releases/download/v0.0.2/larynx_{platform}.tar.gz",
+        default="https://github.com/rhasspy/piper/releases/download/v0.0.2/piper_{platform}.tar.gz",
         help="Format string for download URLs",
     )
     args = parser.parse_args()
@@ -49,10 +49,10 @@ def main() -> None:
             _LOGGER.info("Extracting to %s", temp_dir)
             tar_gz.extractall(temp_dir)
 
-        # Move larynx/ contents
-        larynx_dir = temp_dir / "larynx"
-        for path in larynx_dir.iterdir():
-            rel_path = path.relative_to(larynx_dir)
+        # Move piper/ contents
+        piper_dir = temp_dir / "piper"
+        for path in piper_dir.iterdir():
+            rel_path = path.relative_to(piper_dir)
             if path.is_dir():
                 shutil.copytree(path, args.destination / rel_path, symlinks=True)
             else:

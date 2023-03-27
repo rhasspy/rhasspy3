@@ -458,18 +458,18 @@ curl -X POST 'localhost:13331/pipeline/run?stop_after=handle'
 
 The final stages of our pipeline will be text to speech (`tts`) and audio output (`snd`).
 
-Install [Larynx 2](https://github.com/rhasspy/larynx2):
+Install [Piper](https://github.com/rhasspy/piper):
 
 ```sh
 mkdir -p config/programs/tts/
-cp -R programs/tts/larynx2 config/programs/tts/
-config/programs/tts/larynx2/script/setup.py
+cp -R programs/tts/piper config/programs/tts/
+config/programs/tts/piper/script/setup.py
 ```
 
 and download an English voice:
 
 ```sh
-config/programs/tts/larynx2/script/download.py english
+config/programs/tts/piper/script/download.py english
 ```
 
 Call `download.py` without any arguments to see available voices.
@@ -484,9 +484,9 @@ programs:
   wake: ...
   handle: ...
   tts:
-    larynx2:
+    piper:
       command: |
-        bin/larynx --model "${model}" --output_file -
+        bin/piper --model "${model}" --output_file -
       adapter: |
         tts_adapter_text2wav.py
       template_args:
@@ -509,7 +509,7 @@ pipelines:
     wake: ...
     handle: ...
     tts:
-      name: larynx2
+      name: piper
     snd:
       name: aplay
 ```
@@ -545,7 +545,7 @@ curl -X POST --data 'Welcome to the world of speech synthesis.' 'localhost:13331
 
 ### Client/Server
 
-Like speech to text, text to speech models can take a while to load. Let's add a server for Larynx to `configuration.yaml`:
+Like speech to text, text to speech models can take a while to load. Let's add a server for Piper to `configuration.yaml`:
 
 ```yaml
 programs:
@@ -555,15 +555,15 @@ programs:
   wake: ...
   handle: ...
   tts:
-    larynx2.client:
+    piper.client:
       command: |
-        client_unix_socket.py var/run/larynx2.socket
+        client_unix_socket.py var/run/piper.socket
   snd: ...
 
 servers:
   asr: ...
   tts:
-    larynx2:
+    piper:
       command: |
         script/server "${model}"
       template_args:
@@ -577,14 +577,14 @@ pipelines:
     wake: ...
     handle: ...
     tts:
-      name: larynx2.client
+      name: piper.client
     snd: ...
 ```
 
 Now we can run both servers with the HTTP server:
 
 ```sh
-script/http_server --debug --server asr faster-whisper --server tts larynx2
+script/http_server --debug --server asr faster-whisper --server tts piper
 ```
 
 Text to speech requests should be faster now.
