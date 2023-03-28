@@ -14,6 +14,14 @@ Scripts in `bin/`:
     * Raw audio stream in
 * `snd_adapter_raw.py`
     * Raw audio stream out
+* `tts_adapter_http.py`
+    * HTTP POST to endpoint with text, WAV out
+* `tts_adapter_text2wav.py`
+    * Text in, WAV out
+* `vad_adapter_raw.py`
+    * Raw audio stream in, speech probability out (one line per chunk)
+* `wake_adapter_raw.py`
+    * Raw audio stream in, name of detected model out (one line per detection)
 * `client_unix_socket.py`
     * Send/receive events over Unix domain socket
 
