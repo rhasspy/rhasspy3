@@ -44,6 +44,9 @@ def main() -> None:
     names: List[str] = []
     keyword_paths: List[Path] = []
     sensitivities: List[float] = []
+
+    model_path = str(Path(args.lang_model).absolute()) if args.lang_model is not None else None
+
     for model_settings in args.model:
         keyword_path_str = model_settings[0]
         keyword_path = Path(keyword_path_str)
@@ -63,7 +66,7 @@ def main() -> None:
     porcupine = pvporcupine.create(
         keyword_paths=[str(keyword_path.absolute()) for keyword_path in keyword_paths],
         sensitivities=sensitivities,
-        model_path=str(model_path)
+        model_path=model_path
     )
 
     chunk_format = "h" * porcupine.frame_length
