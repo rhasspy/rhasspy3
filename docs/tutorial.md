@@ -434,7 +434,7 @@ This script just looks for the words "date" and "time" in the text, and responds
 You can test it on some text:
 
 ```sh
-echo 'What time is it?' | script/run bin/handle_handle.py --debug
+echo 'What time is it?' | script/run bin/handle_text.py --debug
 ```
 
 Now let's test it with a full voice command:
