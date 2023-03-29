@@ -29,6 +29,10 @@ def main() -> None:
         help="Keyword model settings (path, [sensitivity])",
     )
     parser.add_argument(
+        "--lang_model",
+        help="Path of the language model (.pv file), default is english one",
+    )
+    parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )
     args = parser.parse_args()
@@ -40,12 +44,13 @@ def main() -> None:
     names: List[str] = []
     keyword_paths: List[Path] = []
     sensitivities: List[float] = []
+
+    model_path = str(Path(args.lang_model).absolute()) if args.lang_model is not None else None
+
     for model_settings in args.model:
         keyword_path_str = model_settings[0]
         keyword_path = Path(keyword_path_str)
-        if keyword_path.exists():
-            keyword_paths.append(keyword_path)
-        else:
+        if not keyword_path.exists():
             keyword_path = keyword_dir / keyword_path_str
             assert keyword_path.exists(), f"Cannot find {keyword_path_str}"
 
@@ -61,6 +66,7 @@ def main() -> None:
     porcupine = pvporcupine.create(
         keyword_paths=[str(keyword_path.absolute()) for keyword_path in keyword_paths],
         sensitivities=sensitivities,
+        model_path=model_path
     )
 
     chunk_format = "h" * porcupine.frame_length
