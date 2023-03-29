@@ -33,7 +33,7 @@ def main() -> None:
             speech_probability = detector.get_speech_probability(chunk)
             print(speech_probability, flush=True)
             chunk = sys.stdin.buffer.read(bytes_per_chunk)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, BrokenPipeError):
         pass
 
 
