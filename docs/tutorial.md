@@ -371,7 +371,29 @@ script/run bin/wake_detect.py --debug
 
 (say "grasshopper")
 
-Test over HTTP server (restart server):
+For non-English models, first download the extra data files:
+
+```sh
+config/programs/wake/porcupine1/script/download.py
+```
+
+Next, adjust your `configuration.yaml`. For example, this uses the German keyword "ananas":
+
+```yaml
+programs:
+  wake:
+    porcupine1:
+      command: |
+        .venv/bin/python3 bin/porcupine_stream.py --model "${model}" --lang_model "${lang_model}"
+      template_args:
+        model: "${data_dir}/resources/keyword_files_de/linux/ananas_linux.ppn"
+        lang_model: "${data_dir}/lib/common/porcupine_params_de.pv"
+
+```
+
+Inspect the files in `config/data/wake/porcupine1` for supported languages and keywords. At this time, English, German (de), French (fr), and Spanish (es) are available with keywords for `linux`, `raspberry-pi`, and many other platforms.
+
+Going back to "grasshopper", we can test over HTTP server (restart server):
 
 ```sh
 curl -X POST 'localhost:13331/pipeline/run?stop_after=wake'
