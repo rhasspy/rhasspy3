@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 import argparse
-import json
 import logging
+import math
 import os
 import socket
 import subprocess
 import tempfile
 import wave
 from pathlib import Path
+
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK
+from wyoming.audio import AudioChunk, AudioStart, AudioStop
+from wyoming.event import read_event, write_event
+from wyoming.tts import Synthesize
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -20,6 +25,9 @@ def main() -> None:
     parser.add_argument("--uri", required=True, help="unix:// or tcp://")
     parser.add_argument(
         "--auto-punctuation", default=".?!", help="Automatically add punctuation"
+    )
+    parser.add_argument(
+        "--samples-per-chunk", type=int, default=DEFAULT_SAMPLES_PER_CHUNK
     )
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
@@ -95,13 +103,15 @@ def handle_connection(
 
     with connection, connection.makefile(mode="rwb") as conn_file:
         while True:
-            event_info = json.loads(conn_file.readline())
-            event_type = event_info["type"]
+            event = read_event(conn_file)
+            if event is None:
+                break
 
-            if event_type != "synthesize":
+            if not Synthesize.is_type(event.type):
                 continue
 
-            raw_text = event_info["data"]["text"]
+            synthesize = Synthesize.from_event(event)
+            raw_text = synthesize.text
             text = raw_text.strip()
             if args.auto_punctuation and text:
                 has_punctuation = False
@@ -122,41 +132,40 @@ def handle_connection(
 
             wav_file: wave.Wave_read = wave.open(output_path, "rb")
             with wav_file:
-                data = {
-                    "rate": wav_file.getframerate(),
-                    "width": wav_file.getsampwidth(),
-                    "channels": wav_file.getnchannels(),
-                }
+                rate = wav_file.getframerate()
+                width = wav_file.getsampwidth()
+                channels = wav_file.getnchannels()
 
-                conn_file.write(
-                    (
-                        json.dumps(
-                            {"type": "audio-start", "data": data}, ensure_ascii=False
-                        )
-                        + "\n"
-                    ).encode()
+                write_event(
+                    AudioStart(
+                        rate=rate,
+                        width=width,
+                        channels=channels,
+                    ).event()
                 )
 
                 # Audio
                 audio_bytes = wav_file.readframes(wav_file.getnframes())
-                conn_file.write(
-                    (
-                        json.dumps(
-                            {
-                                "type": "audio-chunk",
-                                "data": data,
-                                "payload_length": len(audio_bytes),
-                            },
-                            ensure_ascii=False,
-                        )
-                        + "\n"
-                    ).encode()
-                )
-                conn_file.write(audio_bytes)
+                bytes_per_sample = width * channels
+                bytes_per_chunk = bytes_per_sample * args.samples_per_chunk
+                num_chunks = int(math.ceil(len(audio_bytes) / bytes_per_chunk))
 
-            conn_file.write(
-                (json.dumps({"type": "audio-stop"}, ensure_ascii=False) + "\n").encode()
-            )
+                # Split into chunks
+                for i in range(num_chunks):
+                    offset = i * bytes_per_chunk
+                    chunk = audio_bytes[offset : offset + bytes_per_chunk]
+                    write_event(
+                        AudioChunk(
+                            audio=chunk,
+                            rate=rate,
+                            width=width,
+                            channels=channels,
+                        ).event(),
+                        conn_file,
+                    )
+
+            write_event(AudioStop().event(), conn_file)
+
             os.unlink(output_path)
             break
 
