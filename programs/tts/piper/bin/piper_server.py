@@ -17,9 +17,7 @@ _LOGGER = logging.getLogger(_FILE.stem)
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Path to model file (.onnx)")
-    parser.add_argument(
-        "--socketfile", required=True, help="Path to Unix domain socket file"
-    )
+    parser.add_argument("--uri", required=True, help="unix:// or tcp://")
     parser.add_argument(
         "--auto-punctuation", default=".?!", help="Automatically add punctuation"
     )
@@ -28,16 +26,34 @@ def main() -> None:
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    # Need to unlink socket if it exists
-    try:
-        os.unlink(args.socketfile)
-    except OSError:
-        pass
+    is_unix = args.uri.startswith("unix://")
+    is_tcp = args.uri.startswith("tcp://")
+
+    assert is_unix or is_tcp, "Only unix:// or tcp:// are supported"
+    if is_unix:
+        args.uri = args.uri[len("unix://") :]
+    elif is_tcp:
+        args.uri = args.uri[len("tcp://") :]
+
+    if is_unix:
+        # Need to unlink socket if it exists
+        try:
+            os.unlink(args.uri)
+        except OSError:
+            pass
 
     try:
         # Create socket server
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.bind(args.socketfile)
+        if is_unix:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.bind(args.uri)
+            _LOGGER.info("Unix socket at %s", args.uri)
+        else:
+            address, port_str = args.uri.split(":", maxsplit=1)
+            port = int(port_str)
+            sock = socket.create_server((address, port))
+            _LOGGER.info("TCP server at %s", args.uri)
+
         sock.listen()
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -67,7 +83,8 @@ def main() -> None:
                     except Exception:
                         _LOGGER.exception("Error communicating with socket client")
     finally:
-        os.unlink(args.socketfile)
+        if is_unix:
+            os.unlink(args.uri)
 
 
 def handle_connection(
