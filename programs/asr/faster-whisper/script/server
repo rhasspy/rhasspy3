@@ -17,4 +17,4 @@ fi
 socket_dir="${base_dir}/var/run"
 mkdir -p "${socket_dir}"
 
-python3 "${base_dir}/bin/faster_whisper_server.py" --socketfile "${socket_dir}/faster-whisper.socket" "$@"
+python3 "${base_dir}/bin/faster_whisper_server.py" --socketfile "unix://${socket_dir}/faster-whisper.socket" "$@"

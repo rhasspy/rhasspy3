@@ -21,9 +21,7 @@ _LOGGER = logging.getLogger(_FILE.stem)
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Path to faster-whisper model directory")
-    parser.add_argument(
-        "--socketfile", required=True, help="Path to Unix domain socket file"
-    )
+    parser.add_argument("--uri", required=True, help="unix:// or tcp://")
     parser.add_argument(
         "--device",
         default="cpu",
@@ -48,23 +46,40 @@ def main() -> None:
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    # Need to unlink socket if it exists
-    try:
-        os.unlink(args.socketfile)
-    except OSError:
-        pass
+    is_unix = args.uri.startswith("unix://")
+    is_tcp = args.uri.startswith("tcp://")
+
+    assert is_unix or is_tcp, "Only unix:// or tcp:// are supported"
+    if is_unix:
+        args.uri = args.uri[len("unix://") :]
+    elif is_tcp:
+        args.uri = args.uri[len("tcp://") :]
+
+    if is_unix:
+        # Need to unlink socket if it exists
+        try:
+            os.unlink(args.uri)
+        except OSError:
+            pass
 
     try:
         # Create socket server
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.bind(args.socketfile)
+        if is_unix:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.bind(args.uri)
+            _LOGGER.info("Unix socket at %s", args.uri)
+        else:
+            address, port_str = args.uri.split(":", maxsplit=1)
+            port = int(port_str)
+            sock = socket.create_server((address, port))
+            _LOGGER.info("TCP server at %s", args.uri)
+
         sock.listen()
 
         # Load converted faster-whisper model
         model = WhisperModel(
             args.model, device=args.device, compute_type=args.compute_type
         )
-        _LOGGER.info("Ready")
 
         # Listen for connections
         while True:
@@ -113,7 +128,8 @@ def main() -> None:
             except Exception:
                 _LOGGER.exception("Error communicating with socket client")
     finally:
-        os.unlink(args.socketfile)
+        if is_unix:
+            os.unlink(args.socketfile)
 
 
 # -----------------------------------------------------------------------------
