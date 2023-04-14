@@ -1,5 +1,5 @@
 """Information about available services/artifacts."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
 from .event import Event, Eventable
@@ -59,9 +59,20 @@ class TtsProgram(Artifact):
 
 
 @dataclass
+class HandleModel(Artifact):
+    languages: List[str]
+
+
+@dataclass
+class HandleProgram(Artifact):
+    models: List[HandleModel]
+
+
+@dataclass
 class Info(Eventable):
-    asr: List[AsrProgram]
-    tts: List[TtsProgram]
+    asr: List[AsrProgram] = field(default_factory=list)
+    tts: List[TtsProgram] = field(default_factory=list)
+    handle: List[HandleProgram] = field(default_factory=list)
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -71,6 +82,7 @@ class Info(Eventable):
         data: Dict[str, Any] = {
             "asr": [p.to_dict() for p in self.asr],
             "tts": [p.to_dict() for p in self.tts],
+            "handle": [p.to_dict() for p in self.handle],
         }
 
         return Event(type=_INFO_TYPE, data=data)
@@ -81,4 +93,5 @@ class Info(Eventable):
         return Info(
             asr=[AsrProgram.from_dict(d) for d in event.data.get("asr", [])],
             tts=[TtsProgram.from_dict(d) for d in event.data.get("tts", [])],
+            handle=[HandleProgram.from_dict(d) for d in event.data.get("handle", [])],
         )
