@@ -12,10 +12,113 @@ from faster_whisper import WhisperModel
 from wyoming.asr import Transcript
 from wyoming.audio import AudioChunk, AudioStop
 from wyoming.event import read_event, write_event
+from wyoming.info import Describe, Info, AsrModel, AsrProgram, Attribution
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
 _LOGGER = logging.getLogger(_FILE.stem)
+
+_WHISPER_LANGUAGES = [
+    "af",
+    "am",
+    "ar",
+    "as",
+    "az",
+    "ba",
+    "be",
+    "bg",
+    "bn",
+    "bo",
+    "br",
+    "bs",
+    "ca",
+    "cs",
+    "cy",
+    "da",
+    "de",
+    "el",
+    "en",
+    "es",
+    "et",
+    "eu",
+    "fa",
+    "fi",
+    "fo",
+    "fr",
+    "gl",
+    "gu",
+    "ha",
+    "haw",
+    "he",
+    "hi",
+    "hr",
+    "ht",
+    "hu",
+    "hy",
+    "id",
+    "is",
+    "it",
+    "ja",
+    "jw",
+    "ka",
+    "kk",
+    "km",
+    "kn",
+    "ko",
+    "la",
+    "lb",
+    "ln",
+    "lo",
+    "lt",
+    "lv",
+    "mg",
+    "mi",
+    "mk",
+    "ml",
+    "mn",
+    "mr",
+    "ms",
+    "mt",
+    "my",
+    "ne",
+    "nl",
+    "nn",
+    "no",
+    "oc",
+    "pa",
+    "pl",
+    "ps",
+    "pt",
+    "ro",
+    "ru",
+    "sa",
+    "sd",
+    "si",
+    "sk",
+    "sl",
+    "sn",
+    "so",
+    "sq",
+    "sr",
+    "su",
+    "sv",
+    "sw",
+    "ta",
+    "te",
+    "tg",
+    "th",
+    "tk",
+    "tl",
+    "tr",
+    "tt",
+    "uk",
+    "ur",
+    "uz",
+    "vi",
+    "yi",
+    "yo",
+    "zh",
+]
 
 
 def main() -> None:
@@ -45,6 +148,32 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
+
+    model_path = Path(args.model)
+    wyoming_info = Info(
+        asr=[
+            AsrProgram(
+                name="faster-whisper",
+                attribution=Attribution(
+                    name="Guillaume Klein",
+                    url="https://github.com/guillaumekln/faster-whisper/",
+                ),
+                installed=True,
+                models=[
+                    AsrModel(
+                        name=model_path.stem,
+                        attribution=Attribution(
+                            name="rhasspy",
+                            url="https://github.com/rhasspy/models/",
+                        ),
+                        installed=True,
+                        languages=_WHISPER_LANGUAGES,
+                    )
+                ],
+            )
+        ],
+        tts=[],
+    )
 
     is_unix = args.uri.startswith("unix://")
     is_tcp = args.uri.startswith("tcp://")
@@ -81,6 +210,8 @@ def main() -> None:
             args.model, device=args.device, compute_type=args.compute_type
         )
 
+        _LOGGER.info("Ready")
+
         # Listen for connections
         while True:
             try:
@@ -96,7 +227,13 @@ def main() -> None:
                         while True:
                             event = read_event(conn_file)  # type: ignore
                             if event is None:
+                                _LOGGER.debug("Connection closed")
                                 break
+
+                            if Describe.is_type(event.type):
+                                write_event(wyoming_info.event(), conn_file)
+                                _LOGGER.debug("Sent info")
+                                continue
 
                             if AudioChunk.is_type(event.type):
                                 chunk = AudioChunk.from_event(event)
@@ -123,6 +260,7 @@ def main() -> None:
                     _LOGGER.info(text)
 
                     write_event(Transcript(text=text).event(), conn_file)  # type: ignore
+                    _LOGGER.debug("Completed request")
             except KeyboardInterrupt:
                 break
             except Exception:

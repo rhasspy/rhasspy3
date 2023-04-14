@@ -141,7 +141,7 @@ def handle_connection(
         while True:
             event = read_event(conn_file)
             if event is None:
-                _LOGGER.error("Empty event from client")
+                _LOGGER.debug("Connection closed")
                 break
 
             if Describe.is_type(event.type):
@@ -212,7 +212,6 @@ def handle_connection(
             _LOGGER.debug("Completed request")
 
             os.unlink(output_path)
-            break
 
 
 # -----------------------------------------------------------------------------
