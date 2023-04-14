@@ -78,8 +78,11 @@ async def handle(
 
             if Handled.is_type(event.type):
                 handle_result = Handled.from_event(event)
-            elif NotHandled.is_type(event.type):
+                break
+
+            if NotHandled.is_type(event.type):
                 handle_result = NotHandled.from_event(event)
+                break
 
     _LOGGER.debug("handle: %s", handle_result)
 
