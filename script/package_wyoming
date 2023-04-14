@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+# Directory of *this* script
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+
+# Base directory of repo
+base_dir="$(realpath "${this_dir}/..")"
+
+temp_dir="$(mktemp -d)"
+function finish {
+    rm -rf "${temp_dir}"
+}
+
+trap finish EXIT
+
+cp "${base_dir}/wyoming_setup.py" "${temp_dir}/setup.py"
+cp -R "${base_dir}/wyoming" "${temp_dir}/"
+
+cd "${temp_dir}"
+python3 setup.py sdist
+
+mkdir -p "${base_dir}/dist"
+cp -R dist/* "${base_dir}/dist/"
