@@ -3,6 +3,7 @@ import argparse
 import logging
 import math
 import os
+import json
 import socket
 import subprocess
 import tempfile
@@ -13,6 +14,7 @@ from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
 from wyoming.event import read_event, write_event
 from wyoming.tts import Synthesize
+from wyoming.info import Describe, TtsProgram, TtsVoice, Attribution, Info, Describe
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -33,6 +35,36 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
+
+    # Load voice info
+    voice_config_path = f"{args.model}.json"
+    with open(voice_config_path, "r", encoding="utf-8") as voice_config_file:
+        voice_config = json.load(voice_config_file)
+
+    model_language = voice_config["espeak"]["voice"]
+    model_path = Path(args.model)
+    wyoming_info = Info(
+        asr=[],
+        tts=[
+            TtsProgram(
+                name="piper",
+                attribution=Attribution(
+                    name="rhasspy", url="https://github.com/rhasspy/piper"
+                ),
+                installed=True,
+                voices=[
+                    TtsVoice(
+                        name=model_path.stem,
+                        attribution=Attribution(
+                            name="rhasspy", url="https://github.com/rhasspy/piper"
+                        ),
+                        installed=True,
+                        languages=[model_language],
+                    )
+                ],
+            )
+        ],
+    )
 
     is_unix = args.uri.startswith("unix://")
     is_tcp = args.uri.startswith("tcp://")
@@ -76,6 +108,7 @@ def main() -> None:
                 command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
                 universal_newlines=True,
             ) as proc:
                 _LOGGER.info("Ready")
@@ -85,7 +118,7 @@ def main() -> None:
                     try:
                         connection, client_address = sock.accept()
                         _LOGGER.debug("Connection from %s", client_address)
-                        handle_connection(connection, proc, args)
+                        handle_connection(connection, proc, args, wyoming_info)
                     except KeyboardInterrupt:
                         break
                     except Exception:
@@ -96,7 +129,10 @@ def main() -> None:
 
 
 def handle_connection(
-    connection: socket.socket, proc: subprocess.Popen, args: argparse.Namespace
+    connection: socket.socket,
+    proc: subprocess.Popen,
+    args: argparse.Namespace,
+    wyoming_info: Info,
 ) -> None:
     assert proc.stdin is not None
     assert proc.stdout is not None
@@ -105,9 +141,16 @@ def handle_connection(
         while True:
             event = read_event(conn_file)
             if event is None:
+                _LOGGER.error("Empty event from client")
                 break
 
+            if Describe.is_type(event.type):
+                write_event(wyoming_info.event(), conn_file)
+                _LOGGER.debug("Sent info")
+                continue
+
             if not Synthesize.is_type(event.type):
+                _LOGGER.warning("Unexpected event: %s", event)
                 continue
 
             synthesize = Synthesize.from_event(event)
@@ -141,7 +184,8 @@ def handle_connection(
                         rate=rate,
                         width=width,
                         channels=channels,
-                    ).event()
+                    ).event(),
+                    conn_file,
                 )
 
                 # Audio
@@ -165,6 +209,7 @@ def handle_connection(
                     )
 
             write_event(AudioStop().event(), conn_file)
+            _LOGGER.debug("Completed request")
 
             os.unlink(output_path)
             break

@@ -3,7 +3,7 @@ import json
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import IO, Any, Dict, Iterable, Optional
+from typing import BinaryIO, Any, Dict, Iterable, Optional
 
 _TYPE = "type"
 _DATA = "data"
@@ -100,7 +100,7 @@ async def async_write_events(events: Iterable[Event], writer: asyncio.StreamWrit
         pass
 
 
-def read_event(reader: Optional[IO[bytes]] = None) -> Optional[Event]:
+def read_event(reader: Optional[BinaryIO] = None) -> Optional[Event]:
     if reader is None:
         reader = sys.stdin.buffer
 
@@ -126,7 +126,7 @@ def read_event(reader: Optional[IO[bytes]] = None) -> Optional[Event]:
     return None
 
 
-def write_event(event: Event, writer: Optional[IO[bytes]] = None):
+def write_event(event: Event, writer: Optional[BinaryIO] = None):
     if writer is None:
         writer = sys.stdout.buffer
 
