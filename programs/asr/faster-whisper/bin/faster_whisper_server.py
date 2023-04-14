@@ -9,9 +9,9 @@ from pathlib import Path
 
 from faster_whisper import WhisperModel
 
-from rhasspy3.asr import Transcript
-from rhasspy3.audio import AudioChunk, AudioStop
-from rhasspy3.event import read_event, write_event
+from wyoming.asr import Transcript
+from wyoming.audio import AudioChunk, AudioStop
+from wyoming.event import read_event, write_event
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
