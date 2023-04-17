@@ -19,6 +19,7 @@ python_files+=("${base_dir}/bin")
 python_files+=("${base_dir}/rhasspy3")
 python_files+=("${base_dir}/rhasspy3_http_api")
 python_files+=("${base_dir}/programs")
+python_files+=("${base_dir}/wyoming")
 
 # Check
 black "${python_files[@]}" --check

@@ -1,27 +1,123 @@
 #!/usr/bin/env python3
 import argparse
+import asyncio
+import json
 import logging
 import math
 import os
-import json
-import socket
-import subprocess
 import tempfile
 import wave
+from functools import partial
 from pathlib import Path
 
 from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
-from wyoming.event import read_event, write_event
+from wyoming.event import Event
+from wyoming.info import Attribution, Describe, Info, TtsProgram, TtsVoice
+from wyoming.server import AsyncEventHandler, AsyncServer
 from wyoming.tts import Synthesize
-from wyoming.info import Describe, TtsProgram, TtsVoice, Attribution, Info, Describe
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
 _LOGGER = logging.getLogger(_FILE.stem)
 
 
-def main() -> None:
+class PiperEventHandler(AsyncEventHandler):
+    def __init__(
+        self,
+        wyoming_info: Info,
+        cli_args: argparse.Namespace,
+        piper_proc: asyncio.Process,
+        piper_proc_lock: asyncio.Lock,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.cli_args = cli_args
+        self.wyoming_info_event = wyoming_info.event()
+        self.piper_proc = piper_proc
+        self.piper_proc_lock = piper_proc_lock
+
+    async def handle_event(self, event: Event) -> bool:
+        if Describe.is_type(event.type):
+            await self.write_event(self.wyoming_info_event)
+            _LOGGER.debug("Sent info")
+            return True
+
+        if not Synthesize.is_type(event.type):
+            _LOGGER.warning("Unexpected event: %s", event)
+            return True
+
+        synthesize = Synthesize.from_event(event)
+        raw_text = synthesize.text
+        text = raw_text.strip()
+        if self.cli_args.auto_punctuation and text:
+            # Add automatic punctuation (important for some voices)
+            has_punctuation = False
+            for punc_char in self.cli_args.auto_punctuation:
+                if text[-1] == punc_char:
+                    has_punctuation = True
+                    break
+
+            if not has_punctuation:
+                text = text + self.cli_args.auto_punctuation[0]
+
+        async with self.piper_proc_lock:
+            _LOGGER.debug("synthesize: raw_text=%s, text='%s'", raw_text, text)
+
+            # Text in, file path out
+            self.piper_proc.stdin.write((text + "\n").encode())
+            await self.piper_proc.stdin.drain()
+
+            output_path = (await self.piper_proc.stdout.readline()).decode().strip()
+            _LOGGER.debug(output_path)
+
+            wav_file: wave.Wave_read = wave.open(output_path, "rb")
+            with wav_file:
+                rate = wav_file.getframerate()
+                width = wav_file.getsampwidth()
+                channels = wav_file.getnchannels()
+
+                await self.write_event(
+                    AudioStart(
+                        rate=rate,
+                        width=width,
+                        channels=channels,
+                    ).event(),
+                )
+
+                # Audio
+                audio_bytes = wav_file.readframes(wav_file.getnframes())
+                bytes_per_sample = width * channels
+                bytes_per_chunk = bytes_per_sample * self.cli_args.samples_per_chunk
+                num_chunks = int(math.ceil(len(audio_bytes) / bytes_per_chunk))
+
+                # Split into chunks
+                for i in range(num_chunks):
+                    offset = i * bytes_per_chunk
+                    chunk = audio_bytes[offset : offset + bytes_per_chunk]
+                    await self.write_event(
+                        AudioChunk(
+                            audio=chunk,
+                            rate=rate,
+                            width=width,
+                            channels=channels,
+                        ).event(),
+                    )
+
+            await self.write_event(AudioStop().event())
+            _LOGGER.debug("Completed request")
+
+            os.unlink(output_path)
+
+        return True
+
+
+# -----------------------------------------------------------------------------
+
+
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Path to model file (.onnx)")
     parser.add_argument("--uri", required=True, help="unix:// or tcp://")
@@ -44,7 +140,6 @@ def main() -> None:
     model_language = voice_config["espeak"]["voice"]
     model_path = Path(args.model)
     wyoming_info = Info(
-        asr=[],
         tts=[
             TtsProgram(
                 name="piper",
@@ -66,155 +161,34 @@ def main() -> None:
         ],
     )
 
-    is_unix = args.uri.startswith("unix://")
-    is_tcp = args.uri.startswith("tcp://")
+    server = AsyncServer.from_uri(args.uri)
 
-    assert is_unix or is_tcp, "Only unix:// or tcp:// are supported"
-    if is_unix:
-        args.uri = args.uri[len("unix://") :]
-    elif is_tcp:
-        args.uri = args.uri[len("tcp://") :]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        proc = await asyncio.create_subprocess_exec(
+            str(_DIR / "piper"),
+            "--model",
+            str(args.model),
+            "--output_dir",
+            temp_dir,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
 
-    if is_unix:
-        # Need to unlink socket if it exists
-        try:
-            os.unlink(args.uri)
-        except OSError:
-            pass
-
-    try:
-        # Create socket server
-        if is_unix:
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            sock.bind(args.uri)
-            _LOGGER.info("Unix socket at %s", args.uri)
-        else:
-            address, port_str = args.uri.split(":", maxsplit=1)
-            port = int(port_str)
-            sock = socket.create_server((address, port))
-            _LOGGER.info("TCP server at %s", args.uri)
-
-        sock.listen()
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            command = [
-                str(_DIR / "piper"),
-                "--model",
-                str(args.model),
-                "--output_dir",
-                temp_dir,
-            ]
-            with subprocess.Popen(
-                command,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                universal_newlines=True,
-            ) as proc:
-                _LOGGER.info("Ready")
-
-                # Listen for connections
-                while True:
-                    try:
-                        connection, client_address = sock.accept()
-                        _LOGGER.debug("Connection from %s", client_address)
-                        handle_connection(connection, proc, args, wyoming_info)
-                    except KeyboardInterrupt:
-                        break
-                    except Exception:
-                        _LOGGER.exception("Error communicating with socket client")
-    finally:
-        if is_unix:
-            os.unlink(args.uri)
-
-
-def handle_connection(
-    connection: socket.socket,
-    proc: subprocess.Popen,
-    args: argparse.Namespace,
-    wyoming_info: Info,
-) -> None:
-    assert proc.stdin is not None
-    assert proc.stdout is not None
-
-    with connection, connection.makefile(mode="rwb") as conn_file:
-        while True:
-            event = read_event(conn_file)
-            if event is None:
-                _LOGGER.debug("Connection closed")
-                break
-
-            if Describe.is_type(event.type):
-                write_event(wyoming_info.event(), conn_file)
-                _LOGGER.debug("Sent info")
-                continue
-
-            if not Synthesize.is_type(event.type):
-                _LOGGER.warning("Unexpected event: %s", event)
-                continue
-
-            synthesize = Synthesize.from_event(event)
-            raw_text = synthesize.text
-            text = raw_text.strip()
-            if args.auto_punctuation and text:
-                has_punctuation = False
-                for punc_char in args.auto_punctuation:
-                    if text[-1] == punc_char:
-                        has_punctuation = True
-                        break
-
-                if not has_punctuation:
-                    text = text + args.auto_punctuation[0]
-
-            _LOGGER.debug("synthesize: raw_text=%s, text='%s'", raw_text, text)
-
-            # Text in, file path out
-            print(text.strip(), file=proc.stdin, flush=True)
-            output_path = proc.stdout.readline().strip()
-            _LOGGER.debug(output_path)
-
-            wav_file: wave.Wave_read = wave.open(output_path, "rb")
-            with wav_file:
-                rate = wav_file.getframerate()
-                width = wav_file.getsampwidth()
-                channels = wav_file.getnchannels()
-
-                write_event(
-                    AudioStart(
-                        rate=rate,
-                        width=width,
-                        channels=channels,
-                    ).event(),
-                    conn_file,
-                )
-
-                # Audio
-                audio_bytes = wav_file.readframes(wav_file.getnframes())
-                bytes_per_sample = width * channels
-                bytes_per_chunk = bytes_per_sample * args.samples_per_chunk
-                num_chunks = int(math.ceil(len(audio_bytes) / bytes_per_chunk))
-
-                # Split into chunks
-                for i in range(num_chunks):
-                    offset = i * bytes_per_chunk
-                    chunk = audio_bytes[offset : offset + bytes_per_chunk]
-                    write_event(
-                        AudioChunk(
-                            audio=chunk,
-                            rate=rate,
-                            width=width,
-                            channels=channels,
-                        ).event(),
-                        conn_file,
-                    )
-
-            write_event(AudioStop().event(), conn_file)
-            _LOGGER.debug("Completed request")
-
-            os.unlink(output_path)
+        _LOGGER.info("Ready")
+        proc_lock = asyncio.Lock()
+        await server.run(
+            partial(
+                PiperEventHandler,
+                wyoming_info,
+                args,
+                proc,
+                proc_lock,
+            )
+        )
 
 
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

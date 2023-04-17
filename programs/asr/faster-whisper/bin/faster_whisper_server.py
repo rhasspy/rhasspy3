@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 import argparse
+import asyncio
 import io
 import logging
-import os
-import socket
 import wave
+from functools import partial
 from pathlib import Path
+from typing import Optional
 
 from faster_whisper import WhisperModel
 
 from wyoming.asr import Transcript
 from wyoming.audio import AudioChunk, AudioStop
-from wyoming.event import read_event, write_event
-from wyoming.info import Describe, Info, AsrModel, AsrProgram, Attribution
+from wyoming.event import Event
+from wyoming.info import AsrModel, AsrProgram, Attribution, Describe, Info
+from wyoming.server import AsyncEventHandler, AsyncServer
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -121,7 +123,76 @@ _WHISPER_LANGUAGES = [
 ]
 
 
-def main() -> None:
+class FasterWhisperEventHandler(AsyncEventHandler):
+    def __init__(
+        self,
+        wyoming_info: Info,
+        cli_args: argparse.Namespace,
+        model: WhisperModel,
+        model_lock: asyncio.Lock,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.cli_args = cli_args
+        self.wyoming_info_event = wyoming_info.event()
+        self.model = model
+        self.model_lock = model_lock
+
+        self._wav_io: Optional[io.BytesIO] = None
+        self._wav_file: Optional[wave.Wave_write] = None
+
+    async def handle_event(self, event: Event) -> bool:
+        if Describe.is_type(event.type):
+            await self.write_event(self.wyoming_info_event)
+            _LOGGER.debug("Sent info")
+            return True
+
+        if AudioChunk.is_type(event.type):
+            chunk = AudioChunk.from_event(event)
+
+            if self._wav_file is None:
+                _LOGGER.debug("Receiving audio")
+                self._wav_io = io.BytesIO()
+                self._wav_file = wave.open(self._wav_io, "wb")
+                self._wav_file.setframerate(chunk.rate)
+                self._wav_file.setsampwidth(chunk.width)
+                self._wav_file.setnchannels(chunk.channels)
+
+            self._wav_file.writeframes(chunk.audio)
+            return True
+
+        if (
+            AudioStop.is_type(event.type)
+            and (self._wav_io is not None)
+            and (self._wav_file is not None)
+        ):
+            _LOGGER.debug("Audio stopped")
+            self._wav_file.close()
+            self._wav_io.seek(0)
+            async with self.model_lock:
+                segments, _info = self.model.transcribe(
+                    self._wav_io,
+                    beam_size=self.cli_args.beam_size,
+                    language=self.cli_args.language,
+                )
+
+            text = " ".join(segment.text for segment in segments)
+            _LOGGER.info(text)
+
+            await self.write_event(Transcript(text=text).event())
+            _LOGGER.debug("Completed request")
+
+            self._wav_io = None
+            self._wav_file = None
+
+            return False
+
+        return True
+
+
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Path to faster-whisper model directory")
     parser.add_argument("--uri", required=True, help="unix:// or tcp://")
@@ -172,105 +243,26 @@ def main() -> None:
                 ],
             )
         ],
-        tts=[],
     )
 
-    is_unix = args.uri.startswith("unix://")
-    is_tcp = args.uri.startswith("tcp://")
+    # Load converted faster-whisper model
+    model = WhisperModel(args.model, device=args.device, compute_type=args.compute_type)
 
-    assert is_unix or is_tcp, "Only unix:// or tcp:// are supported"
-    if is_unix:
-        args.uri = args.uri[len("unix://") :]
-    elif is_tcp:
-        args.uri = args.uri[len("tcp://") :]
-
-    if is_unix:
-        # Need to unlink socket if it exists
-        try:
-            os.unlink(args.uri)
-        except OSError:
-            pass
-
-    try:
-        # Create socket server
-        if is_unix:
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            sock.bind(args.uri)
-            _LOGGER.info("Unix socket at %s", args.uri)
-        else:
-            address, port_str = args.uri.split(":", maxsplit=1)
-            port = int(port_str)
-            sock = socket.create_server((address, port))
-            _LOGGER.info("TCP server at %s", args.uri)
-
-        sock.listen()
-
-        # Load converted faster-whisper model
-        model = WhisperModel(
-            args.model, device=args.device, compute_type=args.compute_type
+    server = AsyncServer.from_uri(args.uri)
+    _LOGGER.info("Ready")
+    model_lock = asyncio.Lock()
+    await server.run(
+        partial(
+            FasterWhisperEventHandler,
+            wyoming_info,
+            args,
+            model,
+            model_lock,
         )
-
-        _LOGGER.info("Ready")
-
-        # Listen for connections
-        while True:
-            try:
-                connection, client_address = sock.accept()
-                _LOGGER.debug("Connection from %s", client_address)
-
-                is_first_audio = True
-                with connection, connection.makefile(
-                    mode="rwb"
-                ) as conn_file, io.BytesIO() as wav_io:
-                    wav_file: wave.Wave_write = wave.open(wav_io, "wb")
-                    with wav_file:
-                        while True:
-                            event = read_event(conn_file)  # type: ignore
-                            if event is None:
-                                _LOGGER.debug("Connection closed")
-                                break
-
-                            if Describe.is_type(event.type):
-                                write_event(wyoming_info.event(), conn_file)
-                                _LOGGER.debug("Sent info")
-                                continue
-
-                            if AudioChunk.is_type(event.type):
-                                chunk = AudioChunk.from_event(event)
-
-                                if is_first_audio:
-                                    _LOGGER.debug("Receiving audio")
-                                    wav_file.setframerate(chunk.rate)
-                                    wav_file.setsampwidth(chunk.width)
-                                    wav_file.setnchannels(chunk.channels)
-                                    is_first_audio = False
-
-                                wav_file.writeframes(chunk.audio)
-                            elif AudioStop.is_type(event.type):
-                                _LOGGER.debug("Audio stopped")
-                                break
-
-                    wav_io.seek(0)
-                    segments, _info = model.transcribe(
-                        wav_io,
-                        beam_size=args.beam_size,
-                        language=args.language,
-                    )
-                    text = " ".join(segment.text for segment in segments)
-                    _LOGGER.info(text)
-
-                    write_event(Transcript(text=text).event(), conn_file)  # type: ignore
-                    _LOGGER.debug("Completed request")
-            except KeyboardInterrupt:
-                break
-            except Exception:
-                _LOGGER.exception("Error communicating with socket client")
-    finally:
-        if is_unix:
-            os.unlink(args.socketfile)
+    )
 
 
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
