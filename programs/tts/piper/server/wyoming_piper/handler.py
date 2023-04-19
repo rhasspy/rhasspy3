@@ -1,24 +1,18 @@
-#!/usr/bin/env python3
+"""Event handler for clients of the server."""
 import argparse
 import asyncio
-import json
 import logging
 import math
 import os
-import tempfile
 import wave
-from functools import partial
-from pathlib import Path
 
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
 from wyoming.event import Event
-from wyoming.info import Attribution, Describe, Info, TtsProgram, TtsVoice
-from wyoming.server import AsyncEventHandler, AsyncServer
+from wyoming.info import Describe, Info
+from wyoming.server import AsyncEventHandler
 from wyoming.tts import Synthesize
 
-_FILE = Path(__file__)
-_DIR = _FILE.parent
-_LOGGER = logging.getLogger(_FILE.stem)
+_LOGGER = logging.getLogger(__name__)
 
 
 class PiperEventHandler(AsyncEventHandler):
@@ -111,81 +105,3 @@ class PiperEventHandler(AsyncEventHandler):
             os.unlink(output_path)
 
         return True
-
-
-# -----------------------------------------------------------------------------
-
-
-async def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("model", help="Path to model file (.onnx)")
-    parser.add_argument("--uri", required=True, help="unix:// or tcp://")
-    parser.add_argument(
-        "--auto-punctuation", default=".?!", help="Automatically add punctuation"
-    )
-    parser.add_argument("--samples-per-chunk", type=int, default=1024)
-    parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
-    args = parser.parse_args()
-
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
-
-    # Load voice info
-    voice_config_path = f"{args.model}.json"
-    with open(voice_config_path, "r", encoding="utf-8") as voice_config_file:
-        voice_config = json.load(voice_config_file)
-
-    model_language = voice_config["espeak"]["voice"]
-    model_path = Path(args.model)
-    wyoming_info = Info(
-        tts=[
-            TtsProgram(
-                name="piper",
-                attribution=Attribution(
-                    name="rhasspy", url="https://github.com/rhasspy/piper"
-                ),
-                installed=True,
-                voices=[
-                    TtsVoice(
-                        name=model_path.stem,
-                        attribution=Attribution(
-                            name="rhasspy", url="https://github.com/rhasspy/piper"
-                        ),
-                        installed=True,
-                        languages=[model_language],
-                    )
-                ],
-            )
-        ],
-    )
-
-    server = AsyncServer.from_uri(args.uri)
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        proc = await asyncio.create_subprocess_exec(
-            str(_DIR / "piper"),
-            "--model",
-            str(args.model),
-            "--output_dir",
-            temp_dir,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
-
-        _LOGGER.info("Ready")
-        proc_lock = asyncio.Lock()
-        await server.run(
-            partial(
-                PiperEventHandler,
-                wyoming_info,
-                args,
-                proc,
-                proc_lock,
-            )
-        )
-
-
-# -----------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    asyncio.run(main())
