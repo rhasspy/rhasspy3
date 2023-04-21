@@ -123,7 +123,7 @@ def main():
     async def http_config() -> Response:
         return jsonify(rhasspy.config)
 
-    @app.route("/version", methods=["POST"])
+    @app.route("/version", methods=["GET", "POST"])
     async def http_version() -> str:
         return "3.0.0"
 

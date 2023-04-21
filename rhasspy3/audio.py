@@ -6,7 +6,7 @@ from typing import Iterable, Optional
 
 from .event import Event, Eventable
 
-_TYPE = "audio-chunk"
+_CHUNK_TYPE = "audio-chunk"
 _START_TYPE = "audio-start"
 _STOP_TYPE = "audio-stop"
 
@@ -43,11 +43,11 @@ class AudioChunk(Eventable):
 
     @staticmethod
     def is_type(event_type: str) -> bool:
-        return event_type == _TYPE
+        return event_type == _CHUNK_TYPE
 
     def event(self) -> Event:
         return Event(
-            type=_TYPE,
+            type=_CHUNK_TYPE,
             data={
                 "rate": self.rate,
                 "width": self.width,
@@ -104,7 +104,6 @@ class AudioStart(Eventable):
         return event_type == _START_TYPE
 
     def event(self) -> Event:
-
         return Event(
             type=_START_TYPE,
             data={
