@@ -148,12 +148,12 @@ config/programs/asr/faster-whisper/script/download.py tiny-int8
 Notice that the model was downloaded to `config/data/asr/faster-whisper`:
 
 ```sh
-tree config/data/asr/faster-whisper/
+find config/data/asr/faster-whisper/
 config/data/asr/faster-whisper/
-└── tiny-int8
-    ├── config.json
-    ├── model.bin
-    └── vocabulary.txt
+config/data/asr/faster-whisper/tiny-int8
+config/data/asr/faster-whisper/tiny-int8/vocabulary.txt
+config/data/asr/faster-whisper/tiny-int8/model.bin
+config/data/asr/faster-whisper/tiny-int8/config.json
 ```
 
 The `tiny-int8` model is the smallest and fastest model, but may not give the best transcriptions. Run `download.py` without any arguments to see the available models, or follow [the instructions](https://github.com/guillaumekln/faster-whisper/#model-conversion) to make your own!
