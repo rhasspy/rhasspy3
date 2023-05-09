@@ -16,7 +16,7 @@ if requirements_path.is_file():
 
 setup(
     name="wyoming_faster_whisper",
-    version="0.0.1",
+    version="0.0.2",
     description="Wyoming Server for Faster Whisper",
     url="http://github.com/rhasspy/rhasspy3",
     author="Michael Hansen",
