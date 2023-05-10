@@ -77,11 +77,11 @@ async def main() -> None:
     if args.language and (args.language != "auto"):
         _LOGGER.debug("Language: %s", args.language)
         languages = [args.language]
+    else:
+        languages = WHISPER_LANGUAGES
 
         # Whisper does not understand "auto"
         args.language = None
-    else:
-        languages = WHISPER_LANGUAGES
 
     wyoming_info = Info(
         asr=[
