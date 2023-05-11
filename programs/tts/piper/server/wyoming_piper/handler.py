@@ -44,7 +44,10 @@ class PiperEventHandler(AsyncEventHandler):
 
         synthesize = Synthesize.from_event(event)
         raw_text = synthesize.text
-        text = raw_text.strip()
+
+        # Join multiple lines
+        text = " ".join(raw_text.strip().splitlines())
+
         if self.cli_args.auto_punctuation and text:
             # Add automatic punctuation (important for some voices)
             has_punctuation = False
