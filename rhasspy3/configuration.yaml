@@ -347,6 +347,18 @@ programs:
       command: |
         client_unix_socket.py var/run/mimic3.socket
 
+    silero_tts:
+      command: |
+        script/silero --language "${language}" --model "${model}"
+      template_args:
+        language: "ru"
+        model: "v3_1_ru"
+
+    # Run server: silero_tts
+    silero_tts.client:
+      command: |
+        client_unix_socket.py var/run/silero_tts.socket
+
   # ------------------
   # Intent recognition
   # ------------------
@@ -503,6 +515,13 @@ servers:
         script/server "${model}"
       template_args:
         model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
+
+    silero_tts:
+      command: |
+        script/server --language "${language}" --model "${model}"
+      template_args:
+        language: "ru"
+        model: "v3_1_ru"
 
     larynx:
       command: |
