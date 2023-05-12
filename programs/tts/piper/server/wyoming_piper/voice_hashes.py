@@ -189,6 +189,10 @@ VOICE_HASHES = {
         "pt-br-edresson-low.onnx": "53e365c040dd07890fe1855b64c7cc58",
         "pt-br-edresson-low.onnx.json": "3ec806d00312e12c21743eb88e8c7c81",
     },
+    "ru-irinia-medium": {
+        "ru-irinia-medium.onnx": "21fbe77fdc68bdc35d7adb6bf4f52199",
+        "ru-irinia-medium.onnx.json": "43efe7faec23e5db3dc4e2ee7ae23505",
+    },
     "uk-lada-x-low": {
         "uk-lada-x-low.onnx.json": "0dc53021ef5b2086b9072b1f5ad90b18",
         "uk-lada-x-low.onnx": "b84110e3923d64cdd4e0056a22090557",
