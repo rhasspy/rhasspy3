@@ -3,6 +3,7 @@ import argparse
 import logging
 import socket
 import threading
+import re
 
 from rhasspy3.event import read_event, write_event
 
@@ -11,15 +12,23 @@ _LOGGER = logging.getLogger("wrapper_unix_socket")
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("socketfile", help="Path to Unix domain socket file")
+    parser.add_argument("socketfile", help="Path to Unix domain socket file or host/port combination in the form '1.2.3.4:1234'")
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    _LOGGER.debug("Connecting to %s", args.socketfile)
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.connect(args.socketfile)
+    hostport_match = re.match("^(?P<host>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):(?P<port>[0-9]+)$", args.socketfile)
+    if hostport_match is not None:
+        host = hostport_match["host"]
+        port = int(hostport_match["port"])
+        _LOGGER.debug("Connecting to %s:%d", host, port)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+    else:
+        _LOGGER.debug("Connecting to %s", args.socketfile)
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.connect(args.socketfile)
     _LOGGER.debug("Connected")
 
     try:
