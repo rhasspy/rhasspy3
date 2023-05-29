@@ -90,9 +90,15 @@ async def run(
     asr_after = pipeline.asr.after if pipeline.asr else None
 
     vad_program = vad_program or pipeline.vad
+    vad_after = pipeline.vad.after if pipeline.vad else None
+
     intent_program = intent_program or pipeline.intent
     handle_program = handle_program or pipeline.handle
+    handle_after = pipeline.handle.after if pipeline.handle else None
+
     tts_program = tts_program or pipeline.tts
+    tts_after = pipeline.tts.after if pipeline.tts else None
+
     snd_program = snd_program or pipeline.snd
 
     skip_asr = (
@@ -188,6 +194,8 @@ async def run(
         assert handle_program is not None, "Pipeline is missing handle"
         handle_result = await handle(rhasspy, handle_program, handle_input)
         pipeline_result.handle_result = handle_result
+        if handle_after is not None:
+            await run_command(rhasspy, handle_after)
 
     if (stop_after == StopAfterDomain.HANDLE) or (tts_program is None):
         return pipeline_result
@@ -210,6 +218,8 @@ async def run(
         tts_wav_in.seek(0)
         assert snd_program is not None, "Pipeline is missing snd"
         await play(rhasspy, snd_program, tts_wav_in, samples_per_chunk)
+    if tts_after is not None:
+        await run_command(rhasspy, tts_after)
 
     return pipeline_result
 
@@ -279,6 +289,7 @@ async def _mic_wake_asr(
     asr_chunks_to_buffer: int = 0,
     wake_detection: Optional[Detection] = None,
     wake_after: Optional[CommandConfig] = None,
+    vad_after: Optional[CommandConfig] = None,
 ):
     """Wake word detect + asr transcription (+ silence detection)."""
     chunk_buffer: Optional[Deque[Event]] = (
@@ -309,6 +320,9 @@ async def _mic_wake_asr(
                 asr_proc.stdin,
                 chunk_buffer,
             )
+            if vad_after is not None:
+                run_command(rhasspy, vad_after)
+                
             while True:
                 asr_event = await async_read_event(asr_proc.stdout)
                 if asr_event is None:
