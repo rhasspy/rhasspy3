@@ -8,16 +8,16 @@ import tempfile
 import wave
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Optional, Deque
+from typing import Deque, Optional
 
 import aiohttp
 
 from rhasspy3.audio import (
+    DEFAULT_SAMPLES_PER_CHUNK,
     AudioChunk,
+    AudioChunkConverter,
     AudioStart,
     AudioStop,
-    AudioChunkConverter,
-    DEFAULT_SAMPLES_PER_CHUNK,
     wav_to_chunks,
 )
 from rhasspy3.event import (

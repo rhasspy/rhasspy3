@@ -7,7 +7,7 @@ from collections import deque
 from pathlib import Path
 from typing import Deque, List
 
-from rhasspy3.audio import AudioChunk, AudioStop, AudioStart
+from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import Event, async_read_event, async_write_event
 from rhasspy3.mic import DOMAIN as MIC_DOMAIN

@@ -78,6 +78,13 @@ programs:
       template_args:
         model: "share/hey_mycroft.tflite"
 
+    # https://github.com/dscripka/openWakeWord
+    openwakeword:
+      command: |
+        .venv/bin/python3 bin/oww_stream.py --model "${model}"
+      template_args:
+        model: "hey_jarvis"
+
     # TODO: snowman
     # https://github.com/Thalhammer/snowman/
 
