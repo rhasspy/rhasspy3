@@ -1,63 +1,27 @@
 """Wake word detection"""
 import asyncio
 import logging
-from dataclasses import dataclass
 from typing import AsyncIterable, MutableSequence, Optional, Union
+
+from wyoming.wake import Detection, NotDetected
 
 from .audio import AudioChunk, AudioStart, AudioStop
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import Event, Eventable, async_read_event, async_write_event
+from .event import Event, async_read_event, async_write_event
 from .program import create_process
 
 DOMAIN = "wake"
-_DETECTION_TYPE = "detection"
-_NOT_DETECTED_TYPE = "not-detected"
 
 _LOGGER = logging.getLogger(__name__)
 
-
-@dataclass
-class Detection(Eventable):
-    """Wake word was detected."""
-
-    name: Optional[str] = None
-    """Name of model."""
-
-    timestamp: Optional[int] = None
-    """Timestamp of audio chunk with detection"""
-
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _DETECTION_TYPE
-
-    def event(self) -> Event:
-        return Event(
-            type=_DETECTION_TYPE, data={"name": self.name, "timestamp": self.timestamp}
-        )
-
-    @staticmethod
-    def from_event(event: Event) -> "Detection":
-        assert event.data is not None
-        return Detection(
-            name=event.data.get("name"), timestamp=event.data.get("timestamp")
-        )
-
-
-@dataclass
-class NotDetected(Eventable):
-    """Audio stream ended before wake word was detected."""
-
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _NOT_DETECTED_TYPE
-
-    def event(self) -> Event:
-        return Event(type=_NOT_DETECTED_TYPE)
-
-    @staticmethod
-    def from_event(event: Event) -> "NotDetected":
-        return NotDetected()
+__all__ = [
+    "DOMAIN",
+    "Detection",
+    "NotDetected",
+    "detect",
+    "detect_stream",
+]
 
 
 async def detect(

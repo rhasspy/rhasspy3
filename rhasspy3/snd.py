@@ -1,30 +1,23 @@
 """Audio output to speakers."""
 import wave
-from dataclasses import dataclass
 from typing import IO, AsyncIterable, Optional, Union
+
+from wyoming.snd import Played
 
 from .audio import AudioChunk, AudioStop, wav_to_chunks
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import Event, Eventable, async_read_event, async_write_event
+from .event import async_read_event, async_write_event
 from .program import create_process
 
 DOMAIN = "snd"
-_PLAYED_TYPE = "played"
 
-
-@dataclass
-class Played(Eventable):
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _PLAYED_TYPE
-
-    def event(self) -> Event:
-        return Event(type=_PLAYED_TYPE)
-
-    @staticmethod
-    def from_event(event: Event) -> "Played":
-        return Played()
+__all__ = [
+    "DOMAIN",
+    "Played",
+    "play",
+    "play_stream",
+]
 
 
 async def play(

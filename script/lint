@@ -18,7 +18,7 @@ python_files=()
 python_files+=("${base_dir}/bin")
 python_files+=("${base_dir}/rhasspy3")
 python_files+=("${base_dir}/rhasspy3_http_api")
-python_files+=("${base_dir}/programs")
+# python_files+=("${base_dir}/programs")
 python_files+=("${base_dir}/wyoming")
 
 # Check
@@ -26,4 +26,8 @@ black "${python_files[@]}" --check
 isort "${python_files[@]}" --check
 flake8 "${python_files[@]}"
 pylint "${python_files[@]}"
-mypy "${base_dir}/bin" "${base_dir}/rhasspy3"
+mypy \
+    "${base_dir}/bin" \
+    "${base_dir}/rhasspy3" \
+    "${base_dir}/wyoming" \
+    "${base_dir}/rhasspy3_http_api"

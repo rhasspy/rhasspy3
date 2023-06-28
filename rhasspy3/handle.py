@@ -1,62 +1,26 @@
 """Intent recognition and handling."""
 import logging
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union
+from typing import Optional, Union
+
+from wyoming.handle import Handled, NotHandled
 
 from .asr import Transcript
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import Event, Eventable, async_read_event, async_write_event
+from .event import async_read_event, async_write_event
 from .intent import Intent, NotRecognized
 from .program import create_process
 
 DOMAIN = "handle"
-_HANDLED_TYPE = "handled"
-_NOT_HANDLED_TYPE = "not-handled"
 
 _LOGGER = logging.getLogger(__name__)
 
-
-@dataclass
-class Handled(Eventable):
-    text: Optional[str] = None
-
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _HANDLED_TYPE
-
-    def event(self) -> Event:
-        data: Dict[str, Any] = {}
-        if self.text is not None:
-            data["text"] = self.text
-
-        return Event(type=_HANDLED_TYPE, data=data)
-
-    @staticmethod
-    def from_event(event: Event) -> "Handled":
-        assert event.data is not None
-        return Handled(text=event.data.get("text"))
-
-
-@dataclass
-class NotHandled(Eventable):
-    text: Optional[str] = None
-
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _NOT_HANDLED_TYPE
-
-    def event(self) -> Event:
-        data: Dict[str, Any] = {}
-        if self.text is not None:
-            data["text"] = self.text
-
-        return Event(type=_NOT_HANDLED_TYPE, data=data)
-
-    @staticmethod
-    def from_event(event: Event) -> "NotHandled":
-        assert event.data is not None
-        return NotHandled(text=event.data.get("text"))
+__all__ = [
+    "Handled",
+    "NotHandled",
+    "handle",
+    "DOMAIN",
+]
 
 
 async def handle(

@@ -1,6 +1,6 @@
 """Information about available services/artifacts."""
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .event import Event, Eventable
 from .util.dataclasses_json import DataClassJsonMixin
@@ -37,6 +37,9 @@ class Artifact(DataClassJsonMixin):
     installed: bool
 
 
+# -----------------------------------------------------------------------------
+
+
 @dataclass
 class AsrModel(Artifact):
     languages: List[str]
@@ -47,15 +50,26 @@ class AsrProgram(Artifact):
     models: List[AsrModel]
 
 
+# -----------------------------------------------------------------------------
+
+
+@dataclass
+class TtsVoiceSpeaker(DataClassJsonMixin):
+    name: str
+
+
 @dataclass
 class TtsVoice(Artifact):
-    name: str
     languages: List[str]
+    speakers: Optional[List[TtsVoiceSpeaker]] = None
 
 
 @dataclass
 class TtsProgram(Artifact):
     voices: List[TtsVoice]
+
+
+# -----------------------------------------------------------------------------
 
 
 @dataclass
@@ -68,11 +82,28 @@ class HandleProgram(Artifact):
     models: List[HandleModel]
 
 
+# -----------------------------------------------------------------------------
+
+
+@dataclass
+class WakeModel(Artifact):
+    languages: List[str]
+
+
+@dataclass
+class WakeProgram(Artifact):
+    models: List[WakeModel]
+
+
+# -----------------------------------------------------------------------------
+
+
 @dataclass
 class Info(Eventable):
     asr: List[AsrProgram] = field(default_factory=list)
     tts: List[TtsProgram] = field(default_factory=list)
     handle: List[HandleProgram] = field(default_factory=list)
+    wake: List[WakeProgram] = field(default_factory=list)
 
     @staticmethod
     def is_type(event_type: str) -> bool:
@@ -83,6 +114,7 @@ class Info(Eventable):
             "asr": [p.to_dict() for p in self.asr],
             "tts": [p.to_dict() for p in self.tts],
             "handle": [p.to_dict() for p in self.handle],
+            "wake": [p.to_dict() for p in self.wake],
         }
 
         return Event(type=_INFO_TYPE, data=data)
@@ -94,4 +126,5 @@ class Info(Eventable):
             asr=[AsrProgram.from_dict(d) for d in event.data.get("asr", [])],
             tts=[TtsProgram.from_dict(d) for d in event.data.get("tts", [])],
             handle=[HandleProgram.from_dict(d) for d in event.data.get("handle", [])],
+            wake=[WakeProgram.from_dict(d) for d in event.data.get("wake", [])],
         )

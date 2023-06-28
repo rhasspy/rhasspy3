@@ -1,36 +1,22 @@
 """Text to speech."""
 import wave
-from dataclasses import dataclass
 from typing import IO, AsyncIterable, Union
+
+from wyoming.tts import Synthesize
 
 from .audio import AudioChunk, AudioStart, AudioStop
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import Event, Eventable, async_read_event, async_write_event
+from .event import async_read_event, async_write_event
 from .program import create_process
 
 DOMAIN = "tts"
-_SYNTHESIZE_TYPE = "synthesize"
 
-
-@dataclass
-class Synthesize(Eventable):
-    """Request to synthesize audio from text."""
-
-    text: str
-    """Text to synthesize."""
-
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _SYNTHESIZE_TYPE
-
-    def event(self) -> Event:
-        return Event(type=_SYNTHESIZE_TYPE, data={"text": self.text})
-
-    @staticmethod
-    def from_event(event: Event) -> "Synthesize":
-        assert event.data is not None
-        return Synthesize(text=event.data["text"])
+__all__ = [
+    "Synthesize",
+    "DOMAIN",
+    "synthesize",
+]
 
 
 async def synthesize(

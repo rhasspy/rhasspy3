@@ -5,61 +5,25 @@ import time
 from dataclasses import dataclass
 from typing import Iterable, Optional, Union
 
+from wyoming.vad import VoiceStarted, VoiceStopped
+
 from .audio import AudioChunk, AudioStop
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import Event, Eventable, async_read_event, async_write_event
+from .event import Event, async_read_event, async_write_event
 from .program import create_process
 
 DOMAIN = "vad"
-_STARTED_TYPE = "voice-started"
-_STOPPED_TYPE = "voice-stopped"
 
 _LOGGER = logging.getLogger(__name__)
 
-
-@dataclass
-class VoiceStarted(Eventable):
-    """User has started speaking."""
-
-    timestamp: Optional[int] = None
-    """Milliseconds"""
-
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _STARTED_TYPE
-
-    def event(self) -> Event:
-        return Event(
-            type=_STARTED_TYPE,
-            data={"timestamp": self.timestamp},
-        )
-
-    @staticmethod
-    def from_event(event: Event) -> "VoiceStarted":
-        return VoiceStarted(timestamp=event.data.get("timestamp"))
-
-
-@dataclass
-class VoiceStopped(Eventable):
-    """User has stopped speaking."""
-
-    timestamp: Optional[int] = None
-    """Milliseconds"""
-
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _STOPPED_TYPE
-
-    def event(self) -> Event:
-        return Event(
-            type=_STOPPED_TYPE,
-            data={"timestamp": self.timestamp},
-        )
-
-    @staticmethod
-    def from_event(event: Event) -> "VoiceStopped":
-        return VoiceStopped(timestamp=event.data.get("timestamp"))
+__all__ = [
+    "DOMAIN",
+    "VoiceStarted",
+    "VoiceStopped",
+    "Segmenter",
+    "segment",
+]
 
 
 @dataclass

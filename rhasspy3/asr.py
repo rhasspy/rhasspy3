@@ -2,38 +2,27 @@
 import asyncio
 import logging
 import wave
-from dataclasses import dataclass
 from typing import IO, AsyncIterable, Optional, Union
+
+from wyoming.asr import Transcript
 
 from .audio import AudioChunk, AudioStart, AudioStop, wav_to_chunks
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .event import Event, Eventable, async_read_event, async_write_event
+from .event import async_read_event, async_write_event
 from .program import create_process
 from .vad import DOMAIN as VAD_DOMAIN
 from .vad import VoiceStarted, VoiceStopped
 
 DOMAIN = "asr"
-_TRANSCRIPT_TYPE = "transcript"
 
 _LOGGER = logging.getLogger(__name__)
 
-
-@dataclass
-class Transcript(Eventable):
-    text: str
-
-    @staticmethod
-    def is_type(event_type: str) -> bool:
-        return event_type == _TRANSCRIPT_TYPE
-
-    def event(self) -> Event:
-        return Event(type=_TRANSCRIPT_TYPE, data={"text": self.text})
-
-    @staticmethod
-    def from_event(event: Event) -> "Transcript":
-        assert event.data is not None
-        return Transcript(text=event.data["text"])
+__all__ = [
+    "DOMAIN",
+    "Transcript",
+    "transcribe",
+]
 
 
 async def transcribe(
