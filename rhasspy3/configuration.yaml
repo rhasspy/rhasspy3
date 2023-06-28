@@ -447,6 +447,12 @@ programs:
       template_args:
         uri: "ws://localhost:13331/pipeline/asr-tts"
 
+    home_assistant:
+      command: |
+        script/run --token "${token}" --server "${server}" --debug
+      template_args:
+        server: "localhost:8123"
+
 # -----------------------------------------------------------------------------
 
 servers:

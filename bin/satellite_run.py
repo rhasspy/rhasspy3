@@ -7,7 +7,7 @@ from collections import deque
 from pathlib import Path
 from typing import Deque, List
 
-from rhasspy3.audio import AudioChunk, AudioStop
+from rhasspy3.audio import AudioChunk, AudioStop, AudioStart
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import Event, async_read_event, async_write_event
 from rhasspy3.mic import DOMAIN as MIC_DOMAIN
@@ -108,8 +108,24 @@ async def main() -> None:
                 assert remote_proc.stdin is not None
                 assert remote_proc.stdout is not None
 
+                is_start_sent = False
+
                 while chunk_buffer:
-                    await async_write_event(chunk_buffer.pop(), remote_proc.stdin)
+                    chunk_event = chunk_buffer.pop()
+                    if not is_start_sent:
+                        # Inform remote that audio is starting
+                        chunk = AudioChunk.from_event(chunk_event)
+                        await async_write_event(
+                            AudioStart(
+                                rate=chunk.rate,
+                                width=chunk.width,
+                                channels=chunk.channels,
+                            ).event(),
+                            remote_proc.stdin,
+                        )
+                        is_start_sent = True
+
+                    await async_write_event(chunk_event, remote_proc.stdin)
 
                 mic_task = asyncio.create_task(async_read_event(mic_proc.stdout))
                 remote_task = asyncio.create_task(async_read_event(remote_proc.stdout))
@@ -128,6 +144,19 @@ async def main() -> None:
                                 break
 
                             if AudioChunk.is_type(mic_event.type):
+                                if not is_start_sent:
+                                    # Inform remote that audio is starting
+                                    chunk = AudioChunk.from_event(mic_event)
+                                    await async_write_event(
+                                        AudioStart(
+                                            rate=chunk.rate,
+                                            width=chunk.width,
+                                            channels=chunk.channels,
+                                        ).event(),
+                                        remote_proc.stdin,
+                                    )
+                                    is_start_sent = True
+
                                 await async_write_event(mic_event, remote_proc.stdin)
 
                             mic_task = asyncio.create_task(
@@ -152,32 +181,38 @@ async def main() -> None:
                         assert snd_proc.stdin is not None
                         assert snd_proc.stdout is not None
 
+                        is_stopped = False
+                        has_output_audio = False
                         for remote_event in snd_buffer:
                             if AudioChunk.is_type(remote_event.type):
+                                has_output_audio = True
                                 await async_write_event(remote_event, snd_proc.stdin)
                             elif AudioStop.is_type(remote_event.type):
                                 # Unexpected, but it could happen
-                                continue
+                                is_stopped = True
+                                break
 
-                        while True:
+                        while not is_stopped:
                             remote_event = await async_read_event(remote_proc.stdout)
                             if remote_event is None:
                                 break
 
                             if AudioChunk.is_type(remote_event.type):
+                                has_output_audio = True
                                 await async_write_event(remote_event, snd_proc.stdin)
                             elif AudioStop.is_type(remote_event.type):
                                 await async_write_event(remote_event, snd_proc.stdin)
-                                break
+                                is_stopped = True
 
-                        # Wait for audio to finish playing
-                        while True:
-                            snd_event = await async_read_event(snd_proc.stdout)
-                            if snd_event is None:
-                                break
+                        if has_output_audio:
+                            # Wait for audio to finish playing
+                            while True:
+                                snd_event = await async_read_event(snd_proc.stdout)
+                                if snd_event is None:
+                                    break
 
-                            if Played.is_type(snd_event.type):
-                                break
+                                if Played.is_type(snd_event.type):
+                                    break
                 except Exception:
                     _LOGGER.exception(
                         "Unexpected error communicating with remote base station"
