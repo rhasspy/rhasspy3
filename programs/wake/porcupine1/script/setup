@@ -32,6 +32,6 @@ fi
 echo 'Installing Python dependencies'
 pip3 install -r "${base_dir}/requirements.txt"
 
-# -----------------------------------------------------------------------------
-
-echo "OK"
+# Install extra wake words for German, Spanish, French
+echo 'Installing extra wake words'
+python3 "${this_dir}/download.py"
