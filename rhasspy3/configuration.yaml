@@ -240,18 +240,6 @@ programs:
         tts_adapter_text2wav.py
       template_args:
         model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
-      install:
-        command: |
-          script/setup.py --destination '${program_dir}/bin'
-        check_file: "${program_dir}/bin/piper"
-        download:
-          command: |
-            script/download.py --destination '${data_dir}' '${model}'
-        downloads:
-          en-us_lessac:
-            description: "U.S. English voice"
-            check_file: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
-
 
     # Run server: tts piper
     piper.client:
@@ -433,6 +421,11 @@ programs:
         snd_adapter_raw.py --rate 22050 --width 2 --channels 1
       template_args:
         device: "default"
+
+    # https://python-sounddevice.readthedocs.io
+    sounddevice:
+      command: |
+        script/events
 
     udp_raw:
       command: |
