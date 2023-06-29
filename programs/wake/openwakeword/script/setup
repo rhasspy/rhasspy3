@@ -1,33 +1,22 @@
-#!/usr/bin/env bash
-set -eo pipefail
+#!/usr/bin/env python3
+import subprocess
+import venv
+from pathlib import Path
 
-# Directory of *this* script
-this_dir="$( cd "$( dirname "$0" )" && pwd )"
+_DIR = Path(__file__).parent
+_PROGRAM_DIR = _DIR.parent
+_VENV_DIR = _PROGRAM_DIR / ".venv"
 
-# Base directory of repo
-base_dir="$(realpath "${this_dir}/..")"
 
-# Path to virtual environment
-: "${venv:=${base_dir}/.venv}"
+# Create virtual environment
+builder = venv.EnvBuilder(with_pip=True)
+context = builder.ensure_directories(_VENV_DIR)
+builder.create(_VENV_DIR)
 
-# Python binary to use
-: "${PYTHON=python3}"
+# Upgrade dependencies
+pip = [context.env_exe, "-m", "pip"]
+subprocess.check_call(pip + ["install", "--upgrade", "pip"])
+subprocess.check_call(pip + ["install", "--upgrade", "setuptools", "wheel"])
 
-python_version="$(${PYTHON} --version)"
-
-if [ ! -d "${venv}" ]; then
-    # Create virtual environment
-    echo "Creating virtual environment at ${venv} (${python_version})"
-    rm -rf "${venv}"
-    "${PYTHON}" -m venv "${venv}"
-    source "${venv}/bin/activate"
-
-    pip3 install --upgrade pip
-    pip3 install --upgrade wheel setuptools
-else
-    source "${venv}/bin/activate"
-fi
-
-# Install Python dependencies
-echo 'Installing Python dependencies'
-pip3 install -r "${base_dir}/requirements.txt"
+# Install requirements
+subprocess.check_call(pip + ["install", "-r", str(_PROGRAM_DIR / "requirements.txt")])

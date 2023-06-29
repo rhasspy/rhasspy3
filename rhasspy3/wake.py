@@ -66,7 +66,7 @@ async def detect(
                     pending.add(mic_task)
 
             if detection is not None:
-                # Ensure last mic task is finished
+                await async_write_event(AudioStop().event(), wake_proc.stdin)
                 break
 
             if wake_task in done:

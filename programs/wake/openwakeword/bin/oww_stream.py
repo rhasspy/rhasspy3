@@ -57,6 +57,13 @@ def main() -> None:
                         # Decay back to 0
                         activations[model_key] = max(0, activations[model_key])
 
+                    _LOGGER.debug(
+                        "%s: score=%s, activations=%s",
+                        model_key,
+                        model_score[-1],
+                        activations[model_key],
+                    )
+
                     if activations[model_key] >= args.trigger_level:
                         # Report and enter refractory period
                         write_event(
@@ -64,6 +71,7 @@ def main() -> None:
                         )
                         is_detected = True
                         activations[model_key] = -args.refractory_level
+                        _LOGGER.debug("Triggered %s", model_key)
 
                 audio_bytes = audio_bytes[bytes_per_chunk:]
 

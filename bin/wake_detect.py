@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from rhasspy3.core import Rhasspy
-from rhasspy3.mic import DOMAIN as MIC_DOMAIN
+from rhasspy3.mic import record
 from rhasspy3.program import create_process
 from rhasspy3.wake import detect
 
@@ -63,7 +63,7 @@ async def main() -> None:
 
     # Detect wake word
     while True:
-        async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
+        async with record(rhasspy, mic_program) as mic_proc:
             assert mic_proc.stdout is not None
             _LOGGER.debug("Detecting wake word")
             detection = await detect(rhasspy, wake_program, mic_proc.stdout)

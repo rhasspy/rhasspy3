@@ -4,11 +4,12 @@ import argparse
 import logging
 import shlex
 import subprocess
+import threading
 import time
 from pathlib import Path
 
-from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK, AudioChunk, AudioStart
-from rhasspy3.event import write_event
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK, AudioChunk, AudioStart, AudioStop
+from rhasspy3.event import read_event, write_event
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent
@@ -65,12 +66,18 @@ def main() -> None:
     with proc:
         assert proc.stdout is not None
 
+        stop_event = threading.Event()
+        threading.Thread(target=wait_for_stop, daemon=True, args=(stop_event,)).start()
+
         write_event(
             AudioStart(
                 args.rate, args.width, args.channels, timestamp=time.monotonic_ns()
             ).event()
         )
         while True:
+            if stop_event.is_set():
+                break
+
             audio_bytes = proc.stdout.read(bytes_per_chunk)
             if not audio_bytes:
                 break
@@ -84,6 +91,22 @@ def main() -> None:
                     timestamp=time.monotonic_ns(),
                 ).event()
             )
+
+
+def wait_for_stop(stop_event: threading.Event):
+    try:
+        while True:
+            event = read_event()
+            if event is None:
+                break
+
+            if AudioStop.is_type(event.type):
+                stop_event.set()
+                break
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        _LOGGER.exception("Unexpected error in wait_for_stop")
 
 
 if __name__ == "__main__":

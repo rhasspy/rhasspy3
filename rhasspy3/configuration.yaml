@@ -81,7 +81,7 @@ programs:
     # https://github.com/dscripka/openWakeWord
     openwakeword:
       command: |
-        .venv/bin/python3 bin/oww_stream.py --model "${model}"
+        script/stream --model "${model}"
       template_args:
         model: "hey_jarvis"
 
