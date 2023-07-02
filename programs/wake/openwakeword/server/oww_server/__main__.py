@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import argparse
+import io
 import logging
 import threading
 from collections import defaultdict
@@ -38,7 +40,23 @@ CLIENT_ID_TYPE = Tuple[str, int]
 
 
 @dataclass
+class WakeWordData:
+    new_embeddings: int = 0
+    embeddings: np.ndarray = field(
+        default_factory=lambda: np.zeros(
+            shape=(_MAX_EMB, _NUM_FEATURES), dtype=np.float32
+        )
+    )
+    is_detected: bool = False
+    activations: int = 0
+    threshold: float = 0.5
+    trigger_level: int = 4
+    refractory_activations: int = 30
+
+
+@dataclass
 class ClientData:
+    wfile: io.BufferedIOBase
     new_audio_samples: int = 0
     audio: np.ndarray = field(
         default_factory=lambda: np.zeros(shape=(_MAX_SAMPLES,), dtype=np.float32)
@@ -47,12 +65,13 @@ class ClientData:
     mels: np.ndarray = field(
         default_factory=lambda: np.zeros(shape=(_MAX_MELS, _NUM_MELS), dtype=np.float32)
     )
-    new_embeddings: int = 0
-    embeddings: np.ndarray = field(
-        default_factory=lambda: np.zeros(
-            shape=(_MAX_EMB, _NUM_FEATURES), dtype=np.float32
-        )
-    )
+    wake_words: Dict[str, WakeWordData] = field(default_factory=dict)
+
+
+@dataclass
+class WakeWordState:
+    embeddings_ready: Semaphore = field(default_factory=Semaphore)
+    embeddings_lock: Lock = field(default_factory=Lock)
 
 
 @dataclass
@@ -67,18 +86,20 @@ class State:
     mels_ready: Semaphore = field(default_factory=Semaphore)
     mels_lock: Lock = field(default_factory=Lock)
 
-    embeddings_ready: Semaphore = field(default_factory=Semaphore)
-    embeddings_lock: Lock = field(default_factory=Lock)
+    wake_words: Dict[str, WakeWordState] = field(default_factory=dict)
 
 
-class AudioHandler(socketserver.BaseRequestHandler):
+class AudioHandler(socketserver.StreamRequestHandler):
     def __init__(self, state: State, *args, **kwargs):
         self._state = state
         super().__init__(*args, **kwargs)
 
     def handle(self):
         client_id = self.client_address
-        data = ClientData()
+        data = ClientData(self.wfile)
+        for ww_name in self._state.wake_words:
+            data.wake_words[ww_name] = WakeWordData()
+
         with self._state.clients_lock:
             self._state.clients[client_id] = data
 
@@ -106,19 +127,6 @@ class AudioHandler(socketserver.BaseRequestHandler):
                         data.audio[-len(chunk_array) :] = chunk_array
                         data.new_audio_samples += len(chunk_array)
 
-                        # audio_array = self._state.audio_arrays.get(self.client_address)
-                        # if audio_array is None:
-                        #     # New array
-                        #     self._state.audio_arrays[self.client_address] = chunk_array
-                        # else:
-                        #     # Append to existing array (resize is faster)
-                        #     original_length = len(audio_array)
-                        #     audio_array = np.resize(
-                        #         audio_array, original_length + len(chunk_array)
-                        #     )
-                        #     audio_array[original_length:] = chunk_array
-                        #     self._state.audio_arrays[self.client_address] = audio_array
-
                     self._state.audio_ready.release()
                     audio_bytes = audio_bytes[_BYTES_PER_CHUNK:]
         except Exception:
@@ -133,19 +141,33 @@ class AudioHandler(socketserver.BaseRequestHandler):
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("model", nargs="+")
+    args = parser.parse_args()
+
     logging.basicConfig(level=logging.DEBUG)
 
     state = State()
+
+    # One thread per wake word model
+    ww_threads: Dict[str, Thread] = {}
+    for model in args.model:
+        state.wake_words[model] = WakeWordState()
+        ww_threads[model] = Thread(
+            target=ww_proc,
+            daemon=True,
+            args=(
+                state,
+                model,
+            ),
+        )
+        ww_threads[model].start()
 
     mels_thread = Thread(target=mels_proc, daemon=True, args=(state,))
     mels_thread.start()
 
     embeddings_thread = Thread(target=embeddings_proc, daemon=True, args=(state,))
     embeddings_thread.start()
-
-    # TODO: One per ww model
-    ww_thread = Thread(target=ww_proc, daemon=True, args=(state,))
-    ww_thread.start()
 
     def make_handler(*args, **kwargs):
         return AudioHandler(state, *args, **kwargs)
@@ -165,8 +187,9 @@ def main() -> None:
         state.mels_ready.release()
         embeddings_thread.join()
 
-        state.embeddings_ready.release()
-        ww_thread.join()
+        for ww_name, ww_state in state.wake_words.items():
+            ww_state.embeddings_ready.release()
+            ww_threads[ww_name].join()
 
 
 # -----------------------------------------------------------------------------
@@ -195,8 +218,6 @@ def mels_proc(state: State):
                 break
 
             while True:
-                # todo_ids = []
-                # min_chunks = 0
                 with state.audio_lock, state.clients_lock:
                     # Collect batch
                     todo_ids = [
@@ -222,36 +243,6 @@ def mels_proc(state: State):
                         ]
                         client.new_audio_samples -= _SAMPLES_PER_CHUNK
 
-                    # for client_id in state.audio_arrays:
-                    #     client_array: Optional[np.ndarray] = state.audio_arrays[
-                    #         client_id
-                    #     ]
-                    #     assert client_array is not None
-
-                    #     if len(client_array) >= _MEL_SAMPLES:
-                    #         todo_ids.append(client_id)
-
-                    # num_chunks = len(client_array) // _SAMPLES_PER_CHUNK
-                    # if num_chunks >= _MEL_CHUNKS:
-                    #     min_chunks = (
-                    #         num_chunks
-                    #         if min_chunks <= 0
-                    #         else min(num_chunks, min_chunks)
-                    #     )
-                    #     todo_ids.append(client_id)
-
-                # batch_size = len(todo_ids)
-                # if (min_chunks < _MEL_CHUNKS) or (batch_size <= 0):
-                # if batch_size <= 0:
-                # Not enough audio to process
-                # break
-
-                # audio_tensor = np.zeros(
-                #     shape=(batch_size, min_chunks * _SAMPLES_PER_CHUNK), dtype=np.float32
-                # )
-                # audio_tensor = np.zeros(
-                #     shape=(batch_size, _MEL_SAMPLES), dtype=np.float32
-                # )
                 melspec_model.resize_tensor_input(
                     melspec_input_index,
                     audio_tensor.shape,
@@ -259,32 +250,13 @@ def mels_proc(state: State):
                 )
                 melspec_model.allocate_tensors()
 
-                # with state.audio_lock:
-                #     # Copy audio data over now
-                #     for i, client_id in enumerate(todo_ids):
-                #         client_array = state.audio_arrays.get(client_id)
-                #         if client_array is None:
-                #             # Client may have disconnected
-                #             continue
-
-                #         audio_tensor[i, :] = client_array[: audio_tensor.shape[1]]
-
-                #         # Remove processed chunk from client array
-                #         # TODO: Is the hop length used here correctly?
-                #         state.audio_arrays[client_id] = client_array[
-                #             # audio_tensor.shape[1]
-                #             # - _MEL_HOP_LENGTH :
-                #             # _MEL_SAMPLES:
-                #             _SAMPLES_PER_CHUNK:
-                #         ]
-
                 # Generate mels
                 melspec_model.set_tensor(melspec_input_index, audio_tensor)
                 melspec_model.invoke()
                 mels = melspec_model.get_tensor(melspec_output_index)
                 mels = (mels / 10) + 2  # transform to fit embedding
 
-                print("Mels", mels.shape)
+                # print("Mels", mels.shape)
 
                 num_mel_windows = mels.shape[2]
                 with state.mels_lock, state.clients_lock:
@@ -301,22 +273,6 @@ def mels_proc(state: State):
                         # Overwrite
                         client.mels[-num_mel_windows:] = mels[i, 0, :, :]
                         client.new_mels += num_mel_windows
-
-                #         if client_mels is None:
-                #             state.mels[client_id] = mels[i, :, :, :]
-                #         else:
-                #             original_length = client_mels.shape[1]
-                #             client_mels = np.resize(
-                #                 client_mels,
-                #                 (
-                #                     mels.shape[1],
-                #                     original_length + mels.shape[2],
-                #                     mels.shape[3],
-                #                 ),
-                #             )
-                #             assert client_mels is not None
-                #             client_mels[0, original_length:, :] = mels[i, :, :, :]
-                #             state.mels[client_id] = client_mels
 
                 state.mels_ready.release()
 
@@ -345,7 +301,6 @@ def embeddings_proc(state: State):
                 break
 
             while True:
-                # todo_ids = []
                 with state.mels_lock, state.clients_lock:
                     # Collect batch
                     todo_ids = [
@@ -380,92 +335,37 @@ def embeddings_proc(state: State):
                 )
                 embedding_model.allocate_tensors()
 
-                # batch_size = len(todo_ids)
-                # if batch_size <= 0:
-                #     # Not enough embedding features to process
-                #     break
-
-                # mels_tensor = np.zeros(
-                #     shape=(batch_size, _EMB_FEATURES, _NUM_MELS, 1), dtype=np.float32
-                # )
-                # embedding_model.resize_tensor_input(
-                #     embedding_input_index,
-                #     mels_tensor.shape,
-                #     strict=True,
-                # )
-                # embedding_model.allocate_tensors()
-
-                # with state.mels_lock:
-                #     # Copy mel data over now
-                #     for i, client_id in enumerate(todo_ids):
-                #         client_mels = state.mels.get(client_id)
-                #         if client_mels is None:
-                #             # Client may have disconnected
-                #             continue
-
-                #         mels_tensor[i, :, :, 0] = client_mels[
-                #             0,
-                #             : mels_tensor.shape[1],
-                #             :,
-                #         ]
-
-                #         # Remove processed mels
-                #         state.mels[client_id] = client_mels[
-                #             0,
-                #             _EMB_STEP:,
-                #             :,
-                #         ]
-
                 # Generate embeddings
                 embedding_model.set_tensor(embedding_input_index, mels_tensor)
                 embedding_model.invoke()
 
                 embeddings = embedding_model.get_tensor(embedding_output_index)
-                print("Embeddings", embeddings.shape)
+                # print("Embeddings", embeddings.shape)
 
                 num_embedding_windows = embeddings.shape[2]
-                with state.embeddings_lock, state.clients_lock:
-                    # Add to client embeddings
-                    for i, client_id in enumerate(todo_ids):
-                        client = state.clients.get(client_id)
-                        if client is None:
-                            # Client disconnected
-                            continue
+                with state.clients_lock:
+                    for ww_name, ww_state in state.wake_words.items():
+                        with ww_state.embeddings_lock:
+                            # Add to wake word model embeddings
+                            for i, client_id in enumerate(todo_ids):
+                                client = state.clients.get(client_id)
+                                if client is None:
+                                    # Client disconnected
+                                    continue
 
-                        # Shift
-                        client.embeddings[:-num_embedding_windows] = client.embeddings[
-                            num_embedding_windows:
-                        ]
+                                # Shift
+                                client_data = client.wake_words[ww_name]
+                                client_data.embeddings[
+                                    :-num_embedding_windows
+                                ] = client_data.embeddings[num_embedding_windows:]
 
-                        # Overwrite
-                        client.embeddings[-num_embedding_windows:] = embeddings[
-                            i, 0, :, :
-                        ]
-                        client.new_embeddings += num_embedding_windows
+                                # Overwrite
+                                client_data.embeddings[
+                                    -num_embedding_windows:
+                                ] = embeddings[i, 0, :, :]
+                                client_data.new_embeddings += num_embedding_windows
 
-                # with state.embeddings_lock:
-                #     # Add to client embeddings
-                #     for i, client_id in enumerate(todo_ids):
-                #         client_embeddings = state.embeddings.get(client_id)
-                #         if client_embeddings is None:
-                #             # 1 window
-                #             state.embeddings[client_id] = np.resize(
-                #                 embeddings[i, 0, 0, :], (1, embeddings.shape[-1])
-                #             )
-                #         else:
-                #             # 1 more window
-                #             original_length = client_embeddings.shape[-1]
-                #             client_embeddings = np.resize(
-                #                 client_embeddings,
-                #                 (original_length + 1, embeddings.shape[-1]),
-                #             )
-                #             assert client_embeddings is not None
-                #             client_embeddings[original_length:, :] = embeddings[
-                #                 i, 0, 0, :
-                #             ]
-                #             state.embeddings[client_id] = client_embeddings
-
-                state.embeddings_ready.release()
+                        ww_state.embeddings_ready.release()
 
     except Exception:
         _LOGGER.exception("Unexpected error in embeddings thread")
@@ -474,9 +374,8 @@ def embeddings_proc(state: State):
 # -----------------------------------------------------------------------------
 
 
-def ww_proc(state: State):
+def ww_proc(state: State, ww_model_path: str):
     try:
-        ww_model_path = _MODELS_DIR / "alexa_v0.1.tflite"
         _LOGGER.debug("Loading %s", ww_model_path)
         ww_model = tflite.Interpreter(model_path=str(ww_model_path), num_threads=1)
         ww_input = ww_model.get_input_details()[0]
@@ -487,18 +386,19 @@ def ww_proc(state: State):
 
         # ww = [batch x window x features (96)] => [batch x probability]
 
+        ww_state = state.wake_words[ww_model_path]
         while state.is_running:
-            state.embeddings_ready.acquire()
+            ww_state.embeddings_ready.acquire()
             if not state.is_running:
                 break
 
             while True:
-                with state.embeddings_lock, state.clients_lock:
+                with ww_state.embeddings_lock, state.clients_lock:
                     # Collect batch
                     todo_ids = [
                         client_id
                         for client_id, client in state.clients.items()
-                        if client.new_embeddings >= ww_windows
+                        if client.wake_words[ww_model_path].new_embeddings >= ww_windows
                     ]
                     batch_size = len(todo_ids)
                     if batch_size < 1:
@@ -512,21 +412,18 @@ def ww_proc(state: State):
 
                     for i, client_id in enumerate(todo_ids):
                         client = state.clients[client_id]
-                        embeddings_tensor[i, :] = client.embeddings[
-                            -client.new_embeddings : len(client.embeddings)
-                            - client.new_embeddings
+                        client_data = client.wake_words[ww_model_path]
+                        embeddings_tensor[i, :] = client_data.embeddings[
+                            -client_data.new_embeddings : len(client_data.embeddings)
+                            - client_data.new_embeddings
                             + ww_windows
                         ]
-                        client.new_embeddings -= 1
+                        client_data.new_embeddings -= 1
 
                 batch_size = len(todo_ids)
                 if batch_size <= 0:
                     # Not enough embedding features to process
                     break
-
-                # HACK
-                # batch_size = 1
-                # todo_ids = todo_ids[:1]
 
                 ww_model.resize_tensor_input(
                     ww_input_index,
@@ -535,48 +432,40 @@ def ww_proc(state: State):
                 )
                 ww_model.allocate_tensors()
 
-                # with state.clients_lock:
-                #     for i, client_id in enumerate(todo_ids):
-                #         client = state.clients.get(client_id)
-                #         if client is None:
-                #             # Client disconnected
-                #             continue
-
-                #         # Shift
-                #         client.embeddings[:-num_embedding_windows] = client.embeddings[
-                #             num_embedding_windows:
-                #         ]
-
-                #         # Overwrite
-                #         client.embeddings[-num_embedding_windows:] = embeddings[
-                #             i, 0, :, :
-                #         ]
-                #         client.new_embeddings += num_embedding_windows
-
-                # with state.embeddings_lock, state.clients_lock:
-                #     # Copy embeddings data over now
-                #     for i, client_id in enumerate(todo_ids):
-                #         client_embeddings = state.embeddings.get(client_id)
-                #         if client_embeddings is None:
-                #             # Client may have disconnected
-                #             continue
-
-                #         embeddings_tensor[i, :, :] = client_embeddings[
-                #             : embeddings_tensor.shape[1],
-                #             :,
-                #         ]
-
-                #         # Remove 1 embedding
-                #         state.embeddings[client_id] = client_embeddings[
-                #             1:,
-                #             :,
-                #         ]
-
                 # Generate probabilities
                 ww_model.set_tensor(ww_input_index, embeddings_tensor)
                 ww_model.invoke()
                 probabilities = ww_model.get_tensor(ww_output_index)
-                print("Probabilities", probabilities)
+
+                with state.clients_lock:
+                    for i, probability in enumerate(probabilities):
+                        client = state.clients.get(client_id)
+                        if client is None:
+                            # Client disconnected
+                            continue
+
+                        client_data = client.wake_words[ww_model_path]
+                        if probability.item() >= client_data.threshold:
+                            # Increase activation
+                            client_data.activations += 1
+
+                            if client_data.activations >= client_data.trigger_level:
+                                client_data.is_detected = True
+                                client.wfile.write((ww_model_path + "\n").encode("utf-8"))
+                                client.wfile.flush()
+                                _LOGGER.debug(
+                                    "Triggered %s (client=%s)", ww_model_path, client_id
+                                )
+                                client_data.activations = (
+                                    -client_data.refractory_activations
+                                )
+                        else:
+                            # Back towards 0
+                            client_data.activations = max(
+                                0, client_data.activations - 1
+                            )
+
+                # print("Probabilities", probabilities)
 
     except Exception:
         _LOGGER.exception("Unexpected error in wake word thread")
