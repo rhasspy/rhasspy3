@@ -18,23 +18,22 @@ _DIR = Path(__file__).parent
 _MODELS_DIR = _DIR / "models"
 
 _SAMPLE_RATE: Final = 16000  # 16Khz
-_SAMPLE_WIDTH = 2  # 16-bit samples
-_MAX_SAMPLES = 10 * _SAMPLE_RATE  # 10 seconds
+_SAMPLE_WIDTH: Final = 2  # 16-bit samples
+_MAX_SAMPLES: Final = 10 * _SAMPLE_RATE  # 10 seconds
 
-_SAMPLES_PER_CHUNK = 1280  # 80 ms @ 16Khz
-_BYTES_PER_CHUNK = _SAMPLES_PER_CHUNK * _SAMPLE_WIDTH
+_SAMPLES_PER_CHUNK: Final = 1280  # 80 ms @ 16Khz
+_BYTES_PER_CHUNK: Final = _SAMPLES_PER_CHUNK * _SAMPLE_WIDTH
 
 # window = 400, hop length = 160
-_MELS_PER_SECOND = 97
-_MAX_MELS = 10 * _MELS_PER_SECOND  # 10 seconds
-_MEL_SAMPLES = 1760
-# _MEL_HOP_LENGTH = 160
-_NUM_MELS = 32
+_MELS_PER_SECOND: Final = 97
+_MAX_MELS: Final = 10 * _MELS_PER_SECOND  # 10 seconds
+_MEL_SAMPLES: Final = 1760
+_NUM_MELS: Final = 32
 
-_MAX_EMB = 10 * 8  # 10 seconds
-_EMB_FEATURES = 76  # 775 ms
-_EMB_STEP = 8
-_NUM_FEATURES = 96
+_MAX_EMB: Final = 10 * 8  # 10 seconds
+_EMB_FEATURES: Final = 76  # 775 ms
+_EMB_STEP: Final = 8
+_NUM_FEATURES: Final = 96
 
 CLIENT_ID_TYPE = Tuple[str, int]
 
@@ -89,13 +88,15 @@ class State:
     wake_words: Dict[str, WakeWordState] = field(default_factory=dict)
 
 
-class AudioHandler(socketserver.StreamRequestHandler):
+class StreamAudioHandler(socketserver.StreamRequestHandler):
     def __init__(self, state: State, *args, **kwargs):
         self._state = state
         super().__init__(*args, **kwargs)
 
     def handle(self):
         client_id = self.client_address
+        _LOGGER.info("New client: %s", client_id)
+
         data = ClientData(self.wfile)
         for ww_name in self._state.wake_words:
             data.wake_words[ww_name] = WakeWordData()
@@ -105,18 +106,76 @@ class AudioHandler(socketserver.StreamRequestHandler):
 
         audio_bytes = bytes()
 
+        with open("/tmp/test.raw", "wb") as f:
+            try:
+                while True:
+                    chunk_bytes = self.request.recv(_BYTES_PER_CHUNK)
+                    if not chunk_bytes:
+                        # Empty chunk when client disconnects
+                        break
+
+                    f.write(chunk_bytes)
+
+                    audio_bytes += chunk_bytes
+                    while len(audio_bytes) >= _BYTES_PER_CHUNK:
+                        # NOTE: Audio is *not* normalized
+                        chunk_array = np.frombuffer(
+                            audio_bytes[:_BYTES_PER_CHUNK], dtype=np.int16
+                        ).astype(np.float32)
+
+                        with self._state.audio_lock:
+                            # Shift samples left
+                            data.audio[: -len(chunk_array)] = data.audio[len(chunk_array) :]
+
+                            # Add new samples to end
+                            data.audio[-len(chunk_array) :] = chunk_array
+                            data.new_audio_samples = min(
+                                len(data.audio), data.new_audio_samples + len(chunk_array)
+                            )
+
+                        self._state.audio_ready.release()
+                        audio_bytes = audio_bytes[_BYTES_PER_CHUNK:]
+            except ConnectionResetError:
+                _LOGGER.debug("Client disconnected: %s", client_id)
+            except Exception:
+                _LOGGER.exception("handle")
+            finally:
+                # Clean up
+                with self._state.clients_lock:
+                    self._state.clients.pop(client_id, None)
+
+
+class DatagramAudioHandler(socketserver.DatagramRequestHandler):
+    def __init__(self, state: State, *args, **kwargs):
+        self._state = state
+        self._audio_bytes = bytes()
+        super().__init__(*args, **kwargs)
+
+    def handle(self):
+        client_id = self.client_address
+        with self._state.clients_lock:
+            data = self._state.clients.get(client_id)
+            if data is None:
+                _LOGGER.info("New client: %s", client_id)
+
+                data = ClientData(self.wfile)
+                for ww_name in self._state.wake_words:
+                    data.wake_words[ww_name] = WakeWordData()
+
+                self._state.clients[client_id] = data
+
         try:
             while True:
-                chunk_bytes = self.request.recv(_BYTES_PER_CHUNK)
+                chunk_bytes = self.request[0]
                 if not chunk_bytes:
                     # Empty chunk when client disconnects
                     break
 
-                audio_bytes += chunk_bytes
-                while len(audio_bytes) >= _BYTES_PER_CHUNK:
+                self._audio_bytes += chunk_bytes
+                while len(self._audio_bytes) >= _BYTES_PER_CHUNK:
                     # NOTE: Audio is *not* normalized
                     chunk_array = np.frombuffer(
-                        audio_bytes[:_BYTES_PER_CHUNK], dtype=np.int16
+                        self._audio_bytes[:_BYTES_PER_CHUNK], dtype=np.int16
                     ).astype(np.float32)
 
                     with self._state.audio_lock:
@@ -125,10 +184,12 @@ class AudioHandler(socketserver.StreamRequestHandler):
 
                         # Add new samples to end
                         data.audio[-len(chunk_array) :] = chunk_array
-                        data.new_audio_samples += len(chunk_array)
+                        data.new_audio_samples = min(
+                            len(data.audio), data.new_audio_samples + len(chunk_array)
+                        )
 
                     self._state.audio_ready.release()
-                    audio_bytes = audio_bytes[_BYTES_PER_CHUNK:]
+                    self._audio_bytes = self._audio_bytes[_BYTES_PER_CHUNK:]
         except Exception:
             _LOGGER.exception("handle")
         finally:
@@ -154,6 +215,7 @@ def main() -> None:
     for model in args.model:
         state.wake_words[model] = WakeWordState()
         ww_threads[model] = Thread(
+            # target=ww_proc_no_batch,
             target=ww_proc,
             daemon=True,
             args=(
@@ -170,11 +232,11 @@ def main() -> None:
     embeddings_thread.start()
 
     def make_handler(*args, **kwargs):
-        return AudioHandler(state, *args, **kwargs)
+        return StreamAudioHandler(state, *args, **kwargs)
 
     try:
         with socketserver.ThreadingTCPServer(
-            ("localhost", 10400), make_handler
+            ("0.0.0.0", 10400), make_handler
         ) as server:
             server.serve_forever()
     except KeyboardInterrupt:
@@ -272,7 +334,9 @@ def mels_proc(state: State):
 
                         # Overwrite
                         client.mels[-num_mel_windows:] = mels[i, 0, :, :]
-                        client.new_mels += num_mel_windows
+                        client.new_mels = min(
+                            len(client.mels), client.new_mels + num_mel_windows
+                        )
 
                 state.mels_ready.release()
 
@@ -284,6 +348,7 @@ def mels_proc(state: State):
 
 
 def embeddings_proc(state: State):
+    """Transform mels to embedding features."""
     try:
         embedding_model_path = _MODELS_DIR / "embedding_model.tflite"
         _LOGGER.debug("Loading %s", embedding_model_path)
@@ -363,7 +428,10 @@ def embeddings_proc(state: State):
                                 client_data.embeddings[
                                     -num_embedding_windows:
                                 ] = embeddings[i, 0, :, :]
-                                client_data.new_embeddings += num_embedding_windows
+                                client_data.new_embeddings = min(
+                                    len(client_data.embeddings),
+                                    client_data.new_embeddings + num_embedding_windows,
+                                )
 
                         ww_state.embeddings_ready.release()
 
@@ -374,7 +442,99 @@ def embeddings_proc(state: State):
 # -----------------------------------------------------------------------------
 
 
+def ww_proc_no_batch(state: State, ww_model_path: str):
+    """Transform embedding features to wake word probabilities (no batching)."""
+    try:
+        _LOGGER.debug("Loading %s", ww_model_path)
+        ww_model = tflite.Interpreter(model_path=str(ww_model_path), num_threads=1)
+        ww_input = ww_model.get_input_details()[0]
+        ww_input_shape = ww_input["shape"]
+        ww_windows = ww_input_shape[1]
+        ww_input_index = ww_input["index"]
+        ww_output_index = ww_model.get_output_details()[0]["index"]
+
+        # ww = [batch x window x features (96)] => [batch x probability]
+
+        ww_state = state.wake_words[ww_model_path]
+        while state.is_running:
+            ww_state.embeddings_ready.acquire()
+            if not state.is_running:
+                break
+
+            while True:
+                todo_embeddings: Dict[str, np.ndarray] = {}
+                with ww_state.embeddings_lock, state.clients_lock:
+                    for client_id, client in state.clients.items():
+                        if client.wake_words[ww_model_path].new_embeddings < ww_windows:
+                            continue
+
+                        embeddings_tensor = np.zeros(
+                            shape=(1, ww_windows, _NUM_FEATURES),
+                            dtype=np.float32,
+                        )
+
+                        client_data = client.wake_words[ww_model_path]
+                        embeddings_tensor[0, :] = client_data.embeddings[
+                            -client_data.new_embeddings : len(client_data.embeddings)
+                            - client_data.new_embeddings
+                            + ww_windows
+                        ]
+                        client_data.new_embeddings -= 1
+
+                        todo_embeddings[client_id] = embeddings_tensor
+
+                if not todo_embeddings:
+                    break
+
+                for client_id, embeddings_tensor in todo_embeddings.items():
+                    ww_model.resize_tensor_input(
+                        ww_input_index,
+                        embeddings_tensor.shape,
+                        strict=True,
+                    )
+                    ww_model.allocate_tensors()
+
+                    # Generate probabilities
+                    ww_model.set_tensor(ww_input_index, embeddings_tensor)
+                    ww_model.invoke()
+                    probabilities = ww_model.get_tensor(ww_output_index)
+                    probability = probabilities[0]
+
+                    with state.clients_lock:
+                        client = state.clients.get(client_id)
+                        if client is None:
+                            # Client disconnected
+                            continue
+
+                        client_data = client.wake_words[ww_model_path]
+                        if probability.item() >= client_data.threshold:
+                            # Increase activation
+                            client_data.activations += 1
+
+                            if client_data.activations >= client_data.trigger_level:
+                                client_data.is_detected = True
+                                client.wfile.write(
+                                    (ww_model_path + "\n").encode("utf-8")
+                                )
+                                client.wfile.flush()
+                                _LOGGER.debug(
+                                    "Triggered %s (client=%s)", ww_model_path, client_id
+                                )
+                                client_data.activations = (
+                                    -client_data.refractory_activations
+                                )
+                        else:
+                            # Back towards 0
+                            client_data.activations = max(
+                                0, client_data.activations - 1
+                            )
+
+    except Exception:
+        _LOGGER.exception("Unexpected error in wake word thread")
+
+
 def ww_proc(state: State, ww_model_path: str):
+    """Transform embedding features to wake word probabilities (with batching)."""
     try:
         _LOGGER.debug("Loading %s", ww_model_path)
         ww_model = tflite.Interpreter(model_path=str(ww_model_path), num_threads=1)
@@ -420,15 +580,10 @@ def ww_proc(state: State, ww_model_path: str):
                         ]
                         client_data.new_embeddings -= 1
 
-                batch_size = len(todo_ids)
-                if batch_size <= 0:
-                    # Not enough embedding features to process
-                    break
-
                 ww_model.resize_tensor_input(
                     ww_input_index,
                     embeddings_tensor.shape,
-                    strict=True,
+                    strict=False,  # must be False for non-dynamic batch dim
                 )
                 ww_model.allocate_tensors()
 
@@ -439,6 +594,7 @@ def ww_proc(state: State, ww_model_path: str):
 
                 with state.clients_lock:
                     for i, probability in enumerate(probabilities):
+                        client_id = todo_ids[i]
                         client = state.clients.get(client_id)
                         if client is None:
                             # Client disconnected
@@ -451,7 +607,9 @@ def ww_proc(state: State, ww_model_path: str):
 
                             if client_data.activations >= client_data.trigger_level:
                                 client_data.is_detected = True
-                                client.wfile.write((ww_model_path + "\n").encode("utf-8"))
+                                client.wfile.write(
+                                    (ww_model_path + "\n").encode("utf-8")
+                                )
                                 client.wfile.flush()
                                 _LOGGER.debug(
                                     "Triggered %s (client=%s)", ww_model_path, client_id
@@ -464,8 +622,6 @@ def ww_proc(state: State, ww_model_path: str):
                             client_data.activations = max(
                                 0, client_data.activations - 1
                             )
-
-                # print("Probabilities", probabilities)
 
     except Exception:
         _LOGGER.exception("Unexpected error in wake word thread")
