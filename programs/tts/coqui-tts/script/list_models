@@ -1,17 +1,15 @@
-#!/usr/bin/env bash
-set -eo pipefail
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+import venv
+from pathlib import Path
 
-# Directory of *this* script
-this_dir="$( cd "$( dirname "$0" )" && pwd )"
+_DIR = Path(__file__).parent
+_PROGRAM_DIR = _DIR.parent
+_VENV_DIR = _PROGRAM_DIR / ".venv"
 
-# Base directory of repo
-base_dir="$(realpath "${this_dir}/..")"
-
-# Path to virtual environment
-: "${venv:=${base_dir}/.venv}"
-
-if [ -d "${venv}" ]; then
-    source "${venv}/bin/activate"
-fi
-
-tts --list_models "$@"
+context = venv.EnvBuilder().ensure_directories(_VENV_DIR)
+subprocess.check_call(
+    [os.path.join(context.bin_path, "tts"), "--list_models"] + sys.argv[1:]
+)
