@@ -55,7 +55,7 @@ async def async_read_event(reader: asyncio.StreamReader) -> Optional[Event]:
         return Event(
             type=event_dict[_TYPE], data=event_dict.get(_DATA), payload=payload
         )
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ValueError):
         pass
 
     return None
@@ -120,7 +120,7 @@ def read_event(reader: Optional[BinaryIO] = None) -> Optional[Event]:
         return Event(
             type=event_dict[_TYPE], data=event_dict.get(_DATA), payload=payload
         )
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ValueError):
         pass
 
     return None

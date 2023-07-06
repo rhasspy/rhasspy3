@@ -24,13 +24,19 @@ class AsyncEventHandler(ABC):
         await async_write_event(event, self.writer)
 
     async def run(self) -> None:
-        while True:
-            event = await async_read_event(self.reader)
-            if event is None:
-                break
+        try:
+            while True:
+                event = await async_read_event(self.reader)
+                if event is None:
+                    break
 
-            if not (await self.handle_event(event)):
-                break
+                if not (await self.handle_event(event)):
+                    break
+        finally:
+            await self.disconnect()
+
+    async def disconnect(self) -> None:
+        pass
 
 
 HandlerFactory = Callable[
