@@ -9,7 +9,6 @@ from pathlib import Path
 
 from rhasspy3.core import Rhasspy
 from rhasspy3.mic import record
-from rhasspy3.program import create_process
 from rhasspy3.wake import detect
 
 _FILE = Path(__file__)

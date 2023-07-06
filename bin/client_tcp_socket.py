@@ -3,7 +3,9 @@ import argparse
 import logging
 import socket
 import threading
+import sys
 
+from rhasspy3.audio import AudioStop
 from rhasspy3.event import read_event, write_event
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,11 +34,15 @@ def main():
             )
             read_thread.start()
 
-            write_thread = threading.Thread(
-                target=write_proc, args=(conn_file,), daemon=True
-            )
-            write_thread.start()
-            write_thread.join()
+            while True:
+                event = read_event()
+                if event is None:
+                    break
+
+                write_event(event, conn_file)
+
+                if AudioStop.is_type(event.type):
+                    break
     except KeyboardInterrupt:
         pass
 
@@ -51,18 +57,6 @@ def read_proc(conn_file):
             write_event(event)
     except Exception:
         _LOGGER.exception("Unexpected error in read thread")
-
-
-def write_proc(conn_file):
-    try:
-        while True:
-            event = read_event()
-            if event is None:
-                break
-
-            write_event(event, conn_file)
-    except Exception:
-        _LOGGER.exception("Unexpected error in write thread")
 
 
 if __name__ == "__main__":

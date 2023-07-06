@@ -74,23 +74,27 @@ def main() -> None:
                 args.rate, args.width, args.channels, timestamp=time.monotonic_ns()
             ).event()
         )
-        while True:
-            if stop_event.is_set():
-                break
 
-            audio_bytes = proc.stdout.read(bytes_per_chunk)
-            if not audio_bytes:
-                break
+        try:
+            while True:
+                if stop_event.is_set():
+                    break
 
-            write_event(
-                AudioChunk(
-                    args.rate,
-                    args.width,
-                    args.channels,
-                    audio_bytes,
-                    timestamp=time.monotonic_ns(),
-                ).event()
-            )
+                audio_bytes = proc.stdout.read(bytes_per_chunk)
+                if not audio_bytes:
+                    break
+
+                write_event(
+                    AudioChunk(
+                        args.rate,
+                        args.width,
+                        args.channels,
+                        audio_bytes,
+                        timestamp=time.monotonic_ns(),
+                    ).event()
+                )
+        except KeyboardInterrupt:
+            pass
 
 
 def wait_for_stop(stop_event: threading.Event):

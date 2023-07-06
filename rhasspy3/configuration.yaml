@@ -53,7 +53,7 @@ programs:
     # Models: see script/list_models
     porcupine1:
       command: |
-        .venv/bin/python3 bin/porcupine_stream.py --model "${model}"
+        script/stream --model "${model}"
       template_args:
         model: "porcupine_linux.ppn"
 
@@ -62,9 +62,7 @@ programs:
     # Custom wake word: https://github.com/rhasspy/snowboy-seasalt
     snowboy:
       command: |
-        .venv/bin/python3 bin/snowboy_raw_text.py --model "${model}"
-      adapter: |
-        wake_adapter_raw.py
+        script/stream --model "${model}"
       template_args:
         model: "share/snowboy.umdl"
 
@@ -72,9 +70,7 @@ programs:
     # Model included in share/
     precise-lite:
       command: |
-        .venv/bin/python3 bin/precise.py "${model}"
-      adapter: |
-        wake_adapter_raw.py
+        script/stream --model "${model}"
       template_args:
         model: "share/hey_mycroft.tflite"
 
@@ -84,6 +80,17 @@ programs:
         script/stream --model "${model}"
       template_args:
         model: "hey_jarvis"
+
+    openwakeword.client:
+      command: |
+        client_tcp_socket.py "127.0.0.1:10400"
+
+    openwakeword-lite:
+      command: |
+        script/stream --model "${model}"
+      template_args:
+        model: "share/hey_jarvis_v0.1.tflite"
+
 
     # TODO: snowman
     # https://github.com/Thalhammer/snowman/
@@ -235,11 +242,11 @@ programs:
     # Models: https://github.com/piper/piper/releases/tag/v0.0.2
     piper:
       command: |
-        bin/piper --model "${model}" --output_file -
+        bin/piper_autodownload.py --model "${model}" --output_file -
       adapter: |
         tts_adapter_text2wav.py
       template_args:
-        model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
+        model: "en_US-lessac-medium"
 
     # Run server: tts piper
     piper.client:
@@ -519,6 +526,12 @@ servers:
     coqui-tts:
       command: |
         script/server
+
+  wake:
+    openwakeword:
+      command: |
+        script/server --model "${model}"
+
 
 
 # -----------------------------------------------------------------------------

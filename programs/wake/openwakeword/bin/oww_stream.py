@@ -75,7 +75,7 @@ def main() -> None:
 
                 audio_bytes = audio_bytes[bytes_per_chunk:]
 
-        if is_detected:
+        if not is_detected:
             write_event(NotDetected().event())
     except KeyboardInterrupt:
         pass

@@ -60,6 +60,7 @@ class SatelliteConfig(DataClassJsonMixin):
     wake: Optional[PipelineProgramConfig] = None
     remote: Optional[PipelineProgramConfig] = None
     snd: Optional[PipelineProgramConfig] = None
+    vad: Optional[PipelineProgramConfig] = None
 
 
 @dataclass
