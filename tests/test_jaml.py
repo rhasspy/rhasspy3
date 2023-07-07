@@ -19,6 +19,11 @@ outer_a:  # Inline comment
   inner_a:
     name: inner_a
   empty_string: ""
+  list:
+    - 1
+    - "two"
+    - 3.5
+    - true
   string_with_hash: "#test"
 
 outer_b:
@@ -42,6 +47,7 @@ def test_safe_load():
                 "inner_a": {"name": "inner_a"},
                 "empty_string": "",
                 "string_with_hash": "#test",
+                "list": [1, "two", 3.5, True],
             },
             "outer_b": {"name": "inner_b"},
         }
