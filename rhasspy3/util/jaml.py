@@ -157,9 +157,6 @@ class JamlLoader:
                         pass
 
         if value_is_dict:
-            # new_target: Dict[str, Any] = {}
-            # target[key] = new_target
-            # self.target_stack.append(new_target)
             self.target_stack.append(Placeholder(key, target))
             self.indent += _INDENT
         else:

@@ -1,11 +1,12 @@
 """Utilities for creating processes."""
 import asyncio
+import contextlib
 import logging
 import os
 import shlex
 import string
 from asyncio.subprocess import PIPE, Process
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from .config import CommandConfig, PipelineProgramConfig, ProgramConfig
 from .core import Rhasspy
@@ -18,7 +19,17 @@ class MissingProgramConfigError(Exception):
     pass
 
 
-class ProcessContextManager:
+class AsyncNullContextManager(contextlib.AbstractAsyncContextManager):
+    """Async context manager that does nothing."""
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
+
+class ProcessContextManager(contextlib.AbstractAsyncContextManager):
     """Wrapper for an async process that terminates on exit."""
 
     def __init__(self, proc: Process, name: str):
@@ -74,12 +85,15 @@ async def create_process(
 
     # ${variables} available within program/pipeline template_args
     default_mapping = {
+        "base_dir": str(rhasspy.base_dir.absolute()),
+        "config_dir": str(rhasspy.config_dir.absolute()),
         "program_dir": str(program_dir.absolute()),
         "data_dir": str(data_dir.absolute()),
     }
 
     command_str = program_config.command.strip()
     command_mapping = dict(default_mapping)
+
     if program_config.template_args:
         # Substitute within program template args
         args_mapping = dict(program_config.template_args)
@@ -92,6 +106,7 @@ async def create_process(
 
         command_mapping.update(args_mapping)
 
+    adapter_args: List[str] = []
     if pipeline_config is not None:
         if pipeline_config.template_args:
             # Substitute within pipeline template args
@@ -104,6 +119,12 @@ async def create_process(
                 args_mapping[arg_name] = arg_template.safe_substitute(default_mapping)
 
             merge_dict(command_mapping, args_mapping)
+
+        if pipeline_config.adapter_args:
+            arg_template = string.Template(pipeline_config.adapter_args)
+            adapter_args.extend(
+                shlex.split(arg_template.safe_substitute(default_mapping))
+            )
 
     # Substitute template args
     command_template = string.Template(command_str)
@@ -121,8 +142,10 @@ async def create_process(
     cwd = working_dir if working_dir.is_dir() else None
 
     if program_config.shell:
+        # Shell command
         if program_config.adapter:
             program, *args = shlex.split(program_config.adapter)
+            args.extend(adapter_args)
             args.append("--shell")
             args.append(command_str)
 
@@ -145,8 +168,10 @@ async def create_process(
                 env=env,
             )
     else:
+        # Non-shell command
         if program_config.adapter:
             program, *args = shlex.split(program_config.adapter)
+            args.extend(adapter_args)
             args.append(command_str)
         else:
             program, *args = shlex.split(command_str)

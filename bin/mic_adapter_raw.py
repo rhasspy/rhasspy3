@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Reads raw audio chunks from stdin."""
 import argparse
+import contextlib
 import logging
 import shlex
 import subprocess
 import threading
 import time
 from pathlib import Path
+from typing import Union
 
 from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK, AudioChunk, AudioStart, AudioStop
 from rhasspy3.event import read_event, write_event
@@ -23,6 +25,8 @@ def main() -> None:
         help="Command to run",
     )
     parser.add_argument("--shell", action="store_true", help="Run command with shell")
+    #
+    parser.add_argument("--filter", help="Program to filter raw audio through")
     #
     parser.add_argument(
         "--samples-per-chunk",
@@ -63,7 +67,24 @@ def main() -> None:
         command = shlex.split(args.command)
 
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    with proc:
+
+    has_filter = bool(args.filter)
+    if has_filter:
+        filter_proc: Union[
+            subprocess.Popen, contextlib.AbstractContextManager
+        ] = subprocess.Popen(
+            shlex.split(args.filter),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        assert isinstance(filter_proc, subprocess.Popen)
+        assert filter_proc.stdin is not None
+        assert filter_proc.stdout is not None
+    else:
+        filter_proc = contextlib.nullcontext()
+
+    with proc, filter_proc:
         assert proc.stdout is not None
 
         stop_event = threading.Event()
@@ -83,6 +104,11 @@ def main() -> None:
                 audio_bytes = proc.stdout.read(bytes_per_chunk)
                 if not audio_bytes:
                     break
+
+                if has_filter:
+                    filter_proc.stdin.write(audio_bytes)
+                    filter_proc.stdin.flush()
+                    audio_bytes = filter_proc.stdout.read(len(audio_bytes))
 
                 write_event(
                     AudioChunk(

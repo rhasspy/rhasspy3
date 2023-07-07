@@ -112,9 +112,8 @@ async def main() -> None:
                     print("", flush=True)
 
                     if VoiceStopped.is_type(vad_event.type):
-                        if mic_task in pending:
-                            # Clear pending task
-                            await mic_task
+                        for task in pending:
+                            task.cancel()
 
                         # Stop mic and vad
                         await async_write_event(AudioStop().event(), mic_proc.stdin)
