@@ -5,12 +5,15 @@ import logging
 import math
 import os
 import wave
+from typing import Optional
 
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
 from wyoming.event import Event
 from wyoming.info import Describe, Info
 from wyoming.server import AsyncEventHandler
 from wyoming.tts import Synthesize
+
+from .process import PiperProcessManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,8 +23,7 @@ class PiperEventHandler(AsyncEventHandler):
         self,
         wyoming_info: Info,
         cli_args: argparse.Namespace,
-        piper_proc: asyncio.subprocess.Process,
-        piper_proc_lock: asyncio.Lock,
+        process_manager: PiperProcessManager,
         *args,
         **kwargs,
     ) -> None:
@@ -29,8 +31,7 @@ class PiperEventHandler(AsyncEventHandler):
 
         self.cli_args = cli_args
         self.wyoming_info_event = wyoming_info.event()
-        self.piper_proc = piper_proc
-        self.piper_proc_lock = piper_proc_lock
+        self.process_manager = process_manager
 
     async def handle_event(self, event: Event) -> bool:
         if Describe.is_type(event.type):
@@ -59,52 +60,60 @@ class PiperEventHandler(AsyncEventHandler):
             if not has_punctuation:
                 text = text + self.cli_args.auto_punctuation[0]
 
-        async with self.piper_proc_lock:
+        async with self.process_manager.processes_lock:
             _LOGGER.debug("synthesize: raw_text=%s, text='%s'", raw_text, text)
+            voice_name: Optional[str] = None
+            if synthesize.voice is not None:
+                voice_name = synthesize.voice.name
+
+            piper_proc = await self.process_manager.get_process(voice_name=voice_name)
+
+            assert piper_proc.proc.stdin is not None
+            assert piper_proc.proc.stdout is not None
 
             # Text in, file path out
-            self.piper_proc.stdin.write((text + "\n").encode())
-            await self.piper_proc.stdin.drain()
+            piper_proc.proc.stdin.write((text + "\n").encode())
+            await piper_proc.proc.stdin.drain()
 
-            output_path = (await self.piper_proc.stdout.readline()).decode().strip()
+            output_path = (await piper_proc.proc.stdout.readline()).decode().strip()
             _LOGGER.debug(output_path)
 
-            wav_file: wave.Wave_read = wave.open(output_path, "rb")
-            with wav_file:
-                rate = wav_file.getframerate()
-                width = wav_file.getsampwidth()
-                channels = wav_file.getnchannels()
+        wav_file: wave.Wave_read = wave.open(output_path, "rb")
+        with wav_file:
+            rate = wav_file.getframerate()
+            width = wav_file.getsampwidth()
+            channels = wav_file.getnchannels()
 
+            await self.write_event(
+                AudioStart(
+                    rate=rate,
+                    width=width,
+                    channels=channels,
+                ).event(),
+            )
+
+            # Audio
+            audio_bytes = wav_file.readframes(wav_file.getnframes())
+            bytes_per_sample = width * channels
+            bytes_per_chunk = bytes_per_sample * self.cli_args.samples_per_chunk
+            num_chunks = int(math.ceil(len(audio_bytes) / bytes_per_chunk))
+
+            # Split into chunks
+            for i in range(num_chunks):
+                offset = i * bytes_per_chunk
+                chunk = audio_bytes[offset : offset + bytes_per_chunk]
                 await self.write_event(
-                    AudioStart(
+                    AudioChunk(
+                        audio=chunk,
                         rate=rate,
                         width=width,
                         channels=channels,
                     ).event(),
                 )
 
-                # Audio
-                audio_bytes = wav_file.readframes(wav_file.getnframes())
-                bytes_per_sample = width * channels
-                bytes_per_chunk = bytes_per_sample * self.cli_args.samples_per_chunk
-                num_chunks = int(math.ceil(len(audio_bytes) / bytes_per_chunk))
+        await self.write_event(AudioStop().event())
+        _LOGGER.debug("Completed request")
 
-                # Split into chunks
-                for i in range(num_chunks):
-                    offset = i * bytes_per_chunk
-                    chunk = audio_bytes[offset : offset + bytes_per_chunk]
-                    await self.write_event(
-                        AudioChunk(
-                            audio=chunk,
-                            rate=rate,
-                            width=width,
-                            channels=channels,
-                        ).event(),
-                    )
-
-            await self.write_event(AudioStop().event())
-            _LOGGER.debug("Completed request")
-
-            os.unlink(output_path)
+        os.unlink(output_path)
 
         return True

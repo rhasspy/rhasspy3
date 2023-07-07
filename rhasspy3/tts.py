@@ -1,8 +1,8 @@
 """Text to speech."""
 import wave
-from typing import IO, AsyncIterable, Union
+from typing import IO, AsyncIterable, Union, Optional
 
-from wyoming.tts import Synthesize
+from wyoming.tts import Synthesize, SynthesizeVoice
 
 from .audio import AudioChunk, AudioStart, AudioStop
 from .config import PipelineProgramConfig
@@ -14,6 +14,7 @@ DOMAIN = "tts"
 
 __all__ = [
     "Synthesize",
+    "SynthesizeVoice",
     "DOMAIN",
     "synthesize",
 ]
@@ -24,13 +25,20 @@ async def synthesize(
     program: Union[str, PipelineProgramConfig],
     text: str,
     wav_out: IO[bytes],
+    voice_name: Optional[str] = None,
 ):
     """Synthesize audio from text to WAV output."""
     async with (await create_process(rhasspy, DOMAIN, program)) as tts_proc:
         assert tts_proc.stdin is not None
         assert tts_proc.stdout is not None
 
-        await async_write_event(Synthesize(text=text).event(), tts_proc.stdin)
+        await async_write_event(
+            Synthesize(
+                text=text,
+                voice=SynthesizeVoice(name=voice_name) if voice_name else None,
+            ).event(),
+            tts_proc.stdin,
+        )
 
         wav_file: wave.Wave_write = wave.open(wav_out, "wb")
         wav_params_set = False

@@ -3,7 +3,6 @@ import argparse
 import logging
 import socket
 import threading
-import sys
 
 from rhasspy3.audio import AudioStop
 from rhasspy3.event import read_event, write_event
@@ -29,17 +28,17 @@ def main():
 
     try:
         with sock.makefile(mode="rwb") as conn_file:
-            read_thread = threading.Thread(
-                target=read_proc, args=(conn_file,), daemon=True
+            write_thread = threading.Thread(
+                target=write_proc, args=(conn_file,), daemon=True
             )
-            read_thread.start()
+            write_thread.start()
 
             while True:
-                event = read_event()
+                event = read_event(conn_file)
                 if event is None:
                     break
 
-                write_event(event, conn_file)
+                write_event(event)
 
                 if AudioStop.is_type(event.type):
                     break
@@ -47,16 +46,16 @@ def main():
         pass
 
 
-def read_proc(conn_file):
+def write_proc(conn_file):
     try:
         while True:
-            event = read_event(conn_file)
+            event = read_event()
             if event is None:
                 break
 
-            write_event(event)
+            write_event(event, conn_file)
     except Exception:
-        _LOGGER.exception("Unexpected error in read thread")
+        _LOGGER.exception("Unexpected error in write thread")
 
 
 if __name__ == "__main__":

@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(_FILE.stem)
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("text", nargs="*", help="Text to speak (default: stdin)")
+    parser.add_argument("--voice", help="Name of voice to use")
     parser.add_argument(
         "-c",
         "--config",
@@ -71,7 +72,7 @@ async def main() -> None:
             continue
 
         with io.BytesIO() as wav_io:
-            await synthesize(rhasspy, tts_program, line, wav_io)
+            await synthesize(rhasspy, tts_program, line, wav_io, voice_name=args.voice)
             wav_io.seek(0)
             play_result = await play(
                 rhasspy, snd_program, wav_io, args.samples_per_chunk
