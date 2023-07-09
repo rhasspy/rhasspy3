@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 import argparse
+import asyncio
 import logging
 import socket
-import threading
 
-from rhasspy3.audio import AudioStop
-from rhasspy3.event import read_event, write_event
+from rhasspy3.event import (
+    async_get_stdin,
+    async_read_event,
+    async_write_event,
+    write_event,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def main():
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("address", help="ip:port of server")
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
@@ -18,45 +22,55 @@ def main():
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    address, port_str = args.address.split(":", maxsplit=1)
+    host, port_str = args.address.split(":", maxsplit=1)
     port = int(port_str)
 
     _LOGGER.debug("Connecting to %s", args.address)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((address, port))
-    _LOGGER.info("Connected")
+    stdin_reader = await async_get_stdin()
+    sock_reader, sock_writer = await asyncio.open_connection(host=host, port=port)
+    _LOGGER.debug("Connected")
+
+    # stdin -> socket
+    # socket -> stdout
+    stdin_task = asyncio.create_task(async_read_event(stdin_reader))
+    sock_task = asyncio.create_task(async_read_event(sock_reader))
+    pending = {stdin_task, sock_task}
 
     try:
-        with sock.makefile(mode="rwb") as conn_file:
-            write_thread = threading.Thread(
-                target=write_proc, args=(conn_file,), daemon=True
+        while True:
+            done, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_COMPLETED
             )
-            write_thread.start()
-
-            while True:
-                event = read_event(conn_file)
+            if stdin_task in done:
+                event = stdin_task.result()
                 if event is None:
                     break
 
+                # Forward to socket
+                await async_write_event(event, sock_writer)
+
+                # Next stdin event
+                stdin_task = asyncio.create_task(async_read_event(stdin_reader))
+                pending.add(stdin_task)
+
+            if sock_task in done:
+                event = sock_task.result()
+                if event is None:
+                    break
+
+                # Forward to stdout (blocking)
                 write_event(event)
 
-                if AudioStop.is_type(event.type):
-                    break
-    except KeyboardInterrupt:
-        pass
-
-
-def write_proc(conn_file):
-    try:
-        while True:
-            event = read_event()
-            if event is None:
-                break
-
-            write_event(event, conn_file)
-    except Exception:
-        _LOGGER.exception("Unexpected error in write thread")
+                # Next socket event
+                sock_task = asyncio.create_task(async_read_event(sock_reader))
+                pending.add(sock_task)
+    finally:
+        for task in pending:
+            task.cancel()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass

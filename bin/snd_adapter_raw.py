@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Play audio through a command that accepts raw PCM."""
+import asyncio
 import argparse
 import logging
 import shlex
-import subprocess
+import sys
 from pathlib import Path
 
 from rhasspy3.audio import (
@@ -14,7 +15,7 @@ from rhasspy3.audio import (
     AudioChunkConverter,
     AudioStop,
 )
-from rhasspy3.event import read_event, write_event
+from rhasspy3.event import async_get_stdin, async_read_event, write_event
 from rhasspy3.snd import Played
 
 _FILE = Path(__file__)
@@ -22,7 +23,7 @@ _DIR = _FILE.parent
 _LOGGER = logging.getLogger(_FILE.stem)
 
 
-def main() -> None:
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "command",
@@ -47,21 +48,30 @@ def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    if args.shell:
-        command = args.command
-    else:
-        command = shlex.split(args.command)
+    reader = await async_get_stdin()
 
     try:
-        proc = subprocess.Popen(
-            command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL
-        )
+        if args.shell:
+            proc = await asyncio.create_subprocess_shell(
+                args.command,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
+            )
+        else:
+            program, *program_args = shlex.split(args.command)
+            proc = await asyncio.create_subprocess_exec(
+                program,
+                *program_args,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
+            )
+
         assert proc.stdin is not None
 
         converter = AudioChunkConverter(args.rate, args.width, args.channels)
-        with proc:
+        try:
             while True:
-                event = read_event()
+                event = await async_read_event(reader)
                 if event is None:
                     break
 
@@ -69,12 +79,20 @@ def main() -> None:
                     chunk = AudioChunk.from_event(event)
                     chunk = converter.convert(chunk)
                     proc.stdin.write(chunk.audio)
-                    proc.stdin.flush()
+                    await proc.stdin.drain()
                 elif AudioStop.is_type(event.type):
                     break
+        finally:
+            # Gracefully terminate
+            if proc.returncode is None:
+                proc.stdin.close()
+                await proc.wait()
     finally:
         write_event(Played().event())
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
