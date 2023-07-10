@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+import argparse
+import logging
+import json
+import shutil
+from pathlib import Path
+from typing import Any, Dict
+from urllib.request import urlopen
+
+_LOGGER = logging.getLogger()
+
+_DIR = Path(__file__).parent
+_PROGRAM_DIR = _DIR.parent
+_CONFIG_DIR = _PROGRAM_DIR.parent.parent.parent
+_DATA_DIR = _CONFIG_DIR / "data" / "tts" / "piper"
+
+_VERSION = "v1.0.0"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("voice", nargs="*", help="Name of voice to download")
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO)
+
+    _LOGGER.info("Loading voices list")
+    with urlopen(
+        f"https://huggingface.co/rhasspy/piper-voices/raw/{_VERSION}/voices.json"
+    ) as json_response:
+        voices = json.load(json_response)
+
+    if not args.voice:
+        for voice_key in sorted(voices):
+            print(voice_key)
+
+        return
+
+    _DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    for voice in args.voice:
+        assert voice in voices, f"No voice named {voice} in {sorted(voices.keys())}"
+
+    for voice in args.voice:
+        _LOGGER.info("Downloading %s to %s", voice, _DATA_DIR)
+        download_voice(voices, voice)
+
+    _LOGGER.info("Done")
+
+
+def download_voice(voices: Dict[str, Any], key: str):
+    # Download files for the voice
+    for file_path in voices[key]["files"]:
+        file_name = Path(file_path).name
+        if file_name == "MODEL_CARD":
+            continue
+
+        file_url = f"https://huggingface.co/rhasspy/piper-voices/resolve/{_VERSION}/{file_path}"
+        with urlopen(file_url) as file_response:
+            with open(_DATA_DIR / file_name, "wb") as output_file:
+                shutil.copyfileobj(file_response, output_file)
+
+
+# -----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    main()

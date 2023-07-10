@@ -39,6 +39,21 @@ class Eventable(ABC):
         return self.event().data
 
 
+async def async_get_stdin(
+    loop: Optional[asyncio.AbstractEventLoop] = None,
+) -> asyncio.StreamReader:
+    """Get StreamReader for stdin."""
+    if loop is None:
+        loop = asyncio.get_running_loop()
+
+    reader = asyncio.StreamReader()
+    await loop.connect_read_pipe(
+        lambda: asyncio.StreamReaderProtocol(reader), sys.stdin
+    )
+
+    return reader
+
+
 async def async_read_event(reader: asyncio.StreamReader) -> Optional[Event]:
     try:
         json_line = await reader.readline()

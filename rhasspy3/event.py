@@ -2,6 +2,7 @@
 from wyoming.event import (
     Event,
     Eventable,
+    async_get_stdin,
     async_read_event,
     async_write_event,
     async_write_events,
@@ -12,6 +13,7 @@ from wyoming.event import (
 __all__ = [
     "Event",
     "Eventable",
+    "async_get_stdin",
     "async_read_event",
     "async_write_event",
     "async_write_events",

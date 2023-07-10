@@ -44,6 +44,11 @@ programs:
         host: 0.0.0.0
         port: 5000
 
+  mic_filter:
+    speexdsp-cli:
+      command: |
+        bin/speexdsp-cli --rate 16000 --samples 1024
+
   # -------------------
   # Wake word detection
   # -------------------
@@ -242,11 +247,9 @@ programs:
     # Models: https://github.com/piper/piper/releases/tag/v0.0.2
     piper:
       command: |
-        bin/piper_autodownload.py --model "${model}" --output_file -
-      adapter: |
-        tts_adapter_text2wav.py
+        script/events --voice "${voice}"
       template_args:
-        model: "en_US-lessac-medium"
+        voice: "en_US-lessac-medium"
 
     # Run server: tts piper
     piper.client:
@@ -513,9 +516,9 @@ servers:
 
     piper:
       command: |
-        script/server "${model}"
+        script/server --voice "${voice}"
       template_args:
-        model: "${data_dir}/en-us-blizzard_lessac-medium.onnx"
+        voice: "en_US-lessac-medium"
 
     larynx:
       command: |

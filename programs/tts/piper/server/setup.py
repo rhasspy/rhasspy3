@@ -16,7 +16,7 @@ if requirements_path.is_file():
 
 setup(
     name="wyoming_piper",
-    version="0.0.3",
+    version="1.0.0",
     description="Wyoming Server for Piper",
     url="http://github.com/rhasspy/rhasspy3",
     author="Michael Hansen",

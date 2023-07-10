@@ -99,6 +99,8 @@ def ensure_voice_exists(
         ) as download_file:
             shutil.copyfileobj(response, download_file)
 
+        _LOGGER.info("Downloaded %s (%s)", download_file_path, file_url)
+
 
 def find_voice(name: str, data_dirs: Iterable[Union[str, Path]]) -> Tuple[Path, Path]:
     for data_dir in data_dirs:

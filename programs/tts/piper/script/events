@@ -11,9 +11,6 @@ _SERVER_DIR = _PROGRAM_DIR / "server"
 _CONFIG_DIR = _DIR.parent.parent.parent.parent
 _DATA_DIR = _CONFIG_DIR / "data" / "tts" / "piper"
 
-_SOCKETFILE = _PROGRAM_DIR / "var" / "run" / "piper.socket"
-_SOCKETFILE.parent.mkdir(parents=True, exist_ok=True)
-
 server_path = str(_SERVER_DIR.absolute())
 python_path = os.getenv("PYTHONPATH") or ""
 if python_path:
@@ -28,8 +25,6 @@ os.execvp(
         "python3",
         "-m",
         "wyoming_piper",
-        "--uri",
-        f"unix://{_SOCKETFILE.absolute()}",
         "--piper",
         str((_BIN_DIR / "piper").absolute()),
         "--data-dir",

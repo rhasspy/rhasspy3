@@ -1,6 +1,6 @@
 """Event handler for clients of the server."""
 import argparse
-import asyncio
+import json
 import logging
 import math
 import os
@@ -63,16 +63,38 @@ class PiperEventHandler(AsyncEventHandler):
         async with self.process_manager.processes_lock:
             _LOGGER.debug("synthesize: raw_text=%s, text='%s'", raw_text, text)
             voice_name: Optional[str] = None
+            voice_speaker: Optional[str] = None
             if synthesize.voice is not None:
                 voice_name = synthesize.voice.name
+                voice_speaker = synthesize.voice.speaker
 
             piper_proc = await self.process_manager.get_process(voice_name=voice_name)
 
             assert piper_proc.proc.stdin is not None
             assert piper_proc.proc.stdout is not None
 
-            # Text in, file path out
-            piper_proc.proc.stdin.write((text + "\n").encode())
+            # JSON in, file path out
+            input_obj = {"text": text}
+            if voice_speaker is not None:
+                speaker_id_map = piper_proc.config.get("speaker_id_map", {})
+                speaker_id = speaker_id_map.get(voice_speaker)
+                if speaker_id is None:
+                    try:
+                        # Try to interpret as an id
+                        speaker_id = int(voice_speaker)
+                    except ValueError:
+                        pass
+
+                if speaker_id is not None:
+                    input_obj["speaker_id"] = speaker_id
+                else:
+                    _LOGGER.warning(
+                        "No speaker '%s' for voice '%s'", voice_speaker, voice_name
+                    )
+
+            piper_proc.proc.stdin.write(
+                (json.dumps(input_obj, ensure_ascii=False) + "\n").encode()
+            )
             await piper_proc.proc.stdin.drain()
 
             output_path = (await piper_proc.proc.stdout.readline()).decode().strip()

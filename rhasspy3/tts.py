@@ -26,6 +26,7 @@ async def synthesize(
     text: str,
     wav_out: IO[bytes],
     voice_name: Optional[str] = None,
+    voice_speaker: Optional[str] = None,
 ):
     """Synthesize audio from text to WAV output."""
     async with (await create_process(rhasspy, DOMAIN, program)) as tts_proc:
@@ -35,7 +36,12 @@ async def synthesize(
         await async_write_event(
             Synthesize(
                 text=text,
-                voice=SynthesizeVoice(name=voice_name) if voice_name else None,
+                voice=SynthesizeVoice(
+                    name=voice_name,
+                    speaker=voice_speaker,
+                )
+                if voice_name
+                else None,
             ).event(),
             tts_proc.stdin,
         )

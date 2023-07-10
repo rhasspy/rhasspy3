@@ -1,10 +1,11 @@
 import asyncio
+import sys
 from abc import ABC, abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import Callable, Set, Union
+from typing import Callable, Set, Union, Iterable
 
-from .event import Event, async_read_event, async_write_event
+from .event import Event, async_get_stdin, async_read_event, async_write_event
 
 
 class AsyncEventHandler(ABC):
@@ -65,7 +66,10 @@ class AsyncServer(ABC):
             port = int(port_str)
             return AsyncTcpServer(host, port)
 
-        raise ValueError("Only unix:// or tcp:// are supported")
+        if uri.startswith("stdio://"):
+            return AsyncStdioServer()
+
+        raise ValueError("Only 'stdio://', 'unix://', or 'tcp://' are supported")
 
     async def _handler_callback(
         self,
@@ -77,6 +81,30 @@ class AsyncServer(ABC):
         task = asyncio.create_task(handler.run())
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
+
+
+class AsyncStdioServer(AsyncServer):
+    """Wyoming server over stdin/stdout."""
+
+    async def run(self, handler_factory: HandlerFactory) -> None:
+        reader = await async_get_stdin()
+
+        # Get stdout writer.
+        # NOTE: This will make print() non-blocking.
+        loop = asyncio.get_running_loop()
+        writer_transport, writer_protocol = await loop.connect_write_pipe(
+            asyncio.streams.FlowControlMixin, sys.stdout
+        )
+        writer = asyncio.StreamWriter(writer_transport, writer_protocol, None, loop)
+
+        handler = handler_factory(reader, writer)
+        while True:
+            event = await async_read_event(reader)
+            if event is None:
+                break
+
+            if not (await handler.handle_event(event)):
+                break
 
 
 class AsyncTcpServer(AsyncServer):
@@ -102,7 +130,6 @@ class AsyncUnixServer(AsyncServer):
     def __init__(self, socket_path: Union[str, Path]) -> None:
         super().__init__()
         self.socket_path = Path(socket_path)
-        self.tasks: Set[asyncio.Task] = set()
 
     async def run(self, handler_factory: HandlerFactory) -> None:
         # Need to unlink socket file if it exists
