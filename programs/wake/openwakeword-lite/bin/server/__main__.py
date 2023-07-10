@@ -121,7 +121,7 @@ async def main() -> None:
         ],
     )
 
-    state = State(models_dir=_DIR / "models")
+    state = State(models_dir=_DIR.parent.parent / "share")
 
     # One thread per wake word model
     loop = asyncio.get_running_loop()

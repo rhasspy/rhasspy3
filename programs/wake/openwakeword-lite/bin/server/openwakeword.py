@@ -248,7 +248,9 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                             - client_data.new_embeddings
                             + ww_windows
                         ]
-                        client_data.new_embeddings = max(0, client.new_embeddings - 1)
+                        client_data.new_embeddings = max(
+                            0, client_data.new_embeddings - 1
+                        )
 
                 ww_model.resize_tensor_input(
                     ww_input_index,
