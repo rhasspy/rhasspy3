@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Final, Tuple
 
 import numpy as np
+
 from wyoming.server import AsyncEventHandler
 
 _MAX_SECONDS = 10

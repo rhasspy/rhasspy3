@@ -4,8 +4,8 @@ from typing import Union
 from .audio import AudioStop
 from .config import PipelineProgramConfig
 from .core import Rhasspy
-from .program import create_process
 from .event import async_write_event
+from .program import create_process
 
 DOMAIN = "mic"
 

@@ -11,6 +11,7 @@ from urllib.request import urlopen
 _DIR = Path(__file__).parent
 _LOGGER = logging.getLogger("setup")
 
+VERSION = "v1.1.0"
 PLATFORMS = {"x86_64": "amd64", "aarch64": "arm64", "armv7l": "armv7"}
 
 
@@ -25,7 +26,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--link-format",
-        default="https://github.com/rhasspy/piper/releases/download/v1.0.0/piper_{platform}.tar.gz",
+        default=f"https://github.com/rhasspy/piper/releases/download/{VERSION}/piper_{{platform}}.tar.gz",
         help="Format string for download URLs",
     )
     args = parser.parse_args()

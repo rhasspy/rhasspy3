@@ -1,6 +1,6 @@
 import argparse
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from .util import merge_dict
 from .util.dataclasses_json import DataClassJsonMixin

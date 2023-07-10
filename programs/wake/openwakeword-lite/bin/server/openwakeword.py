@@ -8,10 +8,10 @@ from wyoming.wake import Detection
 
 from .const import (
     EMB_FEATURES,
-    MEL_SAMPLES,
-    SAMPLES_PER_CHUNK,
-    NUM_MELS,
     EMB_STEP,
+    MEL_SAMPLES,
+    NUM_MELS,
+    SAMPLES_PER_CHUNK,
     WW_FEATURES,
 )
 from .state import State

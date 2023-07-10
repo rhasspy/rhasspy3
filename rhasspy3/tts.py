@@ -1,6 +1,6 @@
 """Text to speech."""
 import wave
-from typing import IO, AsyncIterable, Union, Optional
+from typing import IO, AsyncIterable, Optional, Union
 
 from wyoming.tts import Synthesize, SynthesizeVoice
 

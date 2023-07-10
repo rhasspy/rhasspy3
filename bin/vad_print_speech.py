@@ -2,20 +2,18 @@
 """Prints voice start/stop in WAV file."""
 import argparse
 import asyncio
-import io
 import json
 import logging
 import sys
-import time
 from pathlib import Path
-from typing import Iterable, Optional
 
-from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK, AudioChunk, AudioStart, AudioStop
+from rhasspy3.audio import DEFAULT_SAMPLES_PER_CHUNK, AudioChunk, AudioStop
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import async_read_event, async_write_event
-from rhasspy3.program import create_process
-from rhasspy3.vad import DOMAIN as VAD_DOMAIN, VoiceStarted, VoiceStopped
 from rhasspy3.mic import DOMAIN as MIC_DOMAIN
+from rhasspy3.program import create_process
+from rhasspy3.vad import DOMAIN as VAD_DOMAIN
+from rhasspy3.vad import VoiceStopped
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent

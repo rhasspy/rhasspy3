@@ -16,7 +16,7 @@ from rhasspy3.audio import (
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import async_read_event
 from rhasspy3.mic import DOMAIN as MIC_DOMAIN
-from rhasspy3.program import create_process, AsyncNullContextManager
+from rhasspy3.program import AsyncNullContextManager, create_process
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent

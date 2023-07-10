@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+"""Stream Wyoming events to and from a TCP socket server."""
 import argparse
 import asyncio
 import logging
-import socket
 
 from rhasspy3.event import (
     async_get_stdin,

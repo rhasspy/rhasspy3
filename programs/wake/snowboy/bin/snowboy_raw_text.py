@@ -1,65 +1,31 @@
 #!/usr/bin/env python3
-import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Dict
 
-from snowboy import snowboydecoder, snowboydetect
+from snowboy_shared import get_arg_parser, load_snowboy
 
-_LOGGER = logging.getLogger("snowboy_raw_text")
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_LOGGER = logging.getLogger(_FILE.stem)
 
 # -----------------------------------------------------------------------------
 
 
 def main() -> None:
     """Main method."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--model",
-        required=True,
-        action="append",
-        nargs="+",
-        help="Snowboy model settings (path, [sensitivity], [audio_gain], [apply_frontend])",
-    )
-    parser.add_argument("--samples-per-chunk", type=int, default=1024)
+    parser = get_arg_parser()
     args = parser.parse_args()
 
     # logging.basicConfig wouldn't work if a handler already existed.
     # snowboy must mess with logging, so this resets it.
     logging.getLogger().handlers = []
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    # Load model settings
-    detectors: Dict[str, snowboydetect.SnowboyDetect] = {}
-
-    for model_settings in args.model:
-        model_path = Path(model_settings[0])
-
-        sensitivity = "0.5"
-        if len(model_settings) > 1:
-            sensitivity = model_settings[1]
-
-        audio_gain = 1.0
-        if len(model_settings) > 2:
-            audio_gain = float(model_settings[2])
-
-        apply_frontend = False
-        if len(model_settings) > 3:
-            apply_frontend = model_settings[3].strip().lower() == "true"
-
-        detector = snowboydetect.SnowboyDetect(
-            snowboydecoder.RESOURCE_FILE.encode(), str(model_path).encode()
-        )
-
-        detector.SetSensitivity(sensitivity.encode())
-        detector.SetAudioGain(audio_gain)
-        detector.ApplyFrontend(apply_frontend)
-
-        detectors[model_path.stem] = detector
+    detectors = load_snowboy(args)
+    bytes_per_chunk = args.samples_per_chunk * 2  # 16-bit samples
 
     # Read 16Khz, 16-bit mono PCM from stdin
-    bytes_per_chunk = args.samples_per_chunk * 2
     try:
         chunk = bytes()
         next_chunk = sys.stdin.buffer.read(bytes_per_chunk)
@@ -79,7 +45,7 @@ def main() -> None:
 
                 chunk = chunk[bytes_per_chunk:]
 
-            next_chunk = sys.stdin.buffer.read(args.samples_per_chunk)
+            next_chunk = sys.stdin.buffer.read(bytes_per_chunk)
             chunk += next_chunk
     except KeyboardInterrupt:
         pass

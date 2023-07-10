@@ -55,7 +55,7 @@ class JamlLoader:
                 target = self.target_stack[-1]
                 if isinstance(target, Placeholder):
                     # Replace with dict
-                    target_dict = {}
+                    target_dict: Dict[str, Any] = {}
                     target.target[target.key] = target_dict
                     target = target_dict
                     self.target_stack[-1] = target
@@ -107,7 +107,7 @@ class JamlLoader:
         target = self.target_stack[-1]
         if isinstance(target, Placeholder):
             # Replace with dict
-            target_dict = {}
+            target_dict: Dict[str, Any] = {}
             target.target[target.key] = target_dict
             target = target_dict
             self.target_stack[-1] = target
@@ -165,7 +165,7 @@ class JamlLoader:
     def _add_list_item(self, line, line_indent: int):
         assert self.target_stack
         target = self.target_stack[-1]
-        assert isinstance(target, Sequence), target
+        assert isinstance(target, List), target
 
         line_stripped = line.strip()
         assert len(line_stripped) > 1
@@ -188,4 +188,5 @@ class JamlLoader:
                 except ValueError:
                     pass
 
+        # pylint: disable=no-member
         target.append(value)

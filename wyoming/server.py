@@ -3,7 +3,7 @@ import sys
 from abc import ABC, abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import Callable, Set, Union, Iterable
+from typing import Callable, Set, Union
 
 from .event import Event, async_get_stdin, async_read_event, async_write_event
 

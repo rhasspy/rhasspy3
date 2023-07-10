@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from threading import Lock, Semaphore
 from typing import Dict
-from pathlib import Path
 
 from .const import ClientData
 

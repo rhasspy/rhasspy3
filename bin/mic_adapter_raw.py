@@ -76,7 +76,7 @@ async def main() -> None:
 
     # Filter for raw input audio.
     # The program must return the same number of bytes for each chunk.
-    filter_proc: Optional[asyncio.subprocess.Process] = None
+    filter_proc: "Optional[asyncio.subprocess.Process]" = None
     if args.filter:
         filter_program, *filter_args = shlex.split(args.filter)
         _LOGGER.debug(
@@ -132,6 +132,9 @@ async def main() -> None:
                     break
 
                 if filter_proc is not None:
+                    assert filter_proc.stdin is not None
+                    assert filter_proc.stdout is not None
+
                     filter_proc.stdin.write(audio_bytes)
                     await filter_proc.stdin.drain()
                     audio_bytes = await filter_proc.stdout.readexactly(len(audio_bytes))

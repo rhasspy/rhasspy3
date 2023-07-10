@@ -1,12 +1,11 @@
 import argparse
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Final
 from pathlib import Path
+from typing import Dict, Final
 
 import numpy as np
 import tflite_runtime.interpreter as tflite
-
 
 _MAX_SECONDS: Final = 10
 _BATCH_SIZE: Final = 1

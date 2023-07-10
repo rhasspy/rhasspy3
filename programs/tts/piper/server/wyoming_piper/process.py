@@ -3,8 +3,8 @@ import argparse
 import asyncio
 import json
 import logging
-import time
 import tempfile
+import time
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -14,7 +14,7 @@ from wyoming.info import Attribution, Info, TtsProgram, TtsVoice, TtsVoiceSpeake
 from wyoming.server import AsyncServer
 from wyoming.tts import Synthesize
 
-from .download import get_voices, ensure_voice_exists, find_voice
+from .download import ensure_voice_exists, find_voice, get_voices
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Play audio through a command that accepts raw PCM."""
-import asyncio
 import argparse
+import asyncio
 import logging
 import shlex
-import sys
 from pathlib import Path
 
 from rhasspy3.audio import (

@@ -3,18 +3,18 @@ import argparse
 import asyncio
 import logging
 import threading
-from functools import partial
 from collections import defaultdict
 from dataclasses import dataclass, field
-from threading import Event, Thread, Lock, Semaphore
+from functools import partial
 from pathlib import Path
-from typing import Dict, Final, Tuple, Optional
+from threading import Event, Lock, Semaphore, Thread
+from typing import Dict, Final, Optional, Tuple
 
 from wyoming.info import Attribution, Info, WakeModel, WakeProgram
 from wyoming.server import AsyncServer
 
 from .handler import OpenWakeWordEventHandler
-from .openwakeword import mels_proc, ww_proc, embeddings_proc
+from .openwakeword import embeddings_proc, mels_proc, ww_proc
 from .state import State, WakeWordState
 
 _LOGGER = logging.getLogger()

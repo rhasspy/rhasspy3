@@ -11,11 +11,11 @@ from rhasspy3.audio import (
     DEFAULT_OUT_WIDTH,
     DEFAULT_SAMPLES_PER_CHUNK,
     AudioChunk,
-    AudioStop,
     AudioChunkConverter,
+    AudioStop,
 )
-from rhasspy3.snd import Played
 from rhasspy3.event import read_event, write_event
+from rhasspy3.snd import Played
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent

@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import numpy as np
 
-from wyoming.audio import AudioChunk, AudioStart, AudioStop, AudioChunkConverter
+from wyoming.audio import AudioChunk, AudioChunkConverter, AudioStart, AudioStop
 from wyoming.event import Event
 from wyoming.info import Describe, Info
 from wyoming.server import AsyncEventHandler

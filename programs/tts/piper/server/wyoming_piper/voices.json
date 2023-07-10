@@ -2634,30 +2634,30 @@
             }
         }
     },
-    "uk_UK-lada-x_low": {
+    "uk_UA-lada-x_low": {
         "name": "lada",
-        "language": "uk_UK",
+        "language": "uk_UA",
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
         "files": {
-            "uk/uk_UK/lada/x_low/uk_UK-lada-x_low.onnx": {
+            "uk/uk_UA/lada/x_low/uk_UA-lada-x_low.onnx": {
                 "size_bytes": 20628813,
                 "md5_digest": "b84110e3923d64cdd4e0056a22090557"
             },
-            "uk/uk_UK/lada/x_low/uk_UK-lada-x_low.onnx.json": {
-                "size_bytes": 5951,
-                "md5_digest": "2ac728c11b85dff83e1a52c8ad4f8fdf"
+            "uk/uk_UA/lada/x_low/uk_UA-lada-x_low.onnx.json": {
+                "size_bytes": 5952,
+                "md5_digest": "0d75a309a184f4db1a3d51872a5737d5"
             },
-            "uk/uk_UK/lada/x_low/MODEL_CARD": {
+            "uk/uk_UA/lada/x_low/MODEL_CARD": {
                 "size_bytes": 267,
-                "md5_digest": "edf5a72d6b117b37f9a6ef1d56e77640"
+                "md5_digest": "8de03ca7a0aee2a1c088638ec18fdb87"
             }
         }
     },
-    "uk_UK-ukrainian_tts-medium": {
+    "uk_UA-ukrainian_tts-medium": {
         "name": "ukrainian_tts",
-        "language": "uk_UK",
+        "language": "uk_UA",
         "quality": "medium",
         "num_speakers": 3,
         "speaker_id_map": {
@@ -2666,17 +2666,17 @@
             "tetiana": 2
         },
         "files": {
-            "uk/uk_UK/ukrainian_tts/medium/uk_UK-ukrainian_tts-medium.onnx": {
+            "uk/uk_UA/ukrainian_tts/medium/uk_UA-ukrainian_tts-medium.onnx": {
                 "size_bytes": 76735663,
                 "md5_digest": "3366c3d4f31cb77966fb14d042956b4f"
             },
-            "uk/uk_UK/ukrainian_tts/medium/uk_UK-ukrainian_tts-medium.onnx.json": {
-                "size_bytes": 2649,
-                "md5_digest": "1bb5118662ab1609398ad68e13c33961"
+            "uk/uk_UA/ukrainian_tts/medium/uk_UA-ukrainian_tts-medium.onnx.json": {
+                "size_bytes": 2650,
+                "md5_digest": "f1aabbcfec611bfb1c7b12cf00156a39"
             },
-            "uk/uk_UK/ukrainian_tts/medium/MODEL_CARD": {
+            "uk/uk_UA/ukrainian_tts/medium/MODEL_CARD": {
                 "size_bytes": 266,
-                "md5_digest": "5d87c44f816de40700558256659fd13b"
+                "md5_digest": "d615c1c54d0017f4eb42c95dabc5573b"
             }
         }
     },
