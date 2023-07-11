@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import List
 
 import numpy as np
 import tflite_runtime.interpreter as tflite
@@ -13,8 +14,11 @@ from .const import (
     NUM_MELS,
     SAMPLES_PER_CHUNK,
     WW_FEATURES,
+    MS_PER_CHUNK,
 )
 from .state import State
+
+_MS_PER_CHUNK = SAMPLES_PER_CHUNK // 16
 
 _LOGGER = logging.getLogger()
 
@@ -58,6 +62,7 @@ def mels_proc(state: State):
                         shape=(batch_size, MEL_SAMPLES), dtype=np.float32
                     )
 
+                    todo_timestamps: List[int] = []
                     for i, client_id in enumerate(todo_ids):
                         client = state.clients[client_id]
                         audio_tensor[i, :] = client.audio[
@@ -68,6 +73,10 @@ def mels_proc(state: State):
                         client.new_audio_samples = max(
                             0, client.new_audio_samples - SAMPLES_PER_CHUNK
                         )
+                        todo_timestamps.append(client.audio_timestamp)
+
+                        # Shift timestamp
+                        client.audio_timestamp += MS_PER_CHUNK
 
                 melspec_model.resize_tensor_input(
                     melspec_input_index,
@@ -99,6 +108,9 @@ def mels_proc(state: State):
                         client.new_mels = min(
                             len(client.mels), client.new_mels + num_mel_windows
                         )
+
+                        # Update timestamp
+                        client.mels_timestamp = todo_timestamps[i]
 
                 state.mels_ready.release()
 
@@ -145,6 +157,7 @@ def embeddings_proc(state: State):
                         dtype=np.float32,
                     )
 
+                    todo_timestamps: List[int] = []
                     for i, client_id in enumerate(todo_ids):
                         client = state.clients[client_id]
                         mels_tensor[i, :, :, 0] = client.mels[
@@ -154,6 +167,10 @@ def embeddings_proc(state: State):
                             :,
                         ]
                         client.new_mels = max(0, client.new_mels - EMB_STEP)
+                        todo_timestamps.append(client.mels_timestamp)
+
+                        # Shift timestamp
+                        client.mels_timestamp += MS_PER_CHUNK
 
                 embedding_model.resize_tensor_input(
                     embedding_input_index,
@@ -193,6 +210,9 @@ def embeddings_proc(state: State):
                                     len(client_data.embeddings),
                                     client_data.new_embeddings + num_embedding_windows,
                                 )
+
+                                # Update timestamp
+                                client_data.embeddings_timestamp = todo_timestamps[i]
 
                         ww_state.embeddings_ready.release()
 
@@ -240,6 +260,7 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                         dtype=np.float32,
                     )
 
+                    todo_timestamps: List[int] = []
                     for i, client_id in enumerate(todo_ids):
                         client = state.clients[client_id]
                         client_data = client.wake_words[ww_model_path]
@@ -251,6 +272,10 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                         client_data.new_embeddings = max(
                             0, client_data.new_embeddings - 1
                         )
+                        todo_timestamps.append(client_data.embeddings_timestamp)
+
+                        # Shift timestamp
+                        client_data.embeddings_timestamp += MS_PER_CHUNK
 
                 ww_model.resize_tensor_input(
                     ww_input_index,
@@ -282,7 +307,10 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                                 client_data.is_detected = True
                                 coros.append(
                                     client.event_handler.write_event(
-                                        Detection(name=ww_model_path).event()
+                                        Detection(
+                                            name=ww_model_path,
+                                            timestamp=todo_timestamps[i],
+                                        ).event()
                                     ),
                                 )
                                 _LOGGER.debug(

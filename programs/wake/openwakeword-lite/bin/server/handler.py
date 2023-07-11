@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 import logging
+import time
 from typing import Optional
 from uuid import uuid4
 
@@ -11,7 +12,7 @@ from wyoming.audio import AudioChunk, AudioChunkConverter, AudioStart, AudioStop
 from wyoming.event import Event
 from wyoming.info import Describe, Info
 from wyoming.server import AsyncEventHandler
-from wyoming.wake import Detection, NotDetected
+from wyoming.wake import NotDetected
 
 from .const import ClientData, WakeWordData
 from .state import State
@@ -73,6 +74,8 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
                     len(self.data.audio),
                     self.data.new_audio_samples + len(chunk_array),
                 )
+
+                self.data.audio_timestamp = chunk.timestamp or time.monotonic_ns()
 
             # Signal mels thread that audio is ready to process
             self.state.audio_ready.release()
