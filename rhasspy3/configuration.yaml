@@ -531,6 +531,12 @@ servers:
         script/server
 
   wake:
+    porcupine1:
+      command: |
+        script/server --model "${model}"
+      template_args:
+        model: "porcupine_linux.ppn"
+
     openwakeword:
       command: |
         script/server --model "${model}"

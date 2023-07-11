@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+import os
+import sys
+import venv
+from pathlib import Path
+
+_DIR = Path(__file__).parent
+_PROGRAM_DIR = _DIR.parent
+_BIN_DIR = _PROGRAM_DIR / "bin"
+_VENV_DIR = _PROGRAM_DIR / ".venv"
+
+_CONFIG_DIR = _DIR.parent.parent.parent.parent
+_DATA_DIR = _CONFIG_DIR / "data" / "tts" / "piper"
+
+_SOCKETFILE = _PROGRAM_DIR / "var" / "run" / "porcupine1.socket"
+_SOCKETFILE.parent.mkdir(parents=True, exist_ok=True)
+
+builder = venv.EnvBuilder()
+context = builder.ensure_directories(_VENV_DIR)
+
+os.execv(
+    context.env_exe,
+    [
+        context.env_exe,
+        _BIN_DIR / "porcupine_stream.py",
+        "--uri",
+        f"unix://{_SOCKETFILE.absolute()}",
+    ]
+    + sys.argv[1:],
+)
