@@ -1,7 +1,14 @@
 {
     "zh_CN-huayan-x_low": {
         "name": "huayan",
-        "language": "zh_CN",
+        "language": {
+            "code": "zh_CN",
+            "family": "zh",
+            "region": "CN",
+            "name_native": "简体中文",
+            "name_english": "Chinese",
+            "country_english": "China"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -22,7 +29,14 @@
     },
     "zh_CN-huayan-medium": {
         "name": "huayan",
-        "language": "zh_CN",
+        "language": {
+            "code": "zh_CN",
+            "family": "zh",
+            "region": "CN",
+            "name_native": "简体中文",
+            "name_english": "Chinese",
+            "country_english": "China"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -43,7 +57,14 @@
     },
     "ru_RU-irina-medium": {
         "name": "irina",
-        "language": "ru_RU",
+        "language": {
+            "code": "ru_RU",
+            "family": "ru",
+            "region": "RU",
+            "name_native": "Русский",
+            "name_english": "Russian",
+            "country_english": "Russia"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -64,7 +85,14 @@
     },
     "ru_RU-dmitri-medium": {
         "name": "dmitri",
-        "language": "ru_RU",
+        "language": {
+            "code": "ru_RU",
+            "family": "ru",
+            "region": "RU",
+            "name_native": "Русский",
+            "name_english": "Russian",
+            "country_english": "Russia"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -85,7 +113,14 @@
     },
     "ru_RU-denis-medium": {
         "name": "denis",
-        "language": "ru_RU",
+        "language": {
+            "code": "ru_RU",
+            "family": "ru",
+            "region": "RU",
+            "name_native": "Русский",
+            "name_english": "Russian",
+            "country_english": "Russia"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -106,7 +141,14 @@
     },
     "ru_RU-ruslan-medium": {
         "name": "ruslan",
-        "language": "ru_RU",
+        "language": {
+            "code": "ru_RU",
+            "family": "ru",
+            "region": "RU",
+            "name_native": "Русский",
+            "name_english": "Russian",
+            "country_english": "Russia"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -127,7 +169,14 @@
     },
     "nl_BE-nathalie-x_low": {
         "name": "nathalie",
-        "language": "nl_BE",
+        "language": {
+            "code": "nl_BE",
+            "family": "nl",
+            "region": "BE",
+            "name_native": "Nederlands",
+            "name_english": "Dutch",
+            "country_english": "Belgium"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -148,7 +197,14 @@
     },
     "nl_BE-nathalie-medium": {
         "name": "nathalie",
-        "language": "nl_BE",
+        "language": {
+            "code": "nl_BE",
+            "family": "nl",
+            "region": "BE",
+            "name_native": "Nederlands",
+            "name_english": "Dutch",
+            "country_english": "Belgium"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -169,7 +225,14 @@
     },
     "nl_BE-rdh-x_low": {
         "name": "rdh",
-        "language": "nl_BE",
+        "language": {
+            "code": "nl_BE",
+            "family": "nl",
+            "region": "BE",
+            "name_native": "Nederlands",
+            "name_english": "Dutch",
+            "country_english": "Belgium"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -190,7 +253,14 @@
     },
     "nl_BE-rdh-medium": {
         "name": "rdh",
-        "language": "nl_BE",
+        "language": {
+            "code": "nl_BE",
+            "family": "nl",
+            "region": "BE",
+            "name_native": "Nederlands",
+            "name_english": "Dutch",
+            "country_english": "Belgium"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -211,7 +281,14 @@
     },
     "nl_NL-mls_7432-low": {
         "name": "mls_7432",
-        "language": "nl_NL",
+        "language": {
+            "code": "nl_NL",
+            "family": "nl",
+            "region": "NL",
+            "name_native": "Nederlands",
+            "name_english": "Dutch",
+            "country_english": "Netherlands"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -232,7 +309,14 @@
     },
     "nl_NL-mls_5809-low": {
         "name": "mls_5809",
-        "language": "nl_NL",
+        "language": {
+            "code": "nl_NL",
+            "family": "nl",
+            "region": "NL",
+            "name_native": "Nederlands",
+            "name_english": "Dutch",
+            "country_english": "Netherlands"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -253,7 +337,14 @@
     },
     "it_IT-riccardo-x_low": {
         "name": "riccardo",
-        "language": "it_IT",
+        "language": {
+            "code": "it_IT",
+            "family": "it",
+            "region": "IT",
+            "name_native": "Italiano",
+            "name_english": "Italian",
+            "country_english": "Italy"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -274,7 +365,14 @@
     },
     "ne_NP-google-x_low": {
         "name": "google",
-        "language": "ne_NP",
+        "language": {
+            "code": "ne_NP",
+            "family": "ne",
+            "region": "NP",
+            "name_native": "नेपाली",
+            "name_english": "Nepali",
+            "country_english": "Nepal"
+        },
         "quality": "x_low",
         "num_speakers": 18,
         "speaker_id_map": {
@@ -314,7 +412,14 @@
     },
     "ne_NP-google-medium": {
         "name": "google",
-        "language": "ne_NP",
+        "language": {
+            "code": "ne_NP",
+            "family": "ne",
+            "region": "NP",
+            "name_native": "नेपाली",
+            "name_english": "Nepali",
+            "country_english": "Nepal"
+        },
         "quality": "medium",
         "num_speakers": 18,
         "speaker_id_map": {
@@ -354,7 +459,14 @@
     },
     "el_GR-rapunzelina-low": {
         "name": "rapunzelina",
-        "language": "el_GR",
+        "language": {
+            "code": "el_GR",
+            "family": "el",
+            "region": "GR",
+            "name_native": "Ελληνικά",
+            "name_english": "Greek",
+            "country_english": "Greece"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -375,7 +487,14 @@
     },
     "kk_KZ-issai-high": {
         "name": "issai",
-        "language": "kk_KZ",
+        "language": {
+            "code": "kk_KZ",
+            "family": "kk",
+            "region": "KZ",
+            "name_native": "қазақша",
+            "name_english": "Kazakh",
+            "country_english": "Kazakhstan"
+        },
         "quality": "high",
         "num_speakers": 6,
         "speaker_id_map": {
@@ -403,7 +522,14 @@
     },
     "kk_KZ-raya-x_low": {
         "name": "raya",
-        "language": "kk_KZ",
+        "language": {
+            "code": "kk_KZ",
+            "family": "kk",
+            "region": "KZ",
+            "name_native": "қазақша",
+            "name_english": "Kazakh",
+            "country_english": "Kazakhstan"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -424,7 +550,14 @@
     },
     "kk_KZ-iseke-x_low": {
         "name": "iseke",
-        "language": "kk_KZ",
+        "language": {
+            "code": "kk_KZ",
+            "family": "kk",
+            "region": "KZ",
+            "name_native": "қазақша",
+            "name_english": "Kazakh",
+            "country_english": "Kazakhstan"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -445,7 +578,14 @@
     },
     "pt_BR-faber-medium": {
         "name": "faber",
-        "language": "pt_BR",
+        "language": {
+            "code": "pt_BR",
+            "family": "pt",
+            "region": "BR",
+            "name_native": "Português",
+            "name_english": "Portuguese",
+            "country_english": "Brazil"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -466,7 +606,14 @@
     },
     "pt_BR-edresson-low": {
         "name": "edresson",
-        "language": "pt_BR",
+        "language": {
+            "code": "pt_BR",
+            "family": "pt",
+            "region": "BR",
+            "name_native": "Português",
+            "name_english": "Portuguese",
+            "country_english": "Brazil"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -487,7 +634,14 @@
     },
     "de_DE-eva_k-x_low": {
         "name": "eva_k",
-        "language": "de_DE",
+        "language": {
+            "code": "de_DE",
+            "family": "de",
+            "region": "DE",
+            "name_native": "Deutsch",
+            "name_english": "German",
+            "country_english": "Germany"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -508,7 +662,14 @@
     },
     "de_DE-pavoque-low": {
         "name": "pavoque",
-        "language": "de_DE",
+        "language": {
+            "code": "de_DE",
+            "family": "de",
+            "region": "DE",
+            "name_native": "Deutsch",
+            "name_english": "German",
+            "country_english": "Germany"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -529,7 +690,14 @@
     },
     "de_DE-kerstin-low": {
         "name": "kerstin",
-        "language": "de_DE",
+        "language": {
+            "code": "de_DE",
+            "family": "de",
+            "region": "DE",
+            "name_native": "Deutsch",
+            "name_english": "German",
+            "country_english": "Germany"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -550,7 +718,14 @@
     },
     "de_DE-thorsten-low": {
         "name": "thorsten",
-        "language": "de_DE",
+        "language": {
+            "code": "de_DE",
+            "family": "de",
+            "region": "DE",
+            "name_native": "Deutsch",
+            "name_english": "German",
+            "country_english": "Germany"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -571,7 +746,14 @@
     },
     "de_DE-thorsten-medium": {
         "name": "thorsten",
-        "language": "de_DE",
+        "language": {
+            "code": "de_DE",
+            "family": "de",
+            "region": "DE",
+            "name_native": "Deutsch",
+            "name_english": "German",
+            "country_english": "Germany"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -592,7 +774,14 @@
     },
     "de_DE-ramona-low": {
         "name": "ramona",
-        "language": "de_DE",
+        "language": {
+            "code": "de_DE",
+            "family": "de",
+            "region": "DE",
+            "name_native": "Deutsch",
+            "name_english": "German",
+            "country_english": "Germany"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -613,7 +802,14 @@
     },
     "de_DE-karlsson-low": {
         "name": "karlsson",
-        "language": "de_DE",
+        "language": {
+            "code": "de_DE",
+            "family": "de",
+            "region": "DE",
+            "name_native": "Deutsch",
+            "name_english": "German",
+            "country_english": "Germany"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -634,7 +830,14 @@
     },
     "da_DK-talesyntese-medium": {
         "name": "talesyntese",
-        "language": "da_DK",
+        "language": {
+            "code": "da_DK",
+            "family": "da",
+            "region": "DK",
+            "name_native": "Dansk",
+            "name_english": "Danish",
+            "country_english": "Denmark"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -655,7 +858,14 @@
     },
     "is_IS-ugla-medium": {
         "name": "ugla",
-        "language": "is_IS",
+        "language": {
+            "code": "is_IS",
+            "family": "is",
+            "region": "IS",
+            "name_native": "íslenska",
+            "name_english": "Icelandic",
+            "country_english": "Iceland"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -676,7 +886,14 @@
     },
     "is_IS-salka-medium": {
         "name": "salka",
-        "language": "is_IS",
+        "language": {
+            "code": "is_IS",
+            "family": "is",
+            "region": "IS",
+            "name_native": "íslenska",
+            "name_english": "Icelandic",
+            "country_english": "Iceland"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -697,7 +914,14 @@
     },
     "is_IS-steinn-medium": {
         "name": "steinn",
-        "language": "is_IS",
+        "language": {
+            "code": "is_IS",
+            "family": "is",
+            "region": "IS",
+            "name_native": "íslenska",
+            "name_english": "Icelandic",
+            "country_english": "Iceland"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -718,7 +942,14 @@
     },
     "is_IS-bui-medium": {
         "name": "bui",
-        "language": "is_IS",
+        "language": {
+            "code": "is_IS",
+            "family": "is",
+            "region": "IS",
+            "name_native": "íslenska",
+            "name_english": "Icelandic",
+            "country_english": "Iceland"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -739,7 +970,14 @@
     },
     "vi_VN-vivos-x_low": {
         "name": "vivos",
-        "language": "vi_VN",
+        "language": {
+            "code": "vi_VN",
+            "family": "vi",
+            "region": "VN",
+            "name_native": "Tiếng Việt",
+            "name_english": "Vietnamese",
+            "country_english": "Vietnam"
+        },
         "quality": "x_low",
         "num_speakers": 65,
         "speaker_id_map": {
@@ -826,7 +1064,14 @@
     },
     "vi_VN-25hours_single-low": {
         "name": "25hours_single",
-        "language": "vi_VN",
+        "language": {
+            "code": "vi_VN",
+            "family": "vi",
+            "region": "VN",
+            "name_native": "Tiếng Việt",
+            "name_english": "Vietnamese",
+            "country_english": "Vietnam"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -847,7 +1092,14 @@
     },
     "vi_VN-vais1000-medium": {
         "name": "vais1000",
-        "language": "vi_VN",
+        "language": {
+            "code": "vi_VN",
+            "family": "vi",
+            "region": "VN",
+            "name_native": "Tiếng Việt",
+            "name_english": "Vietnamese",
+            "country_english": "Vietnam"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -868,7 +1120,14 @@
     },
     "sv_SE-nst-medium": {
         "name": "nst",
-        "language": "sv_SE",
+        "language": {
+            "code": "sv_SE",
+            "family": "sv",
+            "region": "SE",
+            "name_native": "Svenska",
+            "name_english": "Swedish",
+            "country_english": "Sweden"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -889,7 +1148,14 @@
     },
     "ca_ES-upc_ona-x_low": {
         "name": "upc_ona",
-        "language": "ca_ES",
+        "language": {
+            "code": "ca_ES",
+            "family": "ca",
+            "region": "ES",
+            "name_native": "Català",
+            "name_english": "Catalan",
+            "country_english": "Spain"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -910,7 +1176,14 @@
     },
     "ca_ES-upc_ona-medium": {
         "name": "upc_ona",
-        "language": "ca_ES",
+        "language": {
+            "code": "ca_ES",
+            "family": "ca",
+            "region": "ES",
+            "name_native": "Català",
+            "name_english": "Catalan",
+            "country_english": "Spain"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -931,7 +1204,14 @@
     },
     "ca_ES-upc_pau-x_low": {
         "name": "upc_pau",
-        "language": "ca_ES",
+        "language": {
+            "code": "ca_ES",
+            "family": "ca",
+            "region": "ES",
+            "name_native": "Català",
+            "name_english": "Catalan",
+            "country_english": "Spain"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -952,7 +1232,14 @@
     },
     "en_GB-southern_english_female-low": {
         "name": "southern_english_female",
-        "language": "en_GB",
+        "language": {
+            "code": "en_GB",
+            "family": "en",
+            "region": "GB",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "Great Britain"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -973,7 +1260,14 @@
     },
     "en_GB-northern_english_male-medium": {
         "name": "northern_english_male",
-        "language": "en_GB",
+        "language": {
+            "code": "en_GB",
+            "family": "en",
+            "region": "GB",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "Great Britain"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -994,7 +1288,14 @@
     },
     "en_GB-alba-medium": {
         "name": "alba",
-        "language": "en_GB",
+        "language": {
+            "code": "en_GB",
+            "family": "en",
+            "region": "GB",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "Great Britain"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -1015,7 +1316,14 @@
     },
     "en_GB-vctk-medium": {
         "name": "vctk",
-        "language": "en_GB",
+        "language": {
+            "code": "en_GB",
+            "family": "en",
+            "region": "GB",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "Great Britain"
+        },
         "quality": "medium",
         "num_speakers": 109,
         "speaker_id_map": {
@@ -1146,7 +1454,14 @@
     },
     "en_GB-alan-low": {
         "name": "alan",
-        "language": "en_GB",
+        "language": {
+            "code": "en_GB",
+            "family": "en",
+            "region": "GB",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "Great Britain"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -1167,7 +1482,14 @@
     },
     "en_GB-alan-medium": {
         "name": "alan",
-        "language": "en_GB",
+        "language": {
+            "code": "en_GB",
+            "family": "en",
+            "region": "GB",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "Great Britain"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -1188,7 +1510,14 @@
     },
     "en_GB-aru-medium": {
         "name": "aru",
-        "language": "en_GB",
+        "language": {
+            "code": "en_GB",
+            "family": "en",
+            "region": "GB",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "Great Britain"
+        },
         "quality": "medium",
         "num_speakers": 12,
         "speaker_id_map": {
@@ -1222,7 +1551,14 @@
     },
     "en_GB-jenny_dioco-medium": {
         "name": "jenny_dioco",
-        "language": "en_GB",
+        "language": {
+            "code": "en_GB",
+            "family": "en",
+            "region": "GB",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "Great Britain"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -1243,7 +1579,14 @@
     },
     "en_US-kusal-medium": {
         "name": "kusal",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -1264,7 +1607,14 @@
     },
     "en_US-libritts-high": {
         "name": "libritts",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "high",
         "num_speakers": 904,
         "speaker_id_map": {
@@ -2190,7 +2540,14 @@
     },
     "en_US-l2arctic-medium": {
         "name": "l2arctic",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "medium",
         "num_speakers": 24,
         "speaker_id_map": {
@@ -2236,7 +2593,14 @@
     },
     "en_US-kathleen-low": {
         "name": "kathleen",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2257,7 +2621,14 @@
     },
     "en_US-amy-low": {
         "name": "amy",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2278,7 +2649,14 @@
     },
     "en_US-amy-medium": {
         "name": "amy",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2299,7 +2677,14 @@
     },
     "en_US-ryan-low": {
         "name": "ryan",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2320,7 +2705,14 @@
     },
     "en_US-ryan-high": {
         "name": "ryan",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "high",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2341,7 +2733,14 @@
     },
     "en_US-ryan-medium": {
         "name": "ryan",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2362,7 +2761,14 @@
     },
     "en_US-danny-low": {
         "name": "danny",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2383,7 +2789,14 @@
     },
     "en_US-arctic-medium": {
         "name": "arctic",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "medium",
         "num_speakers": 18,
         "speaker_id_map": {
@@ -2423,7 +2836,14 @@
     },
     "en_US-lessac-low": {
         "name": "lessac",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2444,7 +2864,14 @@
     },
     "en_US-lessac-high": {
         "name": "lessac",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "high",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2465,7 +2892,14 @@
     },
     "en_US-lessac-medium": {
         "name": "lessac",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2486,7 +2920,14 @@
     },
     "en_US-joe-medium": {
         "name": "joe",
-        "language": "en_US",
+        "language": {
+            "code": "en_US",
+            "family": "en",
+            "region": "US",
+            "name_native": "English",
+            "name_english": "English",
+            "country_english": "United States"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2507,7 +2948,14 @@
     },
     "es_MX-ald-medium": {
         "name": "ald",
-        "language": "es_MX",
+        "language": {
+            "code": "es_MX",
+            "family": "es",
+            "region": "MX",
+            "name_native": "Español",
+            "name_english": "Spanish",
+            "country_english": "Mexico"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2528,7 +2976,14 @@
     },
     "es_ES-davefx-medium": {
         "name": "davefx",
-        "language": "es_ES",
+        "language": {
+            "code": "es_ES",
+            "family": "es",
+            "region": "ES",
+            "name_native": "Español",
+            "name_english": "Spanish",
+            "country_english": "Spain"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2549,7 +3004,14 @@
     },
     "es_ES-mls_9972-low": {
         "name": "mls_9972",
-        "language": "es_ES",
+        "language": {
+            "code": "es_ES",
+            "family": "es",
+            "region": "ES",
+            "name_native": "Español",
+            "name_english": "Spanish",
+            "country_english": "Spain"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2570,7 +3032,14 @@
     },
     "es_ES-sharvard-medium": {
         "name": "sharvard",
-        "language": "es_ES",
+        "language": {
+            "code": "es_ES",
+            "family": "es",
+            "region": "ES",
+            "name_native": "Español",
+            "name_english": "Spanish",
+            "country_english": "Spain"
+        },
         "quality": "medium",
         "num_speakers": 2,
         "speaker_id_map": {
@@ -2594,7 +3063,14 @@
     },
     "es_ES-carlfm-x_low": {
         "name": "carlfm",
-        "language": "es_ES",
+        "language": {
+            "code": "es_ES",
+            "family": "es",
+            "region": "ES",
+            "name_native": "Español",
+            "name_english": "Spanish",
+            "country_english": "Spain"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2615,7 +3091,14 @@
     },
     "es_ES-mls_10246-low": {
         "name": "mls_10246",
-        "language": "es_ES",
+        "language": {
+            "code": "es_ES",
+            "family": "es",
+            "region": "ES",
+            "name_native": "Español",
+            "name_english": "Spanish",
+            "country_english": "Spain"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2636,7 +3119,14 @@
     },
     "uk_UA-lada-x_low": {
         "name": "lada",
-        "language": "uk_UA",
+        "language": {
+            "code": "uk_UA",
+            "family": "uk",
+            "region": "UA",
+            "name_native": "украї́нська мо́ва",
+            "name_english": "Ukrainian",
+            "country_english": "Ukraine"
+        },
         "quality": "x_low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2657,7 +3147,14 @@
     },
     "uk_UA-ukrainian_tts-medium": {
         "name": "ukrainian_tts",
-        "language": "uk_UA",
+        "language": {
+            "code": "uk_UA",
+            "family": "uk",
+            "region": "UA",
+            "name_native": "украї́нська мо́ва",
+            "name_english": "Ukrainian",
+            "country_english": "Ukraine"
+        },
         "quality": "medium",
         "num_speakers": 3,
         "speaker_id_map": {
@@ -2682,7 +3179,14 @@
     },
     "sw_CD-lanfrica-medium": {
         "name": "lanfrica",
-        "language": "sw_CD",
+        "language": {
+            "code": "sw_CD",
+            "family": "sw",
+            "region": "CD",
+            "name_native": "Kiswahili",
+            "name_english": "Swahili",
+            "country_english": "Democratic Republic of the Congo"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2703,7 +3207,14 @@
     },
     "fr_FR-siwis-low": {
         "name": "siwis",
-        "language": "fr_FR",
+        "language": {
+            "code": "fr_FR",
+            "family": "fr",
+            "region": "FR",
+            "name_native": "Français",
+            "name_english": "French",
+            "country_english": "France"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2724,7 +3235,14 @@
     },
     "fr_FR-siwis-medium": {
         "name": "siwis",
-        "language": "fr_FR",
+        "language": {
+            "code": "fr_FR",
+            "family": "fr",
+            "region": "FR",
+            "name_native": "Français",
+            "name_english": "French",
+            "country_english": "France"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2745,7 +3263,14 @@
     },
     "fr_FR-mls_1840-low": {
         "name": "mls_1840",
-        "language": "fr_FR",
+        "language": {
+            "code": "fr_FR",
+            "family": "fr",
+            "region": "FR",
+            "name_native": "Français",
+            "name_english": "French",
+            "country_english": "France"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2766,7 +3291,14 @@
     },
     "fr_FR-gilles-low": {
         "name": "gilles",
-        "language": "fr_FR",
+        "language": {
+            "code": "fr_FR",
+            "family": "fr",
+            "region": "FR",
+            "name_native": "Français",
+            "name_english": "French",
+            "country_english": "France"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2787,7 +3319,14 @@
     },
     "fi_FI-harri-low": {
         "name": "harri",
-        "language": "fi_FI",
+        "language": {
+            "code": "fi_FI",
+            "family": "fi",
+            "region": "FI",
+            "name_native": "Suomi",
+            "name_english": "Finnish",
+            "country_english": "Finland"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2808,7 +3347,14 @@
     },
     "fi_FI-harri-medium": {
         "name": "harri",
-        "language": "fi_FI",
+        "language": {
+            "code": "fi_FI",
+            "family": "fi",
+            "region": "FI",
+            "name_native": "Suomi",
+            "name_english": "Finnish",
+            "country_english": "Finland"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2829,7 +3375,14 @@
     },
     "ka_GE-natia-medium": {
         "name": "natia",
-        "language": "ka_GE",
+        "language": {
+            "code": "ka_GE",
+            "family": "ka",
+            "region": "GE",
+            "name_native": "ქართული ენა",
+            "name_english": "Georgian",
+            "country_english": "Georgia"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2850,7 +3403,14 @@
     },
     "pl_PL-darkman-medium": {
         "name": "darkman",
-        "language": "pl_PL",
+        "language": {
+            "code": "pl_PL",
+            "family": "pl",
+            "region": "PL",
+            "name_native": "Polski",
+            "name_english": "Polish",
+            "country_english": "Poland"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2871,7 +3431,14 @@
     },
     "pl_PL-mls_6892-low": {
         "name": "mls_6892",
-        "language": "pl_PL",
+        "language": {
+            "code": "pl_PL",
+            "family": "pl",
+            "region": "PL",
+            "name_native": "Polski",
+            "name_english": "Polish",
+            "country_english": "Poland"
+        },
         "quality": "low",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2892,7 +3459,14 @@
     },
     "pl_PL-gosia-medium": {
         "name": "gosia",
-        "language": "pl_PL",
+        "language": {
+            "code": "pl_PL",
+            "family": "pl",
+            "region": "PL",
+            "name_native": "Polski",
+            "name_english": "Polish",
+            "country_english": "Poland"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},
@@ -2913,7 +3487,14 @@
     },
     "no_NO-talesyntese-medium": {
         "name": "talesyntese",
-        "language": "no_NO",
+        "language": {
+            "code": "no_NO",
+            "family": "no",
+            "region": "NO",
+            "name_native": "Norsk",
+            "name_english": "Norwegian",
+            "country_english": "Norway"
+        },
         "quality": "medium",
         "num_speakers": 1,
         "speaker_id_map": {},

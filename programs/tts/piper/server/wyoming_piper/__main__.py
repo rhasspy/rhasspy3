@@ -74,6 +74,7 @@ async def main() -> None:
         tts=[
             TtsProgram(
                 name="piper",
+                description="A fast, local, neural text to speech engine",
                 attribution=Attribution(
                     name="rhasspy", url="https://github.com/rhasspy/piper"
                 ),
@@ -81,11 +82,12 @@ async def main() -> None:
                 voices=[
                     TtsVoice(
                         name=voice_name,
+                        description=get_description(voice_info),
                         attribution=Attribution(
                             name="rhasspy", url="https://github.com/rhasspy/piper"
                         ),
                         installed=True,
-                        languages=[voice_info["language"]],
+                        languages=[voice_info["language"]["code"]],
                         speakers=[
                             TtsVoiceSpeaker(name=speaker_name)
                             for speaker_name in voice_info["speaker_id_map"]
@@ -121,6 +123,17 @@ async def main() -> None:
 
 # -----------------------------------------------------------------------------
 
+
+def get_description(voice_info: Dict[str, Any]):
+    """Get a human readable description for a voice."""
+    name = voice_info["name"]
+    name = " ".join(name.split("_"))
+    quality = voice_info["quality"]
+
+    return f"{name} ({quality})"
+
+
+# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     asyncio.run(main())
