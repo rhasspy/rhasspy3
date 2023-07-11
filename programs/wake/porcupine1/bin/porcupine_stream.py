@@ -37,13 +37,16 @@ class PorcupineEventHandler(AsyncEventHandler):
             wake=[
                 WakeProgram(
                     name="porcupine1",
+                    description="Porcupine version 1",
                     attribution=Attribution(
-                        name="Picovoice", url="https://github.com/Picovoice/porcupine"
+                        name="Picovoice",
+                        url="https://github.com/Picovoice/porcupine",
                     ),
                     installed=True,
                     models=[
                         WakeModel(
                             name=keyword,
+                            description=keyword,
                             attribution=Attribution(
                                 name=keyword,
                                 url="https://github.com/Picovoice/porcupine",
