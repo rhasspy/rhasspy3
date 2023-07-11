@@ -33,9 +33,9 @@ class Attribution(DataClassJsonMixin):
 @dataclass
 class Artifact(DataClassJsonMixin):
     name: str
-    description: str
     attribution: Attribution
     installed: bool
+    description: Optional[str]
 
 
 # -----------------------------------------------------------------------------

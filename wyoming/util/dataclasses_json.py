@@ -21,6 +21,15 @@ class DataClassJsonMixin:
             else:
                 kwargs[key] = _decode(value, field.type)
 
+        # Fill in optional fields
+        for field in cls_fields.values():
+            if (
+                (field.name not in kwargs)
+                and hasattr(field.type, "__args__")
+                and (type(None) in field.type.__args__)
+            ):
+                kwargs[field.name] = None
+
         return cls(**kwargs)
 
     def to_dict(self) -> Dict[str, Any]:
