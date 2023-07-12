@@ -85,7 +85,7 @@ async def main() -> None:
             _LOGGER.debug("Starting detection")
             message_id = 1
             detect_args = {
-                "type": "wake/detect",
+                "type": "wake_word/detect",
                 "id": message_id,
             }
             if args.entity_id:
@@ -99,7 +99,9 @@ async def main() -> None:
 
             # Get handler id.
             # This is a single byte prefix that needs to be in every binary payload.
-            handler_id = bytes([msg["result"]["handler_id"]])
+            msg = await websocket.receive_json()
+            _LOGGER.debug(msg)
+            handler_id = bytes([msg["event"]["handler_id"]])
 
             # Detect wakeword(s)
             _LOGGER.debug("Starting detection")
@@ -135,7 +137,7 @@ async def main() -> None:
                         _LOGGER.info(result_json)
                         write_event(
                             Detection(
-                                name=result_json["ww_id"],
+                                name=result_json["event"]["ww_id"],
                                 timestamp=result_json.get("timestamp"),
                             ).event()
                         )

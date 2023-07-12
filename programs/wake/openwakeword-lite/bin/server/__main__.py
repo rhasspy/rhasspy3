@@ -21,69 +21,6 @@ _LOGGER = logging.getLogger()
 _DIR = Path(__file__).parent
 
 
-# class StreamAudioHandler(socketserver.StreamRequestHandler):
-#     def __init__(self, state: State, *args, **kwargs):
-#         self._state = state
-#         super().__init__(*args, **kwargs)
-
-#     def handle(self):
-#         client_id = self.client_address
-#         _LOGGER.info("New client: %s", client_id)
-
-#         data = ClientData(self.wfile)
-#         for ww_name in self._state.wake_words:
-#             data.wake_words[ww_name] = WakeWordData()
-
-#         with self._state.clients_lock:
-#             self._state.clients[client_id] = data
-
-#         audio_bytes = bytes()
-
-#         with open("/tmp/test.raw", "wb") as f:
-#             try:
-#                 while True:
-#                     chunk_bytes = self.request.recv(_BYTES_PER_CHUNK)
-#                     if not chunk_bytes:
-#                         # Empty chunk when client disconnects
-#                         break
-
-#                     f.write(chunk_bytes)
-
-#                     audio_bytes += chunk_bytes
-#                     while len(audio_bytes) >= _BYTES_PER_CHUNK:
-#                         # NOTE: Audio is *not* normalized
-#                         chunk_array = np.frombuffer(
-#                             audio_bytes[:_BYTES_PER_CHUNK], dtype=np.int16
-#                         ).astype(np.float32)
-
-#                         with self._state.audio_lock:
-#                             # Shift samples left
-#                             data.audio[: -len(chunk_array)] = data.audio[
-#                                 len(chunk_array) :
-#                             ]
-
-#                             # Add new samples to end
-#                             data.audio[-len(chunk_array) :] = chunk_array
-#                             data.new_audio_samples = min(
-#                                 len(data.audio),
-#                                 data.new_audio_samples + len(chunk_array),
-#                             )
-
-#                         self._state.audio_ready.release()
-#                         audio_bytes = audio_bytes[_BYTES_PER_CHUNK:]
-#             except ConnectionResetError:
-#                 _LOGGER.debug("Client disconnected: %s", client_id)
-#             except Exception:
-#                 _LOGGER.exception("handle")
-#             finally:
-#                 # Clean up
-#                 with self._state.clients_lock:
-#                     self._state.clients.pop(client_id, None)
-
-
-# -----------------------------------------------------------------------------
-
-
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--uri", required=True, help="unix:// or tcp://")
@@ -102,6 +39,7 @@ async def main() -> None:
         wake=[
             WakeProgram(
                 name="openwakeword",
+                description="An open-source audio wake word (or phrase) detection framework with a focus on performance and simplicity.",
                 attribution=Attribution(
                     name="dscripka", url="https://github.com/dscripka/openWakeWord"
                 ),
@@ -109,11 +47,12 @@ async def main() -> None:
                 models=[
                     WakeModel(
                         name=model,
+                        description=Path(model).stem,
                         attribution=Attribution(
                             name=model, url="https://github.com/dscripka/openWakeWord"
                         ),
                         installed=True,
-                        languages=["en"],  # HACK
+                        languages=[],
                     )
                     for model in args.model
                 ],
