@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from functools import partial
 from pathlib import Path
 from typing import Callable, Set, Union
+from urllib.parse import urlparse
 
 from .event import Event, async_get_stdin, async_read_event, async_write_event
 
@@ -57,16 +58,17 @@ class AsyncServer(ABC):
 
     @staticmethod
     def from_uri(uri: str) -> "AsyncServer":
-        if uri.startswith("unix://"):
-            socket_path = uri[len("unix://") :]
-            return AsyncUnixServer(socket_path)
+        result = urlparse(uri)
 
-        if uri.startswith("tcp://"):
-            host, port_str = uri[len("tcp://") :].split(":")
+        if result.scheme == "unix":
+            return AsyncUnixServer(result.path)
+
+        if result.scheme == "tcp":
+            host, port_str = result.netloc.split(":")
             port = int(port_str)
             return AsyncTcpServer(host, port)
 
-        if uri.startswith("stdio://"):
+        if result.scheme == "stdio":
             return AsyncStdioServer()
 
         raise ValueError("Only 'stdio://', 'unix://', or 'tcp://' are supported")
