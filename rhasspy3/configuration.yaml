@@ -86,9 +86,9 @@ programs:
       template_args:
         model: "hey_jarvis"
 
-    openwakeword.client:
+    openwakeword-lite.client:
       command: |
-        client_tcp_socket.py "127.0.0.1:10400"
+        client_unix_socket.py var/run/openwakeword.socket
 
     openwakeword-lite:
       command: |
@@ -459,7 +459,7 @@ programs:
 
     home_assistant:
       command: |
-        script/run --token "${token}" --server "${server}" --debug
+        script/stream --token "${token}" --server "${server}" --debug
       template_args:
         server: "localhost:8123"
 
@@ -537,9 +537,11 @@ servers:
       template_args:
         model: "porcupine_linux.ppn"
 
-    openwakeword:
+    openwakeword-lite:
       command: |
         script/server --model "${model}"
+      template_args:
+        model: "hey_rhasspy"
 
 
 

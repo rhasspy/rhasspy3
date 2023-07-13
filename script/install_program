@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+import argparse
+import shutil
+import subprocess
+from pathlib import Path
+
+_FILE = Path(__file__)
+_DIR = _FILE.parent
+_REPO_DIR = _DIR.parent
+
+
+PROGRAMS = {
+    "tts": ["piper"],
+    "wake": ["porcupine1", "openwakeword-lite"],
+    "vad": ["silero"],
+    "mic_filter": ["speexdsp-cli"],
+    "remote": ["home_assistant"],
+}
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--config",
+        default=_DIR.parent / "config",
+        help="Configuration directory",
+    )
+    args, rest_args = parser.parse_known_args()
+
+    if (len(rest_args) < 1) or (rest_args[0] not in PROGRAMS):
+        for domain in sorted(PROGRAMS):
+            print(domain)
+        return
+
+    domain = rest_args[0]
+    if (len(rest_args) < 2) or (rest_args[1] not in PROGRAMS[domain]):
+        for program in sorted(PROGRAMS[domain]):
+            print(program)
+        return
+
+    program = rest_args[1]
+    install_dir = Path(args.config) / "programs" / domain / program
+    if install_dir.exists():
+        print("Already installed:", install_dir)
+        return
+
+    program_dir = _REPO_DIR / "programs" / domain / program
+    shutil.copytree(program_dir, install_dir)
+    subprocess.check_call([str(install_dir / "script" / "setup")])
+
+    print("OK")
+
+
+if __name__ == "__main__":
+    main()
