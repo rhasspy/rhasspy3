@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import asyncio
-import json
 import logging
-import tempfile
-import time
-from dataclasses import dataclass
 from functools import partial
-from pathlib import Path
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict
 
 from wyoming.info import Attribution, Info, TtsProgram, TtsVoice, TtsVoiceSpeaker
 from wyoming.server import AsyncServer
-from wyoming.tts import Synthesize
 
 from .download import get_voices
 from .handler import PiperEventHandler

@@ -3,7 +3,7 @@ import json
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, Iterable, Set, Tuple, Union
 from urllib.request import urlopen
 
 from .file_hash import get_file_hash

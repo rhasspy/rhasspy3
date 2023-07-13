@@ -6,21 +6,18 @@ import logging
 import tempfile
 import time
 from dataclasses import dataclass
-from functools import partial
-from pathlib import Path
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Optional
 
-from wyoming.info import Attribution, Info, TtsProgram, TtsVoice, TtsVoiceSpeaker
-from wyoming.server import AsyncServer
-from wyoming.tts import Synthesize
 
-from .download import ensure_voice_exists, find_voice, get_voices
+from .download import ensure_voice_exists, find_voice
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
 class PiperProcess:
+    """Info for a running Piper process (one voice)."""
+
     name: str
     proc: "asyncio.subprocess.Process"
     config: Dict[str, Any]
@@ -29,6 +26,8 @@ class PiperProcess:
 
 
 class PiperProcessManager:
+    """Manager of running Piper processes."""
+
     def __init__(self, args: argparse.Namespace, voices_info: Dict[str, Any]):
         self.voices_info = voices_info
         self.args = args
@@ -36,6 +35,7 @@ class PiperProcessManager:
         self.processes_lock = asyncio.Lock()
 
     async def get_process(self, voice_name: Optional[str] = None) -> PiperProcess:
+        """Get a running Piper process or start a new one if necessary."""
         if voice_name is None:
             # Default voice
             voice_name = self.args.voice
@@ -45,11 +45,13 @@ class PiperProcessManager:
         # Resolve alias
         voice_info = self.voices_info.get(voice_name, {})
         voice_name = voice_info.get("key", voice_name)
+        assert voice_name is not None
 
         piper_proc = self.processes.get(voice_name)
         if piper_proc is None:
+            # Start new Piper process
             if self.args.max_piper_procs > 0:
-                # Restrict number of parallel processes
+                # Restrict number of running processes
                 while len(self.processes) >= self.args.max_piper_procs:
                     # Stop least recently used process
                     lru_proc_name, lru_proc = sorted(
@@ -65,9 +67,9 @@ class PiperProcessManager:
                             _LOGGER.exception("Unexpected error stopping piper process")
 
             _LOGGER.debug(
-                "Starting process for: %s (%s/%s running)",
+                "Starting process for: %s (%s/%s)",
                 voice_name,
-                len(self.processes),
+                len(self.processes) + 1,
                 self.args.max_piper_procs,
             )
 
@@ -90,7 +92,7 @@ class PiperProcessManager:
                 str(config_path),
                 "--output_dir",
                 str(wav_dir.name),
-                "--json-input",
+                "--json-input",  # piper 1.1+
             ]
 
             if self.args.noise_scale:
