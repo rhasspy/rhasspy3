@@ -1,1 +1,2 @@
 include requirements.txt
+include wyoming_piper/voices.json

@@ -5,12 +5,15 @@ import setuptools
 from setuptools import setup
 
 this_dir = Path(__file__).parent
+module_dir = this_dir / "wyoming_piper"
 
 requirements = []
 requirements_path = this_dir / "requirements.txt"
 if requirements_path.is_file():
     with open(requirements_path, "r", encoding="utf-8") as requirements_file:
         requirements = requirements_file.read().splitlines()
+
+data_files = [module_dir / "voices.json"]
 
 # -----------------------------------------------------------------------------
 
@@ -23,6 +26,7 @@ setup(
     author_email="mike@rhasspy.org",
     license="MIT",
     packages=setuptools.find_packages(),
+    package_data={"wyoming_piper": [str(p.relative_to(module_dir)) for p in data_files]},
     install_requires=requirements,
     classifiers=[
         "Development Status :: 3 - Alpha",

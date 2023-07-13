@@ -91,12 +91,14 @@ async def main() -> None:
                         ),
                         installed=True,
                         languages=[voice_info["language"]["code"]],
-                        speakers=[
-                            TtsVoiceSpeaker(name=speaker_name)
-                            for speaker_name in voice_info["speaker_id_map"]
-                        ]
-                        if voice_info.get("speaker_id_map")
-                        else None,
+                        #
+                        # Don't send speakers for now because it overflows StreamReader buffers
+                        # speakers=[
+                        #     TtsVoiceSpeaker(name=speaker_name)
+                        #     for speaker_name in voice_info["speaker_id_map"]
+                        # ]
+                        # if voice_info.get("speaker_id_map")
+                        # else None,
                     )
                     for voice_name, voice_info in voices_info.items()
                 ],
