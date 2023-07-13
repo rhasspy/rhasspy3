@@ -16,6 +16,10 @@ _LOGGER = logging.getLogger(__name__)
 _SKIP_FILES = {"MODEL_CARD"}
 
 
+class VoiceNotFoundError(Exception):
+    pass
+
+
 def get_voices() -> Dict[str, Any]:
     """Loads available voices from embedded JSON file."""
     with open(_DIR / "voices.json", "r", encoding="utf-8") as voices_file:
@@ -29,6 +33,8 @@ def ensure_voice_exists(
     voices_info: Dict[str, Any],
 ):
     assert data_dirs, "No data dirs"
+    if name not in voices_info:
+        raise VoiceNotFoundError(name)
 
     voice_info = voices_info[name]
     voice_files = voice_info["files"]

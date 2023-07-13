@@ -14,7 +14,7 @@ from wyoming.info import Attribution, Info, TtsProgram, TtsVoice, TtsVoiceSpeake
 from wyoming.server import AsyncServer
 from wyoming.tts import Synthesize
 
-from .download import ensure_voice_exists, find_voice, get_voices
+from .download import get_voices
 from .handler import PiperEventHandler
 from .process import PiperProcessManager
 
@@ -70,6 +70,15 @@ async def main() -> None:
 
     # Load voice info
     voices_info = get_voices()
+
+    # Resolve aliases for backwards compatibility with old voice names
+    aliases_info: Dict[str, Any] = {}
+    for voice_info in voices_info.values():
+        for voice_alias in voice_info.get("aliases", []):
+            aliases_info[voice_alias] = voice_info
+
+    voices_info.update(aliases_info)
+
     wyoming_info = Info(
         tts=[
             TtsProgram(
@@ -136,4 +145,7 @@ def get_description(voice_info: Dict[str, Any]):
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
