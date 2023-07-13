@@ -27,7 +27,9 @@
                 "md5_digest": "715587a977945498c5741b74eb81a1fd"
             }
         },
-        "aliases": []
+        "aliases": [
+            "zh-cn-huayan-x-low"
+        ]
     },
     "zh_CN-huayan-medium": {
         "key": "zh_CN-huayan-medium",
@@ -87,7 +89,9 @@
                 "md5_digest": "397e67453b4ea5a95642673d0debb5ba"
             }
         },
-        "aliases": []
+        "aliases": [
+            "ru-irinia-medium"
+        ]
     },
     "ru_RU-dmitri-medium": {
         "key": "ru_RU-dmitri-medium",
@@ -207,7 +211,9 @@
                 "md5_digest": "5df62094bde427374223f91f44476392"
             }
         },
-        "aliases": []
+        "aliases": [
+            "nl-nathalie-x-low"
+        ]
     },
     "nl_BE-nathalie-medium": {
         "key": "nl_BE-nathalie-medium",
@@ -267,7 +273,9 @@
                 "md5_digest": "6d0157bcd5ff281717e663d56dab980e"
             }
         },
-        "aliases": []
+        "aliases": [
+            "nl-rdh-x-low"
+        ]
     },
     "nl_BE-rdh-medium": {
         "key": "nl_BE-rdh-medium",
@@ -297,7 +305,9 @@
                 "md5_digest": "dc4487b06fcef6ff270c852ce12947b9"
             }
         },
-        "aliases": []
+        "aliases": [
+            "nl-rdh-medium"
+        ]
     },
     "nl_NL-mls_7432-low": {
         "key": "nl_NL-mls_7432-low",
@@ -327,7 +337,9 @@
                 "md5_digest": "5d8ee8e955f077fc99cac61191d00892"
             }
         },
-        "aliases": []
+        "aliases": [
+            "nl-mls_7432-low"
+        ]
     },
     "nl_NL-mls_5809-low": {
         "key": "nl_NL-mls_5809-low",
@@ -357,7 +369,9 @@
                 "md5_digest": "ac4b35e581cea8418909947a29a671bb"
             }
         },
-        "aliases": []
+        "aliases": [
+            "nl-mls_5809-low"
+        ]
     },
     "it_IT-riccardo-x_low": {
         "key": "it_IT-riccardo-x_low",
@@ -387,7 +401,9 @@
                 "md5_digest": "3e70f29ab998ac0380edc0cec7395e80"
             }
         },
-        "aliases": []
+        "aliases": [
+            "it-riccardo_fasol-x-low"
+        ]
     },
     "ne_NP-google-x_low": {
         "key": "ne_NP-google-x_low",
@@ -436,7 +452,9 @@
                 "md5_digest": "5ea405c002a69df5961c8d43cadbb844"
             }
         },
-        "aliases": []
+        "aliases": [
+            "ne-google-x-low"
+        ]
     },
     "ne_NP-google-medium": {
         "key": "ne_NP-google-medium",
@@ -485,7 +503,9 @@
                 "md5_digest": "afe022ba061870d0c9fe085fe9a9f31f"
             }
         },
-        "aliases": []
+        "aliases": [
+            "ne-google-medium"
+        ]
     },
     "el_GR-rapunzelina-low": {
         "key": "el_GR-rapunzelina-low",
@@ -552,7 +572,9 @@
                 "md5_digest": "30487d1011336ed15feabd156424cbd9"
             }
         },
-        "aliases": []
+        "aliases": [
+            "kk-issai-high"
+        ]
     },
     "kk_KZ-raya-x_low": {
         "key": "kk_KZ-raya-x_low",
@@ -582,7 +604,9 @@
                 "md5_digest": "fb34d2e65fac42f4d6e003d3d30c897e"
             }
         },
-        "aliases": []
+        "aliases": [
+            "kk-raya-x-low"
+        ]
     },
     "kk_KZ-iseke-x_low": {
         "key": "kk_KZ-iseke-x_low",
@@ -612,7 +636,9 @@
                 "md5_digest": "fce637093c4437a1f929280913a86aa5"
             }
         },
-        "aliases": []
+        "aliases": [
+            "kk-iseke-x-low"
+        ]
     },
     "pt_BR-faber-medium": {
         "key": "pt_BR-faber-medium",
@@ -672,7 +698,9 @@
                 "md5_digest": "62cde47b9a3214109e601f90eeadea11"
             }
         },
-        "aliases": []
+        "aliases": [
+            "pt-br-edresson-low"
+        ]
     },
     "de_DE-eva_k-x_low": {
         "key": "de_DE-eva_k-x_low",
@@ -702,7 +730,9 @@
                 "md5_digest": "02b01f3d47b2798ece347b2c7e94c9e9"
             }
         },
-        "aliases": []
+        "aliases": [
+            "de-eva_k-x-low"
+        ]
     },
     "de_DE-pavoque-low": {
         "key": "de_DE-pavoque-low",
@@ -732,7 +762,9 @@
                 "md5_digest": "e0aacaf7b834938c4e3ad1fb3f68ef87"
             }
         },
-        "aliases": []
+        "aliases": [
+            "de-pavoque-low"
+        ]
     },
     "de_DE-kerstin-low": {
         "key": "de_DE-kerstin-low",
@@ -762,7 +794,9 @@
                 "md5_digest": "69ec1bc99fc7e19c9ddcdf712920a6c7"
             }
         },
-        "aliases": []
+        "aliases": [
+            "de-kerstin-low"
+        ]
     },
     "de_DE-thorsten-low": {
         "key": "de_DE-thorsten-low",
@@ -792,7 +826,9 @@
                 "md5_digest": "203f58b93f0372564e745f1e05ea47bb"
             }
         },
-        "aliases": []
+        "aliases": [
+            "de-thorsten-low"
+        ]
     },
     "de_DE-thorsten-medium": {
         "key": "de_DE-thorsten-medium",
@@ -852,7 +888,9 @@
                 "md5_digest": "c970992423b5fc7a26340a9363e15952"
             }
         },
-        "aliases": []
+        "aliases": [
+            "de-ramona-low"
+        ]
     },
     "de_DE-karlsson-low": {
         "key": "de_DE-karlsson-low",
@@ -882,7 +920,9 @@
                 "md5_digest": "6e2f3eec10cf7fceb0b68b67eccd06a4"
             }
         },
-        "aliases": []
+        "aliases": [
+            "de-karlsson-low"
+        ]
     },
     "da_DK-talesyntese-medium": {
         "key": "da_DK-talesyntese-medium",
@@ -912,7 +952,9 @@
                 "md5_digest": "628cc03fca8f5d2c454824d6252955ad"
             }
         },
-        "aliases": []
+        "aliases": [
+            "da-nst_talesyntese-medium"
+        ]
     },
     "is_IS-ugla-medium": {
         "key": "is_IS-ugla-medium",
@@ -942,7 +984,9 @@
                 "md5_digest": "a3ba0a35bc26d440ee3b0872e435fcd5"
             }
         },
-        "aliases": []
+        "aliases": [
+            "is-ugla-medium"
+        ]
     },
     "is_IS-salka-medium": {
         "key": "is_IS-salka-medium",
@@ -972,7 +1016,9 @@
                 "md5_digest": "0f3d286069e4c7bead9b40ece3bbefe6"
             }
         },
-        "aliases": []
+        "aliases": [
+            "is-salka-medium"
+        ]
     },
     "is_IS-steinn-medium": {
         "key": "is_IS-steinn-medium",
@@ -1002,7 +1048,9 @@
                 "md5_digest": "45ab46f37e5a6bdf739d58496752e6a0"
             }
         },
-        "aliases": []
+        "aliases": [
+            "is-steinn-medium"
+        ]
     },
     "is_IS-bui-medium": {
         "key": "is_IS-bui-medium",
@@ -1032,7 +1080,9 @@
                 "md5_digest": "a055aad199d8cc58e52913ff2af461d8"
             }
         },
-        "aliases": []
+        "aliases": [
+            "is-bui-medium"
+        ]
     },
     "vi_VN-vivos-x_low": {
         "key": "vi_VN-vivos-x_low",
@@ -1128,7 +1178,9 @@
                 "md5_digest": "6bd1265a94a8f6bcce74a5b1145a7f95"
             }
         },
-        "aliases": []
+        "aliases": [
+            "vi-vivos-x-low"
+        ]
     },
     "vi_VN-25hours_single-low": {
         "key": "vi_VN-25hours_single-low",
@@ -1158,7 +1210,9 @@
                 "md5_digest": "25eb4744418cd7b8da0a9096dcfa6e61"
             }
         },
-        "aliases": []
+        "aliases": [
+            "vi-25hours-single-low"
+        ]
     },
     "vi_VN-vais1000-medium": {
         "key": "vi_VN-vais1000-medium",
@@ -1248,7 +1302,9 @@
                 "md5_digest": "1f555643ff6f7d9133679d730f3f6016"
             }
         },
-        "aliases": []
+        "aliases": [
+            "ca-upc_ona-x-low"
+        ]
     },
     "ca_ES-upc_ona-medium": {
         "key": "ca_ES-upc_ona-medium",
@@ -1308,7 +1364,9 @@
                 "md5_digest": "4ff8699c4439c9f49180457f0becc49e"
             }
         },
-        "aliases": []
+        "aliases": [
+            "ca-upc_pau-x-low"
+        ]
     },
     "en_GB-southern_english_female-low": {
         "key": "en_GB-southern_english_female-low",
@@ -1338,7 +1396,9 @@
                 "md5_digest": "77ac998c8b37842ef98594567f141629"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-gb-southern_english_female-low"
+        ]
     },
     "en_GB-northern_english_male-medium": {
         "key": "en_GB-northern_english_male-medium",
@@ -1568,7 +1628,9 @@
                 "md5_digest": "b116c3cbdebac99ade9af03807cb9301"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-gb-alan-low"
+        ]
     },
     "en_GB-alan-medium": {
         "key": "en_GB-alan-medium",
@@ -2636,7 +2698,9 @@
                 "md5_digest": "cdeac934f1154489924a071470b22365"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-us-libritts-high"
+        ]
     },
     "en_US-l2arctic-medium": {
         "key": "en_US-l2arctic-medium",
@@ -2721,7 +2785,9 @@
                 "md5_digest": "0585e0a798d093c9ee090b99d9c8f68e"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-us-kathleen-low"
+        ]
     },
     "en_US-amy-low": {
         "key": "en_US-amy-low",
@@ -2751,7 +2817,9 @@
                 "md5_digest": "e1cdd84aa7493b8fbe1e6471f6f93cea"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-us-amy-low"
+        ]
     },
     "en_US-amy-medium": {
         "key": "en_US-amy-medium",
@@ -2811,7 +2879,9 @@
                 "md5_digest": "030252d21b0bd1048c37a9eb7f94eb17"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-us-ryan-low"
+        ]
     },
     "en_US-ryan-high": {
         "key": "en_US-ryan-high",
@@ -2841,7 +2911,9 @@
                 "md5_digest": "9c966517ed0bfbffbfdb218e99dbeadd"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-us-ryan-high"
+        ]
     },
     "en_US-ryan-medium": {
         "key": "en_US-ryan-medium",
@@ -2871,7 +2943,9 @@
                 "md5_digest": "79d9200481a9dcabfa1803cb9e31c28a"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-us-ryan-medium"
+        ]
     },
     "en_US-danny-low": {
         "key": "en_US-danny-low",
@@ -3042,7 +3116,9 @@
                 "md5_digest": "42f2dd4a98149e12fc70b301d9579dfd"
             }
         },
-        "aliases": []
+        "aliases": [
+            "en-us-lessac-medium"
+        ]
     },
     "en_US-joe-medium": {
         "key": "en_US-joe-medium",
@@ -3162,7 +3238,9 @@
                 "md5_digest": "4ba8c18ce72a202a49312ee1914ca6b0"
             }
         },
-        "aliases": []
+        "aliases": [
+            "es-mls_9972-low"
+        ]
     },
     "es_ES-sharvard-medium": {
         "key": "es_ES-sharvard-medium",
@@ -3225,7 +3303,9 @@
                 "md5_digest": "19cb47bbe9e07e8d7937cfd39027d3a9"
             }
         },
-        "aliases": []
+        "aliases": [
+            "es-carlfm-x-low"
+        ]
     },
     "es_ES-mls_10246-low": {
         "key": "es_ES-mls_10246-low",
@@ -3255,7 +3335,9 @@
                 "md5_digest": "a345cefedda92347f53ea9a84d1b3983"
             }
         },
-        "aliases": []
+        "aliases": [
+            "es-mls_10246-low"
+        ]
     },
     "uk_UA-lada-x_low": {
         "key": "uk_UA-lada-x_low",
@@ -3285,7 +3367,9 @@
                 "md5_digest": "8de03ca7a0aee2a1c088638ec18fdb87"
             }
         },
-        "aliases": []
+        "aliases": [
+            "uk-lada-x-low"
+        ]
     },
     "uk_UA-ukrainian_tts-medium": {
         "key": "uk_UA-ukrainian_tts-medium",
@@ -3379,7 +3463,9 @@
                 "md5_digest": "5d4a6b6e8d4a476e9b415ec0c1f030da"
             }
         },
-        "aliases": []
+        "aliases": [
+            "fr-siwis-low"
+        ]
     },
     "fr_FR-siwis-medium": {
         "key": "fr_FR-siwis-medium",
@@ -3409,7 +3495,9 @@
                 "md5_digest": "2b9ea48b15e9e1fd25f95b415caaf66f"
             }
         },
-        "aliases": []
+        "aliases": [
+            "fr-siwis-medium"
+        ]
     },
     "fr_FR-mls_1840-low": {
         "key": "fr_FR-mls_1840-low",
@@ -3439,7 +3527,9 @@
                 "md5_digest": "35d860ab0a8497966c73da525728e711"
             }
         },
-        "aliases": []
+        "aliases": [
+            "fr-mls_1840-low"
+        ]
     },
     "fr_FR-gilles-low": {
         "key": "fr_FR-gilles-low",
@@ -3469,7 +3559,9 @@
                 "md5_digest": "9317af9efdb0d9986d42357b180f06e2"
             }
         },
-        "aliases": []
+        "aliases": [
+            "fr-gilles-low"
+        ]
     },
     "fi_FI-harri-low": {
         "key": "fi_FI-harri-low",
@@ -3499,7 +3591,9 @@
                 "md5_digest": "93ccf398abae82b7d7a3d420658e26f1"
             }
         },
-        "aliases": []
+        "aliases": [
+            "fi-harri-low"
+        ]
     },
     "fi_FI-harri-medium": {
         "key": "fi_FI-harri-medium",
@@ -3619,7 +3713,9 @@
                 "md5_digest": "74ebc618d120896113449ad2f957b7a4"
             }
         },
-        "aliases": []
+        "aliases": [
+            "pl-mls_6892-low"
+        ]
     },
     "pl_PL-gosia-medium": {
         "key": "pl_PL-gosia-medium",
@@ -3679,6 +3775,8 @@
                 "md5_digest": "5fe51d2a4a0e05e85c88a80373000ae1"
             }
         },
-        "aliases": []
+        "aliases": [
+            "no-talesyntese-medium"
+        ]
     }
 }
