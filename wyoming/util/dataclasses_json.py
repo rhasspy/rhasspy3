@@ -14,6 +14,10 @@ class DataClassJsonMixin:
 
         cls_fields = {field.name: field for field in fields(cls)}
         for key, value in data.items():
+            if key not in cls_fields:
+                # Skip unknown fields
+                continue
+
             field = cls_fields[key]
             if is_dataclass(field.type):
                 assert issubclass(field.type, DataClassJsonMixin), field.type
@@ -21,13 +25,9 @@ class DataClassJsonMixin:
             else:
                 kwargs[key] = _decode(value, field.type)
 
-        # Fill in optional fields
+        # Fill in optional fields with None
         for field in cls_fields.values():
-            if (
-                (field.name not in kwargs)
-                and hasattr(field.type, "__args__")
-                and (type(None) in field.type.__args__)
-            ):
+            if (field.name not in kwargs) and _is_optional(field.type):
                 kwargs[field.name] = None
 
         return cls(**kwargs)
@@ -63,3 +63,8 @@ def _decode(value: Any, target_type: Type) -> Any:
             }
 
     return value
+
+
+def _is_optional(target_type: Type):
+    """True if type is Optional"""
+    return hasattr(target_type, "__args__") and (type(None) in target_type.__args__)
