@@ -1,0 +1,2 @@
+tflite-runtime-nightly
+wyoming==1.0.0

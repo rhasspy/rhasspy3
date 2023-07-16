@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+import os
+import sys
+import venv
+from pathlib import Path
+
+_DIR = Path(__file__).parent
+_PROGRAM_DIR = _DIR.parent
+_BIN_DIR = _PROGRAM_DIR / "bin"
+_VENV_DIR = _PROGRAM_DIR / ".venv"
+_SERVER_DIR = _PROGRAM_DIR / "server"
+
+_SOCKETFILE = _PROGRAM_DIR / "var" / "run" / "openwakeword.socket"
+_SOCKETFILE.parent.mkdir(parents=True, exist_ok=True)
+
+server_path = str(_SERVER_DIR.absolute())
+python_path = os.getenv("PYTHONPATH") or ""
+if python_path:
+    python_path = f"{python_path}{os.pathsep}{server_path}"
+else:
+    python_path = server_path
+
+os.putenv("PYTHONPATH", python_path)
+
+
+builder = venv.EnvBuilder()
+context = builder.ensure_directories(_VENV_DIR)
+
+os.execv(
+    context.env_exe,
+    [
+        context.env_exe,
+        "-m",
+        "wyoming_openwakeword",
+        "--uri",
+        f"unix://{_SOCKETFILE.absolute()}",
+    ]
+    + sys.argv[1:],
+)
