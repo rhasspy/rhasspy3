@@ -94,7 +94,7 @@ programs:
       command: |
         script/stream --model "${model}"
       template_args:
-        model: "share/hey_jarvis_v0.1.tflite"
+        model: "share/hey_rhasspy_v0.1.tflite"
 
 
     # TODO: snowman

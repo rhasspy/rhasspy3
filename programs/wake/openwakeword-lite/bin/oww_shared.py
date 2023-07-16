@@ -7,6 +7,7 @@ from typing import Dict, Final
 import numpy as np
 import tflite_runtime.interpreter as tflite
 
+_AUTOFILL_SECONDS: Final = 3
 _MAX_SECONDS: Final = 10
 _BATCH_SIZE: Final = 1
 
@@ -61,7 +62,7 @@ class OpenWakeWordState:
     _audio: np.ndarray = field(
         default_factory=lambda: np.zeros(shape=(_MAX_SAMPLES,), dtype=np.float32)
     )
-    _new_audio_samples: int = 0
+    _new_audio_samples: int = _AUTOFILL_SECONDS * _SAMPLE_RATE
 
     _mels: np.ndarray = field(
         default_factory=lambda: np.zeros(shape=(_MAX_MELS, NUM_MELS), dtype=np.float32)

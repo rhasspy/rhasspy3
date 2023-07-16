@@ -148,7 +148,9 @@ async def detect_stream(
             if audio_task in done:
                 chunk_bytes = audio_task.result()
                 if chunk_bytes:
-                    chunk = AudioChunk(rate, width, channels, chunk_bytes)
+                    chunk = AudioChunk(
+                        rate, width, channels, chunk_bytes, timestamp=timestamp
+                    )
                     await async_write_event(chunk.event(), wake_proc.stdin)
                     timestamp += chunk.milliseconds
 
