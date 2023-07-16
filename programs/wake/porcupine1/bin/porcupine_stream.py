@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import asyncio
 import argparse
+import asyncio
 import logging
 import struct
 from functools import partial
@@ -11,8 +11,8 @@ from porcupine_shared import get_arg_parser, load_porcupine
 from rhasspy3.audio import AudioChunk, AudioStop
 from rhasspy3.event import Event
 from rhasspy3.wake import Detection, NotDetected
-from wyoming.info import Describe, Info, WakeModel, WakeProgram, Attribution
-from wyoming.server import AsyncServer, AsyncEventHandler
+from wyoming.info import Attribution, Describe, Info, WakeModel, WakeProgram
+from wyoming.server import AsyncEventHandler, AsyncServer
 
 _FILE = Path(__file__)
 _DIR = _FILE.parent

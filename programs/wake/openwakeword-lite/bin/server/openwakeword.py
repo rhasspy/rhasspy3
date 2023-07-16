@@ -11,10 +11,10 @@ from .const import (
     EMB_FEATURES,
     EMB_STEP,
     MEL_SAMPLES,
+    MS_PER_CHUNK,
     NUM_MELS,
     SAMPLES_PER_CHUNK,
     WW_FEATURES,
-    MS_PER_CHUNK,
 )
 from .state import State
 

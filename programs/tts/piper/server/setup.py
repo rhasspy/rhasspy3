@@ -26,7 +26,9 @@ setup(
     author_email="mike@rhasspy.org",
     license="MIT",
     packages=setuptools.find_packages(),
-    package_data={"wyoming_piper": [str(p.relative_to(module_dir)) for p in data_files]},
+    package_data={
+        "wyoming_piper": [str(p.relative_to(module_dir)) for p in data_files]
+    },
     install_requires=requirements,
     classifiers=[
         "Development Status :: 3 - Alpha",

@@ -7,6 +7,7 @@ from typing import Any, BinaryIO, Dict, Iterable, Optional
 
 _TYPE = "type"
 _DATA = "data"
+_DATA_LENGTH = "data_length"
 _PAYLOAD_LENGTH = "payload_length"
 _NEWLINE = "\n".encode()
 
@@ -61,10 +62,18 @@ async def async_read_event(reader: asyncio.StreamReader) -> Optional[Event]:
             return None
 
         event_dict = json.loads(json_line)
+        data_length = event_dict.get(_DATA_LENGTH)
+        if (data_length is not None) and (data_length > 0):
+            # Merge data
+            data_bytes = await reader.readexactly(data_length)
+            data_dict = event_dict.get(_DATA, {})
+            data_dict.update(json.loads(data_bytes))
+            event_dict[_DATA] = data_dict
+
         payload_length = event_dict.get(_PAYLOAD_LENGTH)
 
         payload: Optional[bytes] = None
-        if payload_length is not None:
+        if (payload_length is not None) and (payload_length > 0):
             payload = await reader.readexactly(payload_length)
 
         return Event(
@@ -78,6 +87,13 @@ async def async_read_event(reader: asyncio.StreamReader) -> Optional[Event]:
 
 async def async_write_event(event: Event, writer: asyncio.StreamWriter):
     event_dict: Dict[str, Any] = event.to_dict()
+
+    data_dict = event_dict.pop(_DATA, None)
+    data_bytes: Optional[bytes] = None
+    if data_dict:
+        data_bytes = json.dumps(data_dict, ensure_ascii=False).encode("utf-8")
+        event_dict[_DATA_LENGTH] = len(data_bytes)
+
     if event.payload:
         event_dict[_PAYLOAD_LENGTH] = len(event.payload)
 
@@ -85,6 +101,9 @@ async def async_write_event(event: Event, writer: asyncio.StreamWriter):
 
     try:
         writer.writelines((json_line.encode(), _NEWLINE))
+
+        if data_bytes:
+            writer.write(data_bytes)
 
         if event.payload:
             writer.write(event.payload)
@@ -95,22 +114,8 @@ async def async_write_event(event: Event, writer: asyncio.StreamWriter):
 
 
 async def async_write_events(events: Iterable[Event], writer: asyncio.StreamWriter):
-    coros = []
-    for event in events:
-        event_dict: Dict[str, Any] = event.to_dict()
-        if event.payload:
-            event_dict[_PAYLOAD_LENGTH] = len(event.payload)
-
-        json_line = json.dumps(event_dict, ensure_ascii=False)
-        writer.writelines((json_line.encode(), _NEWLINE))
-
-        if event.payload:
-            writer.write(event.payload)
-
-        coros.append(writer.drain())
-
     try:
-        await asyncio.gather(*coros)
+        await asyncio.gather(*(async_write_event(event, writer) for event in events))
     except KeyboardInterrupt:
         pass
 
@@ -126,11 +131,24 @@ def read_event(reader: Optional[BinaryIO] = None) -> Optional[Event]:
             return None
 
         event_dict = json.loads(json_line)
+        data_length = event_dict.get(_DATA_LENGTH)
+        if (data_length is not None) and (data_length > 0):
+            # Merge data
+            data_bytes = reader.read(data_length)
+            while len(data_bytes) < data_length:
+                data_bytes += reader.read(data_length - len(data_bytes))
+
+            data_dict = event_dict.get(_DATA, {})
+            data_dict.update(json.loads(data_bytes))
+            event_dict[_DATA] = data_dict
+
         payload_length = event_dict.get(_PAYLOAD_LENGTH)
 
         payload: Optional[bytes] = None
         if payload_length is not None:
             payload = reader.read(payload_length)
+            while len(payload) < payload_length:
+                payload += reader.read(payload_length - len(payload))
 
         return Event(
             type=event_dict[_TYPE], data=event_dict.get(_DATA), payload=payload
@@ -146,6 +164,13 @@ def write_event(event: Event, writer: Optional[BinaryIO] = None):
         writer = sys.stdout.buffer
 
     event_dict: Dict[str, Any] = event.to_dict()
+
+    data_dict = event_dict.pop(_DATA, None)
+    data_bytes: Optional[bytes] = None
+    if data_dict:
+        data_bytes = json.dumps(data_dict, ensure_ascii=False).encode("utf-8")
+        event_dict[_DATA_LENGTH] = len(data_bytes)
+
     if event.payload:
         event_dict[_PAYLOAD_LENGTH] = len(event.payload)
 
@@ -153,6 +178,9 @@ def write_event(event: Event, writer: Optional[BinaryIO] = None):
 
     try:
         writer.writelines((json_line.encode(), _NEWLINE))
+
+        if data_bytes:
+            writer.write(data_bytes)
 
         if event.payload:
             writer.write(event.payload)

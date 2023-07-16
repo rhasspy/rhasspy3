@@ -12,11 +12,7 @@ from typing import Deque, Optional
 
 import aiohttp
 
-from rhasspy3.audio import (
-    AudioChunk,
-    AudioChunkConverter,
-    AudioStop,
-)
+from rhasspy3.audio import AudioChunk, AudioChunkConverter, AudioStop
 from rhasspy3.event import (
     Event,
     async_get_stdin,

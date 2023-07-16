@@ -33,8 +33,11 @@ Each **event** in the Wyoming protocol is:
 1. A **single line** of JSON with an object:
     * **MUST** have a `type` field with an event type name
     * MAY have a `data` field with an object that contains event-specific data
+    * MAY have a `data_length` field with a number > 0
     * MAY have a `payload_length` field with a number > 0
-2. If `payload_length` is given, *exactly* that may bytes follows
+2. If `data_length` is given, *exactly* that may bytes follows
+    * data bytes MUST be a UTF-8 encoded JSON object that is merged with the data field above
+3. If `payload_length` is given, *exactly* that may bytes follows
 
 Example:
 
