@@ -71,7 +71,7 @@ async def main() -> None:
     aliases_info: Dict[str, Any] = {}
     for voice_info in voices_info.values():
         for voice_alias in voice_info.get("aliases", []):
-            aliases_info[voice_alias] = voice_info
+            aliases_info[voice_alias] = {"_is_alias": True, **voice_info}
 
     voices_info.update(aliases_info)
 
@@ -103,6 +103,7 @@ async def main() -> None:
                         # else None,
                     )
                     for voice_name, voice_info in voices_info.items()
+                    if not voice_info.get("_is_alias", False)
                 ],
             )
         ],
