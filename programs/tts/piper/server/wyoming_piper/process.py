@@ -23,6 +23,37 @@ class PiperProcess:
     wav_dir: tempfile.TemporaryDirectory
     last_used: int = 0
 
+    def get_speaker_id(self, speaker: str) -> Optional[int]:
+        """Get speaker by name or id."""
+        return _get_speaker_id(self.config, speaker)
+
+    @property
+    def is_multispeaker(self) -> bool:
+        """True if model has more than one speaker."""
+        return _is_multispeaker(self.config)
+
+
+def _get_speaker_id(config: Dict[str, Any], speaker: str) -> Optional[int]:
+    """Get speaker by name or id."""
+    speaker_id_map = config.get("speaker_id_map", {})
+    speaker_id = speaker_id_map.get(speaker)
+    if speaker_id is None:
+        try:
+            # Try to interpret as an id
+            speaker_id = int(speaker)
+        except ValueError:
+            pass
+
+    return speaker_id
+
+
+def _is_multispeaker(config: Dict[str, Any]) -> bool:
+    """True if model has more than one speaker."""
+    return config.get("num_speakers", 1) > 1
+
+
+# -----------------------------------------------------------------------------
+
 
 class PiperProcessManager:
     """Manager of running Piper processes."""
@@ -35,9 +66,14 @@ class PiperProcessManager:
 
     async def get_process(self, voice_name: Optional[str] = None) -> PiperProcess:
         """Get a running Piper process or start a new one if necessary."""
+        voice_speaker: Optional[str] = None
         if voice_name is None:
             # Default voice
             voice_name = self.args.voice
+
+        if voice_name == self.args.voice:
+            # Default speaker
+            voice_speaker = self.args.speaker
 
         assert voice_name is not None
 
@@ -93,6 +129,13 @@ class PiperProcessManager:
                 str(wav_dir.name),
                 "--json-input",  # piper 1.1+
             ]
+
+            _LOGGER.debug(voice_speaker)
+            if voice_speaker is not None:
+                if _is_multispeaker(config):
+                    speaker_id = _get_speaker_id(config, voice_speaker)
+                    if speaker_id is not None:
+                        piper_args.extend(["--speaker", str(speaker_id)])
 
             if self.args.noise_scale:
                 piper_args.extend(["--noise-scale", str(self.args.noise_scale)])

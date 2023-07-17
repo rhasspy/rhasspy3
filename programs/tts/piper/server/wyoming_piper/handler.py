@@ -5,7 +5,7 @@ import logging
 import math
 import os
 import wave
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
 from wyoming.event import Event
@@ -44,6 +44,8 @@ class PiperEventHandler(AsyncEventHandler):
             return True
 
         synthesize = Synthesize.from_event(event)
+        _LOGGER.debug(synthesize)
+
         raw_text = synthesize.text
 
         # Join multiple lines
@@ -74,17 +76,9 @@ class PiperEventHandler(AsyncEventHandler):
             assert piper_proc.proc.stdout is not None
 
             # JSON in, file path out
-            input_obj = {"text": text}
+            input_obj: Dict[str, Any] = {"text": text}
             if voice_speaker is not None:
-                speaker_id_map = piper_proc.config.get("speaker_id_map", {})
-                speaker_id = speaker_id_map.get(voice_speaker)
-                if speaker_id is None:
-                    try:
-                        # Try to interpret as an id
-                        speaker_id = int(voice_speaker)
-                    except ValueError:
-                        pass
-
+                speaker_id = piper_proc.get_speaker_id(voice_speaker)
                 if speaker_id is not None:
                     input_obj["speaker_id"] = speaker_id
                 else:
@@ -92,6 +86,7 @@ class PiperEventHandler(AsyncEventHandler):
                         "No speaker '%s' for voice '%s'", voice_speaker, voice_name
                     )
 
+            _LOGGER.debug("input: %s", input_obj)
             piper_proc.proc.stdin.write(
                 (json.dumps(input_obj, ensure_ascii=False) + "\n").encode()
             )

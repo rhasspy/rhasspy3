@@ -41,7 +41,9 @@ async def main() -> None:
         help="Directory to download voices into",
     )
     #
-    parser.add_argument("--speaker", type=int, help="Id of speaker for default voice")
+    parser.add_argument(
+        "--speaker", type=str, help="Name or id of speaker for default voice"
+    )
     parser.add_argument("--noise-scale", type=float, help="Generator noise")
     parser.add_argument("--length-scale", type=float, help="Phoneme length")
     parser.add_argument("--noise-w", type=float, help="Phoneme width noise")
@@ -54,7 +56,7 @@ async def main() -> None:
         "--max-piper-procs",
         type=int,
         default=1,
-        help="Maximum number of piper process to run simultaneously",
+        help="Maximum number of piper process to run simultaneously (default: 1)",
     )
     #
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
@@ -110,7 +112,7 @@ async def main() -> None:
 
     # Make sure default voice is loaded.
     # Other voices will be loaded on-demand.
-    await process_manager.get_process(args.voice)
+    await process_manager.get_process()
 
     # Start server
     server = AsyncServer.from_uri(args.uri)
