@@ -10,6 +10,8 @@ _DATA = "data"
 _DATA_LENGTH = "data_length"
 _PAYLOAD_LENGTH = "payload_length"
 _NEWLINE = "\n".encode()
+_VERSION = "version"
+_VERSION_NUMBER = "1.1"
 
 
 @dataclass
@@ -87,6 +89,7 @@ async def async_read_event(reader: asyncio.StreamReader) -> Optional[Event]:
 
 async def async_write_event(event: Event, writer: asyncio.StreamWriter):
     event_dict: Dict[str, Any] = event.to_dict()
+    event_dict[_VERSION] = _VERSION_NUMBER
 
     data_dict = event_dict.pop(_DATA, None)
     data_bytes: Optional[bytes] = None
@@ -164,6 +167,7 @@ def write_event(event: Event, writer: Optional[BinaryIO] = None):
         writer = sys.stdout.buffer
 
     event_dict: Dict[str, Any] = event.to_dict()
+    event_dict[_VERSION] = _VERSION_NUMBER
 
     data_dict = event_dict.pop(_DATA, None)
     data_bytes: Optional[bytes] = None
