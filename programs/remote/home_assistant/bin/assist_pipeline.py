@@ -27,6 +27,7 @@ from rhasspy3.event import (
     read_event,
     write_event,
 )
+from rhasspy3.vad import VoiceStarted, VoiceStopped
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -185,7 +186,11 @@ async def run_pipeline(args: argparse.Namespace):
                     event = receive_event_task.result()
                     _LOGGER.debug(event)
                     event_type = event["event"]["type"]
-                    if event_type == "run-end":
+                    if event_type == "stt-start":
+                        write_event(VoiceStarted().event())
+                    elif event_type == "stt-end":
+                        write_event(VoiceStopped().event())
+                    elif event_type == "run-end":
                         _LOGGER.info("Pipeline finished")
                         is_running = False
                         break

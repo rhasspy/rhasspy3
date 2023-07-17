@@ -8,14 +8,15 @@ from collections import deque
 from pathlib import Path
 from typing import Deque, List, Optional
 
-from rhasspy3.audio import AudioChunk, AudioStart, AudioStop
+from rhasspy3.audio import AudioChunk, AudioStart, AudioStop, DEFAULT_SAMPLES_PER_CHUNK
 from rhasspy3.core import Rhasspy
 from rhasspy3.event import Event, async_read_event, async_write_event
 from rhasspy3.mic import record
 from rhasspy3.program import create_process
 from rhasspy3.remote import DOMAIN as REMOTE_DOMAIN
-from rhasspy3.snd import DOMAIN as SND_DOMAIN
+from rhasspy3.snd import DOMAIN as SND_DOMAIN, play
 from rhasspy3.snd import Played
+from rhasspy3.vad import VoiceStarted, VoiceStopped
 from rhasspy3.wake import detect
 
 _FILE = Path(__file__)
@@ -44,8 +45,16 @@ async def main() -> None:
         help="Program to use for wake word detection (overiddes satellite)",
     )
     parser.add_argument(
+        "--wake-after-wav",
+        help="Path to WAV file to play after each wake word detection",
+    )
+    parser.add_argument(
         "--remote-program",
         help="Program to use for remote communication with base station (overrides satellite)",
+    )
+    parser.add_argument(
+        "--remote-voice-stopped-wav",
+        help="Path to WAV file to play after remote reports user has stopped speaking",
     )
     parser.add_argument(
         "--snd-program",
@@ -53,6 +62,9 @@ async def main() -> None:
     )
     #
     parser.add_argument("--asr-chunks-to-buffer", type=int, default=0)
+    parser.add_argument(
+        "--samples-per-chunk", type=int, default=DEFAULT_SAMPLES_PER_CHUNK
+    )
     #
     parser.add_argument("--save-audio-dir", help="Directory to save wake/asr/tts audio")
     #
@@ -122,6 +134,16 @@ async def main() -> None:
             )
             if detection is None:
                 continue
+
+            if args.wake_after_wav:
+                # Play sound after wake word detection
+                with open(args.wake_after_wav, "rb") as wake_after_wav_file:
+                    await play(
+                        rhasspy,
+                        snd_program,
+                        wake_after_wav_file,
+                        args.samples_per_chunk,
+                    )
 
             asr_wav_writer: Optional[wave.Wave_write] = None
             asr_wav_writer_set = False
@@ -204,13 +226,41 @@ async def main() -> None:
 
                         if remote_task in done:
                             remote_event = remote_task.result()
-                            if remote_event is not None:
+                            _LOGGER.debug(remote_event)
+                            if remote_event is None:
+                                break
+
+                            if (
+                                AudioStart.is_type(remote_event.type)
+                                or AudioChunk.is_type(remote_event.type)
+                                or AudioStop.is_type(remote_event.type)
+                            ):
+                                # Remote is streaming audio back.
+                                # Stop what we're doing and start playback.
                                 snd_buffer.append(remote_event)
 
-                            for task in pending:
-                                task.cancel()
+                                for task in pending:
+                                    task.cancel()
 
-                            break
+                                break
+
+                            if args.remote_voice_stopped_wav and VoiceStopped.is_type(
+                                remote_event.type
+                            ):
+                                with open(
+                                    args.remote_voice_stopped_wav, "rb"
+                                ) as remote_voice_stopped_wav_file:
+                                    await play(
+                                        rhasspy,
+                                        snd_program,
+                                        remote_voice_stopped_wav_file,
+                                        args.samples_per_chunk,
+                                    )
+
+                            remote_task = asyncio.create_task(
+                                async_read_event(remote_proc.stdout)
+                            )
+                            pending.add(remote_task)
 
                     # Output audio
                     async with (
@@ -287,6 +337,9 @@ async def main() -> None:
             break
 
         loop_idx += 1
+
+
+# -----------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
