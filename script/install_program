@@ -15,6 +15,7 @@ PROGRAMS = {
     "vad": ["silero"],
     "mic_filter": ["speexdsp-cli"],
     "remote": ["home_assistant"],
+    "snd": ["sounddevice"],
 }
 
 
