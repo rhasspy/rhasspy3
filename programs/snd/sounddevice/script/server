@@ -9,8 +9,17 @@ _PROGRAM_DIR = _DIR.parent
 _VENV_DIR = _PROGRAM_DIR / ".venv"
 _SCRIPT = "sounddevice_events.py"
 
+_SOCKETFILE = _PROGRAM_DIR / "var" / "run" / "sounddevice.socket"
+_SOCKETFILE.parent.mkdir(parents=True, exist_ok=True)
+
 context = venv.EnvBuilder().ensure_directories(_VENV_DIR)
 os.execv(
     context.env_exe,
-    [context.env_exe, str(_PROGRAM_DIR / "bin" / _SCRIPT)] + sys.argv[1:],
+    [
+        context.env_exe,
+        str(_PROGRAM_DIR / "bin" / _SCRIPT),
+        "--uri",
+        f"unix://{_SOCKETFILE.absolute()}",
+    ]
+    + sys.argv[1:],
 )

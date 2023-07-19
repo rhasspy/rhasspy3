@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import argparse
+import asyncio
 import logging
+from functools import partial
 from pathlib import Path
 
-import sounddevice
+import sounddevice as sd
+from wyoming.server import AsyncServer, AsyncEventHandler
 
 from rhasspy3.audio import (
     DEFAULT_OUT_CHANNELS,
@@ -14,7 +17,7 @@ from rhasspy3.audio import (
     AudioChunkConverter,
     AudioStop,
 )
-from rhasspy3.event import read_event, write_event
+from rhasspy3.event import Event
 from rhasspy3.snd import Played
 
 _FILE = Path(__file__)
@@ -22,8 +25,35 @@ _DIR = _FILE.parent
 _LOGGER = logging.getLogger(_FILE.stem)
 
 
-def main() -> None:
+class SoundDeviceEventHandler(AsyncEventHandler):
+    def __init__(
+        self,
+        cli_args: argparse.Namespace,
+        stream: sd.RawOutputStream,
+        converter: AudioChunkConverter,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.cli_args = cli_args
+        self.stream = stream
+        self.converter = converter
+
+    async def handle_event(self, event: Event) -> bool:
+        if AudioChunk.is_type(event.type):
+            chunk = self.converter.convert(AudioChunk.from_event(event))
+            self.stream.write(chunk.audio)
+        elif AudioStop.is_type(event.type):
+            await self.write_event(Played().event())
+            return False
+
+        return True
+
+
+async def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--uri", default="stdio://", help="unix:// or tcp://")
     parser.add_argument(
         "--rate", type=int, default=DEFAULT_OUT_RATE, help="Sample rate (hertz)"
     )
@@ -50,33 +80,36 @@ def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
+    if not args.device:
+        args.device = None  # default device
+
     converter = AudioChunkConverter(
         rate=args.rate, width=args.width, channels=args.channels
     )
 
-    try:
-        with sounddevice.RawOutputStream(
-            samplerate=args.rate,
-            blocksize=args.samples_per_chunk,
-            device=args.device,
-            channels=args.channels,
-            dtype="int16",
-        ) as stream:
-            while True:
-                event = read_event()
-                if event is None:
-                    break
+    with sd.RawOutputStream(
+        samplerate=args.rate,
+        blocksize=args.samples_per_chunk,
+        device=args.device,
+        channels=args.channels,
+        dtype="int16",
+    ) as stream:
+        # Start server
+        server = AsyncServer.from_uri(args.uri)
 
-                if AudioChunk.is_type(event.type):
-                    chunk = converter.convert(AudioChunk.from_event(event))
-                    stream.write(chunk.audio)
-                elif AudioStop.is_type(event.type):
-                    break
-    except KeyboardInterrupt:
-        pass
-    finally:
-        write_event(Played().event())
+        _LOGGER.info("Ready")
+        await server.run(
+            partial(
+                SoundDeviceEventHandler,
+                args,
+                stream,
+                converter,
+            )
+        )
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass

@@ -437,6 +437,10 @@ programs:
       command: |
         script/events
 
+    sounddevice.client:
+      command: |
+        client_unix_socket.py var/run/sounddevice.socket
+
     udp_raw:
       command: |
         bin/udp_raw.py --host "${host}" --port ${port}
@@ -542,6 +546,13 @@ servers:
         script/server --model "${model}"
       template_args:
         model: "hey_rhasspy"
+
+  snd:
+    sounddevice:
+      command: |
+        script/server --device "${device}"
+      template_args:
+        device: ""
 
 
 

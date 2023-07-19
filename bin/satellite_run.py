@@ -226,7 +226,6 @@ async def main() -> None:
 
                         if remote_task in done:
                             remote_event = remote_task.result()
-                            _LOGGER.debug(remote_event)
                             if remote_event is None:
                                 break
 

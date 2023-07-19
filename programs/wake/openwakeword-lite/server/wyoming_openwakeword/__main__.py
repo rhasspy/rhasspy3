@@ -20,7 +20,7 @@ _DIR = Path(__file__).parent
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--uri", required=True, help="unix:// or tcp://")
+    parser.add_argument("--uri", default="stdio://", help="unix:// or tcp://")
     parser.add_argument(
         "--model",
         required=True,
