@@ -80,7 +80,12 @@ async def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    if not args.device:
+    if args.device:
+        try:
+            args.device = int(args.device)
+        except ValueError:
+            pass
+    else:
         args.device = None  # default device
 
     converter = AudioChunkConverter(
