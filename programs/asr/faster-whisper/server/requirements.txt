@@ -1,4 +1,4 @@
-wyoming==0.0.1
+wyoming==1.1.0
 
-ctranslate2>=3.5,<4
+ctranslate2>=3.17,<4
 tokenizers==0.13.*
