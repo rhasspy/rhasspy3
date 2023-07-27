@@ -77,12 +77,7 @@ async def main() -> None:
         _LOGGER.info("Downloading %s to %s", model, args.download_dir)
         model_dir = download_model(model, args.download_dir)
 
-    if args.language and (args.language != "auto"):
-        _LOGGER.debug("Language: %s", args.language)
-        languages = [args.language]
-    else:
-        languages = WHISPER_LANGUAGES
-
+    if args.language == "auto":
         # Whisper does not understand "auto"
         args.language = None
 
@@ -105,7 +100,7 @@ async def main() -> None:
                             url="https://github.com/rhasspy/models/",
                         ),
                         installed=True,
-                        languages=languages,
+                        languages=WHISPER_LANGUAGES,
                     )
                 ],
             )
