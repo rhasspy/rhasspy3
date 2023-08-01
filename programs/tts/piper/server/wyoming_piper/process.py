@@ -83,7 +83,10 @@ class PiperProcessManager:
         assert voice_name is not None
 
         piper_proc = self.processes.get(voice_name)
-        if piper_proc is None:
+        if (piper_proc is None) or (piper_proc.proc.returncode is not None):
+            # Remove if stopped
+            self.processes.pop(voice_name, None)
+
             # Start new Piper process
             if self.args.max_piper_procs > 0:
                 # Restrict number of running processes

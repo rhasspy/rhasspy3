@@ -19,7 +19,7 @@ data_files = [module_dir / "voices.json"]
 
 setup(
     name="wyoming_piper",
-    version="1.1.0",
+    version="1.2.0",
     description="Wyoming Server for Piper",
     url="http://github.com/rhasspy/rhasspy3",
     author="Michael Hansen",
