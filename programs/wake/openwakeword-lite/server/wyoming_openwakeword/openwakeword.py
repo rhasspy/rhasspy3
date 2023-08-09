@@ -316,11 +316,8 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                                 _LOGGER.debug(
                                     "Triggered %s (client=%s)", ww_model_path, client_id
                                 )
-                                client_data.activations = (
-                                    -client_data.refractory_activations
-                                )
                         else:
-                            # Back towards 0
+                            # Down towards 0
                             client_data.activations = max(
                                 0, client_data.activations - 1
                             )

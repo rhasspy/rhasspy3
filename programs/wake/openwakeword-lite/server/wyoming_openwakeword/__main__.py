@@ -30,6 +30,24 @@ async def main() -> None:
     parser.add_argument(
         "--models-dir", default=_DIR / "models", help="Path to directory with models"
     )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.5,
+        help="Wake word model threshold (0-1, default: 0.5)",
+    )
+    parser.add_argument(
+        "--trigger-level",
+        type=int,
+        default=4,
+        help="Number of activations before detection (default: 4)",
+    )
+    #
+    parser.add_argument(
+        "--noise-suppression",
+        action="store_true",
+        help="Enable noise suppression with speexdsp",
+    )
     #
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()

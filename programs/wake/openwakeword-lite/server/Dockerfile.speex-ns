@@ -1,0 +1,35 @@
+FROM quay.io/pypa/manylinux_2_28_x86_64 as build-amd64
+
+FROM quay.io/pypa/manylinux_2_28_aarch64 as build-arm64
+
+ARG TARGETARCH
+ARG TARGETVARIANT
+FROM build-${TARGETARCH}${TARGETVARIANT} as build
+ARG TARGETARCH
+ARG TARGETVARIANT
+
+ENV LANG C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN yum install -y speexdsp-devel swig
+
+RUN curl -L 'https://github.com/TeaPoly/speexdsp-ns-python/archive/refs/heads/main.tar.gz' | \
+    tar -xzf -
+
+RUN cd speexdsp-ns-python-main && \
+    for version in 7 8 9 10 11 12; do "python3.${version}" setup.py bdist_wheel; done && \
+    auditwheel repair dist/*.whl
+
+RUN for version in 7 8 9 10 11 12; do \
+    "python3.${version}" -m venv --symlinks "venv_3${version}"; \
+    "venv_3${version}/bin/pip3" install speexdsp-ns-python-main/wheelhouse/*cp3${version}*.whl; \
+    "venv_3${version}/bin/python3" -c 'from speexdsp_ns import NoiseSuppression; data = NoiseSuppression.create(320, 16000).process(bytes(320 * 2)); assert len(data) == 640, len(data)'; \
+    done;
+
+# -----------------------------------------------------------------------------
+
+FROM scratch
+ARG TARGETARCH
+ARG TARGETVARIANT
+
+COPY --from=build /speexdsp-ns-python-main/wheelhouse/ ./
