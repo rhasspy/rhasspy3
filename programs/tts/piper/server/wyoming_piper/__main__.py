@@ -59,13 +59,19 @@ async def main() -> None:
         help="Maximum number of piper process to run simultaneously (default: 1)",
     )
     #
+    parser.add_argument(
+        "--update-voices",
+        action="store_true",
+        help="Download latest voices.json during startup",
+    )
+    #
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     # Load voice info
-    voices_info = get_voices()
+    voices_info = get_voices(args.download_dir, update_voices=args.update_voices)
 
     # Resolve aliases for backwards compatibility with old voice names
     aliases_info: Dict[str, Any] = {}
@@ -102,7 +108,9 @@ async def main() -> None:
                         # if voice_info.get("speaker_id_map")
                         # else None,
                     )
-                    for voice_name, voice_info in voices_info.items()
+                    for voice_name, voice_info in sorted(
+                        voices_info.items(), key=lambda kv: kv[0]
+                    )
                     if not voice_info.get("_is_alias", False)
                 ],
             )
