@@ -93,6 +93,36 @@
             "ca-upc_pau-x-low"
         ]
     },
+    "cs_CZ-jirka-medium": {
+        "key": "cs_CZ-jirka-medium",
+        "name": "jirka",
+        "language": {
+            "code": "cs_CZ",
+            "family": "cs",
+            "region": "CZ",
+            "name_native": "Čeština",
+            "name_english": "Czech",
+            "country_english": "Czech Republic"
+        },
+        "quality": "medium",
+        "num_speakers": 1,
+        "speaker_id_map": {},
+        "files": {
+            "cs/cs_CZ/jirka/medium/cs_CZ-jirka-medium.onnx": {
+                "size_bytes": 63201294,
+                "md5_digest": "da2deb0a3f93226a3f9b6e40d43c46ca"
+            },
+            "cs/cs_CZ/jirka/medium/cs_CZ-jirka-medium.onnx.json": {
+                "size_bytes": 5025,
+                "md5_digest": "2762e45c5b084694093c683a5da7cf94"
+            },
+            "cs/cs_CZ/jirka/medium/MODEL_CARD": {
+                "size_bytes": 281,
+                "md5_digest": "85a220211eadd9b89f3dc023d82966b4"
+            }
+        },
+        "aliases": []
+    },
     "da_DK-talesyntese-medium": {
         "key": "da_DK-talesyntese-medium",
         "name": "talesyntese",
@@ -284,6 +314,36 @@
         "aliases": [
             "de-ramona-low"
         ]
+    },
+    "de_DE-thorsten-high": {
+        "key": "de_DE-thorsten-high",
+        "name": "thorsten",
+        "language": {
+            "code": "de_DE",
+            "family": "de",
+            "region": "DE",
+            "name_native": "Deutsch",
+            "name_english": "German",
+            "country_english": "Germany"
+        },
+        "quality": "high",
+        "num_speakers": 1,
+        "speaker_id_map": {},
+        "files": {
+            "de/de_DE/thorsten/high/de_DE-thorsten-high.onnx": {
+                "size_bytes": 113895201,
+                "md5_digest": "256505fe58fb8b9d6ed78b83f6b8a9d2"
+            },
+            "de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json": {
+                "size_bytes": 4875,
+                "md5_digest": "e81686e00a9d825e2488ead660bec6fd"
+            },
+            "de/de_DE/thorsten/high/MODEL_CARD": {
+                "size_bytes": 281,
+                "md5_digest": "582a051328d56a564e8a38c9029ae630"
+            }
+        },
+        "aliases": []
     },
     "de_DE-thorsten-low": {
         "key": "de_DE-thorsten-low",
@@ -2645,6 +2705,66 @@
         },
         "aliases": []
     },
+    "hu_HU-anna-medium": {
+        "key": "hu_HU-anna-medium",
+        "name": "anna",
+        "language": {
+            "code": "hu_HU",
+            "family": "hu",
+            "region": "HU",
+            "name_native": "Magyar",
+            "name_english": "Hungarian",
+            "country_english": "Hungary"
+        },
+        "quality": "medium",
+        "num_speakers": 1,
+        "speaker_id_map": {},
+        "files": {
+            "hu/hu_HU/anna/medium/hu_HU-anna-medium.onnx": {
+                "size_bytes": 63201294,
+                "md5_digest": "3796f9fa28bd8d390d17828e2e2e952d"
+            },
+            "hu/hu_HU/anna/medium/hu_HU-anna-medium.onnx.json": {
+                "size_bytes": 5018,
+                "md5_digest": "ae63867e2c2cb6695555a17bdee8b751"
+            },
+            "hu/hu_HU/anna/medium/MODEL_CARD": {
+                "size_bytes": 277,
+                "md5_digest": "1a1332b041bc211d4d14fbd93eff03e9"
+            }
+        },
+        "aliases": []
+    },
+    "hu_HU-berta-medium": {
+        "key": "hu_HU-berta-medium",
+        "name": "berta",
+        "language": {
+            "code": "hu_HU",
+            "family": "hu",
+            "region": "HU",
+            "name_native": "Magyar",
+            "name_english": "Hungarian",
+            "country_english": "Hungary"
+        },
+        "quality": "medium",
+        "num_speakers": 1,
+        "speaker_id_map": {},
+        "files": {
+            "hu/hu_HU/berta/medium/hu_HU-berta-medium.onnx": {
+                "size_bytes": 63201294,
+                "md5_digest": "a94cc2562ba892f462cb502f9d3c3ca3"
+            },
+            "hu/hu_HU/berta/medium/hu_HU-berta-medium.onnx.json": {
+                "size_bytes": 4961,
+                "md5_digest": "1f722cc72f330e3ba0222c6a94a527fa"
+            },
+            "hu/hu_HU/berta/medium/MODEL_CARD": {
+                "size_bytes": 278,
+                "md5_digest": "009624d3fa8f0f1e73c22a6277798c95"
+            }
+        },
+        "aliases": []
+    },
     "is_IS-bui-medium": {
         "key": "is_IS-bui-medium",
         "name": "bui",
@@ -3446,6 +3566,36 @@
         },
         "aliases": []
     },
+    "pt_PT-tugão-medium": {
+        "key": "pt_PT-tugão-medium",
+        "name": "tugão",
+        "language": {
+            "code": "pt_PT",
+            "family": "pt",
+            "region": "PT",
+            "name_native": "Português",
+            "name_english": "Portuguese",
+            "country_english": "Portugal"
+        },
+        "quality": "medium",
+        "num_speakers": 1,
+        "speaker_id_map": {},
+        "files": {
+            "pt/pt_PT/tugão/medium/pt_PT-tugão-medium.onnx": {
+                "size_bytes": 63201294,
+                "md5_digest": "0642048511ffe36c3b519520614b53f4"
+            },
+            "pt/pt_PT/tugão/medium/pt_PT-tugão-medium.onnx.json": {
+                "size_bytes": 5026,
+                "md5_digest": "c4113a1da477aa6db28420454c142ebd"
+            },
+            "pt/pt_PT/tugão/medium/MODEL_CARD": {
+                "size_bytes": 281,
+                "md5_digest": "fcaafaf8d265f5a5b8e83df547f49bfd"
+            }
+        },
+        "aliases": []
+    },
     "ro_RO-mihai-medium": {
         "key": "ro_RO-mihai-medium",
         "name": "mihai",
@@ -3598,6 +3748,36 @@
         },
         "aliases": []
     },
+    "sk_SK-lili-medium": {
+        "key": "sk_SK-lili-medium",
+        "name": "lili",
+        "language": {
+            "code": "sk_SK",
+            "family": "sk",
+            "region": "SK",
+            "name_native": "Slovenčina",
+            "name_english": "Slovak",
+            "country_english": "Slovakia"
+        },
+        "quality": "medium",
+        "num_speakers": 1,
+        "speaker_id_map": {},
+        "files": {
+            "sk/sk_SK/lili/medium/sk_SK-lili-medium.onnx": {
+                "size_bytes": 63201294,
+                "md5_digest": "836e078518042448bda8416a8ea52984"
+            },
+            "sk/sk_SK/lili/medium/sk_SK-lili-medium.onnx.json": {
+                "size_bytes": 4963,
+                "md5_digest": "e49cbd13cb5ce5b8f7e1c1479ec2cc91"
+            },
+            "sk/sk_SK/lili/medium/MODEL_CARD": {
+                "size_bytes": 275,
+                "md5_digest": "101dc437bf775a45dd6eedb14d9cfb4e"
+            }
+        },
+        "aliases": []
+    },
     "sr_RS-serbski_institut-medium": {
         "key": "sr_RS-serbski_institut-medium",
         "name": "serbski_institut",
@@ -3717,6 +3897,36 @@
             "tr/tr_TR/dfki/medium/MODEL_CARD": {
                 "size_bytes": 319,
                 "md5_digest": "870d6bc19719328699449cb7b4dd56cf"
+            }
+        },
+        "aliases": []
+    },
+    "tr_TR-fahrettin-medium": {
+        "key": "tr_TR-fahrettin-medium",
+        "name": "fahrettin",
+        "language": {
+            "code": "tr_TR",
+            "family": "tr",
+            "region": "TR",
+            "name_native": "Türkçe",
+            "name_english": "Turkish",
+            "country_english": "Turkey"
+        },
+        "quality": "medium",
+        "num_speakers": 1,
+        "speaker_id_map": {},
+        "files": {
+            "tr/tr_TR/fahrettin/medium/tr_TR-fahrettin-medium.onnx": {
+                "size_bytes": 63201294,
+                "md5_digest": "3ab8730ec3a132c79c74a45c451372f8"
+            },
+            "tr/tr_TR/fahrettin/medium/tr_TR-fahrettin-medium.onnx.json": {
+                "size_bytes": 5022,
+                "md5_digest": "38b7beb509cb459da3c8f95841a59435"
+            },
+            "tr/tr_TR/fahrettin/medium/MODEL_CARD": {
+                "size_bytes": 279,
+                "md5_digest": "f0fe18e5a6b7615d59a89dfe4873247f"
             }
         },
         "aliases": []
