@@ -32,9 +32,20 @@ def ensure_voice_exists(
     download_dir: Union[str, Path],
     voices_info: Dict[str, Any],
 ):
-    assert data_dirs, "No data dirs"
     if name not in voices_info:
+        # Try as file path to a custom voice
+        onnx_path = Path(name)
+        config_path = Path(name + ".json")
+        if onnx_path.exists():
+            if config_path.exists():
+                # Custom voice found
+                return
+
+            _LOGGER.warning("Missing custom voice config: %s", config_path)
+
         raise VoiceNotFoundError(name)
+
+    assert data_dirs, "No data dirs"
 
     voice_info = voices_info[name]
     voice_files = voice_info["files"]
@@ -109,6 +120,10 @@ def ensure_voice_exists(
 
 
 def find_voice(name: str, data_dirs: Iterable[Union[str, Path]]) -> Tuple[Path, Path]:
+    """Looks for the files for a voice.
+
+    Returns: tuple of onnx path, config path
+    """
     for data_dir in data_dirs:
         data_dir = Path(data_dir)
         onnx_path = data_dir / f"{name}.onnx"
@@ -116,5 +131,12 @@ def find_voice(name: str, data_dirs: Iterable[Union[str, Path]]) -> Tuple[Path, 
 
         if onnx_path.exists() and config_path.exists():
             return onnx_path, config_path
+
+    # Try as a custom voice
+    onnx_path = Path(name)
+    config_path = Path(name + ".json")
+
+    if onnx_path.exists() and config_path.exists():
+        return onnx_path, config_path
 
     raise ValueError(f"Missing files for voice {name}")

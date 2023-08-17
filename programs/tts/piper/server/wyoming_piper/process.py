@@ -133,7 +133,6 @@ class PiperProcessManager:
                 "--json-input",  # piper 1.1+
             ]
 
-            _LOGGER.debug(voice_speaker)
             if voice_speaker is not None:
                 if _is_multispeaker(config):
                     speaker_id = _get_speaker_id(config, voice_speaker)
