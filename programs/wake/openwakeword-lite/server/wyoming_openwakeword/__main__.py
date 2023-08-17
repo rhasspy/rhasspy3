@@ -50,8 +50,14 @@ async def main() -> None:
     )
     #
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
+    parser.add_argument(
+        "--debug-probability",
+        action="store_true",
+        help="Log all wake word probabilities (VERY noisy)",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
+    _LOGGER.debug(args)
 
     models_dir = Path(args.models_dir)
     model_paths: List[Path] = []
@@ -96,10 +102,17 @@ async def main() -> None:
         ],
     )
 
-    state = State(models_dir=models_dir)
+    state = State(models_dir=models_dir, debug_probability=args.debug_probability)
+    loop = asyncio.get_running_loop()
+
+    # Start server first to handle info requests
+    server = AsyncServer.from_uri(args.uri)
+    server_task = loop.create_task(
+        server.run(partial(OpenWakeWordEventHandler, wyoming_info, args, state))
+    )
+    _LOGGER.debug("Server started")
 
     # One thread per wake word model
-    loop = asyncio.get_running_loop()
     ww_threads: Dict[str, Thread] = {}
     for model_path in model_paths:
         model_key = str(model_path)
@@ -123,12 +136,10 @@ async def main() -> None:
     # mels -> embeddings
     embeddings_thread = Thread(target=embeddings_proc, daemon=True, args=(state,))
     embeddings_thread.start()
-
-    server = AsyncServer.from_uri(args.uri)
     _LOGGER.info("Ready")
 
     try:
-        await server.run(partial(OpenWakeWordEventHandler, wyoming_info, args, state))
+        await server_task
     except KeyboardInterrupt:
         pass
     finally:

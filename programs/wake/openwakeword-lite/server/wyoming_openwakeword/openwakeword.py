@@ -298,6 +298,13 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                             # Client disconnected
                             continue
 
+                        if state.debug_probability:
+                            _LOGGER.debug(
+                                "client=%s, probability=%s",
+                                client_id,
+                                probability.item(),
+                            )
+
                         client_data = client.wake_words[ww_model_path]
                         if probability.item() >= client_data.threshold:
                             # Increase activation

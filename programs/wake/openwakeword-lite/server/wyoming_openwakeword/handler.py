@@ -22,6 +22,8 @@ _NS_BYTES: Final = _NS_SAMPLES * 2
 
 
 class OpenWakeWordEventHandler(AsyncEventHandler):
+    """Event handler for openWakeWord clients."""
+
     def __init__(
         self,
         wyoming_info: Info,
@@ -48,10 +50,12 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
 
             self.noise_supression = NoiseSuppression.create(_NS_SAMPLES, 16000)
 
+        _LOGGER.debug("Client connected: %s", self.client_id)
+
     async def handle_event(self, event: Event) -> bool:
         if Describe.is_type(event.type):
             await self.write_event(self.wyoming_info_event)
-            _LOGGER.debug("Sent info")
+            _LOGGER.debug("Sent info to client: %s", self.client_id)
             return True
 
         if self.data is None:
@@ -70,6 +74,8 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
             self.is_detected = False
             with self.state.audio_lock:
                 self.data.reset()
+
+            _LOGGER.debug("Receiving audio from client: %s", self.client_id)
         elif AudioChunk.is_type(event.type):
             # Add to audio buffer and signal mels thread
             chunk = self.converter.convert(AudioChunk.from_event(event))
@@ -127,11 +133,19 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
                 # No wake word detections
                 await self.write_event(NotDetected().event())
 
+            _LOGGER.debug(
+                "Audio stopped without detection from client: %s", self.client_id
+            )
+
             return False
+        else:
+            _LOGGER.debug("Unexpected event: type=%s, data=%s", event.type, event.data)
 
         return True
 
     async def disconnect(self) -> None:
+        _LOGGER.debug("Client disconnected: %s", self.client_id)
+
         if self.data is None:
             return
 

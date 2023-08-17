@@ -27,3 +27,5 @@ class State:
     mels_lock: Lock = field(default_factory=Lock)
 
     wake_words: Dict[str, WakeWordState] = field(default_factory=dict)
+
+    debug_probability: bool = False
