@@ -32,7 +32,7 @@ class ProcessContextManager:
         try:
             if self.proc.returncode is None:
                 self.proc.terminate()
-                await self.proc.wait()
+                await self.proc.communicate()
         except ProcessLookupError:
             # Expected when process has already exited
             pass
