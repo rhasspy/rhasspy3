@@ -4,7 +4,8 @@ import asyncio
 import json
 import logging
 from functools import partial
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, Set
 
 from wyoming.info import Attribution, Info, TtsProgram, TtsVoice
 from wyoming.server import AsyncServer
@@ -106,16 +107,32 @@ async def main() -> None:
         if not voice_info.get("_is_alias", False)
     ]
 
+    custom_voice_names: Set[str] = set()
     if args.voice not in voices_info:
+        custom_voice_names.add(args.voice)
+
+    for data_dir in args.data_dir:
+        data_dir = Path(data_dir)
+        if not data_dir.is_dir():
+            continue
+
+        for onnx_path in data_dir.glob("*.onnx"):
+            custom_voice_name = onnx_path.stem
+            if custom_voice_name not in voices_info:
+                custom_voice_names.add(custom_voice_name)
+
+    for custom_voice_name in custom_voice_names:
         # Add custom voice info
-        _custom_voice_path, custom_config_path = find_voice(args.voice, args.data_dir)
+        _custom_voice_path, custom_config_path = find_voice(
+            custom_voice_name, args.data_dir
+        )
         with open(custom_config_path, "r", encoding="utf-8") as custom_config_file:
             custom_config = json.load(custom_config_file)
             custom_name = custom_config["dataset"]
             custom_quality = custom_config["audio"]["quality"]
             voices.append(
                 TtsVoice(
-                    name=args.voice,
+                    name=custom_name,
                     description=f"{custom_name} ({custom_quality})",
                     attribution=Attribution(name="", url=""),
                     installed=True,
