@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 import argparse
 import asyncio
+import json
 import logging
 from functools import partial
 from typing import Any, Dict
 
-from wyoming.info import Attribution, Info, TtsProgram, TtsVoice, TtsVoiceSpeaker
+from wyoming.info import Attribution, Info, TtsProgram, TtsVoice
 from wyoming.server import AsyncServer
 
-from .download import get_voices
+from .download import find_voice, get_voices
 from .handler import PiperEventHandler
 from .process import PiperProcessManager
 
@@ -37,8 +38,7 @@ async def main() -> None:
     )
     parser.add_argument(
         "--download-dir",
-        required=True,
-        help="Directory to download voices into",
+        help="Directory to download voices into (default: first data dir)",
     )
     #
     parser.add_argument(
@@ -68,6 +68,10 @@ async def main() -> None:
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
 
+    if not args.download_dir:
+        # Default to first data directory
+        args.download_dir = args.data_dir[0]
+
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     # Load voice info
@@ -80,6 +84,44 @@ async def main() -> None:
             aliases_info[voice_alias] = {"_is_alias": True, **voice_info}
 
     voices_info.update(aliases_info)
+    voices = [
+        TtsVoice(
+            name=voice_name,
+            description=get_description(voice_info),
+            attribution=Attribution(
+                name="rhasspy", url="https://github.com/rhasspy/piper"
+            ),
+            installed=True,
+            languages=[voice_info["language"]["code"]],
+            #
+            # Don't send speakers for now because it overflows StreamReader buffers
+            # speakers=[
+            #     TtsVoiceSpeaker(name=speaker_name)
+            #     for speaker_name in voice_info["speaker_id_map"]
+            # ]
+            # if voice_info.get("speaker_id_map")
+            # else None,
+        )
+        for voice_name, voice_info in voices_info.items()
+        if not voice_info.get("_is_alias", False)
+    ]
+
+    if args.voice not in voices_info:
+        # Add custom voice info
+        _custom_voice_path, custom_config_path = find_voice(args.voice, args.data_dir)
+        with open(custom_config_path, "r", encoding="utf-8") as custom_config_file:
+            custom_config = json.load(custom_config_file)
+            custom_name = custom_config["dataset"]
+            custom_quality = custom_config["audio"]["quality"]
+            voices.append(
+                TtsVoice(
+                    name=args.voice,
+                    description=f"{custom_name} ({custom_quality})",
+                    attribution=Attribution(name="", url=""),
+                    installed=True,
+                    languages=[custom_config["language"]["code"]],
+                )
+            )
 
     wyoming_info = Info(
         tts=[
@@ -90,29 +132,7 @@ async def main() -> None:
                     name="rhasspy", url="https://github.com/rhasspy/piper"
                 ),
                 installed=True,
-                voices=[
-                    TtsVoice(
-                        name=voice_name,
-                        description=get_description(voice_info),
-                        attribution=Attribution(
-                            name="rhasspy", url="https://github.com/rhasspy/piper"
-                        ),
-                        installed=True,
-                        languages=[voice_info["language"]["code"]],
-                        #
-                        # Don't send speakers for now because it overflows StreamReader buffers
-                        # speakers=[
-                        #     TtsVoiceSpeaker(name=speaker_name)
-                        #     for speaker_name in voice_info["speaker_id_map"]
-                        # ]
-                        # if voice_info.get("speaker_id_map")
-                        # else None,
-                    )
-                    for voice_name, voice_info in sorted(
-                        voices_info.items(), key=lambda kv: kv[0]
-                    )
-                    if not voice_info.get("_is_alias", False)
-                ],
+                voices=sorted(voices, key=lambda v: v.name),
             )
         ],
     )

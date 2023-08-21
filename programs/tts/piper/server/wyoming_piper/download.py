@@ -29,19 +29,28 @@ def get_voices(
 
     if update_voices:
         # Download latest voices.json
-        voices_url = URL_FORMAT.format(file="voices.json")
-        _LOGGER.debug("Downloading %s to %s", voices_url, voices_download)
-        with urlopen(voices_url) as response, open(
-            voices_download, "wb"
-        ) as download_file:
-            shutil.copyfileobj(response, download_file)
+        try:
+            voices_url = URL_FORMAT.format(file="voices.json")
+            _LOGGER.debug("Downloading %s to %s", voices_url, voices_download)
+            with urlopen(voices_url) as response:
+                with open(voices_download, "wb") as download_file:
+                    shutil.copyfileobj(response, download_file)
+        except Exception:
+            _LOGGER.exception("Failed to update voices list")
 
     # Prefer downloaded file to embedded
-    voices_embedded = _DIR / "voices.json"
-    voices_path = voices_download if voices_download.exists() else voices_embedded
+    if voices_download.exists():
+        try:
+            _LOGGER.debug("Loading %s", voices_download)
+            with open(voices_download, "r", encoding="utf-8") as voices_file:
+                return json.load(voices_file)
+        except Exception:
+            _LOGGER.exception("Failed to load %s", voices_download)
 
-    _LOGGER.debug("Loading %s", voices_path)
-    with open(voices_path, "r", encoding="utf-8") as voices_file:
+    # Fall back to embedded
+    voices_embedded = _DIR / "voices.json"
+    _LOGGER.debug("Loading %s", voices_embedded)
+    with open(voices_embedded, "r", encoding="utf-8") as voices_file:
         return json.load(voices_file)
 
 
@@ -52,17 +61,12 @@ def ensure_voice_exists(
     voices_info: Dict[str, Any],
 ):
     if name not in voices_info:
-        # Try as file path to a custom voice
-        onnx_path = Path(name)
-        config_path = Path(name + ".json")
-        if onnx_path.exists():
-            if config_path.exists():
-                # Custom voice found
-                return
-
-            _LOGGER.warning("Missing custom voice config: %s", config_path)
-
-        raise VoiceNotFoundError(name)
+        # Try as name or file path to a custom voice.
+        #
+        # This will raise VoiceNotFoundError if the onnx model or config file
+        # can't be found.
+        find_voice(name, data_dirs)
+        return
 
     assert data_dirs, "No data dirs"
 
@@ -158,4 +162,4 @@ def find_voice(name: str, data_dirs: Iterable[Union[str, Path]]) -> Tuple[Path, 
     if onnx_path.exists() and config_path.exists():
         return onnx_path, config_path
 
-    raise ValueError(f"Missing files for voice {name}")
+    raise VoiceNotFoundError(name)
