@@ -329,6 +329,7 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
 
                             if client_data.activations >= client_data.trigger_level:
                                 client_data.is_detected = True
+                                client_data.activations = 0
                                 coros.append(
                                     client.event_handler.write_event(
                                         Detection(
