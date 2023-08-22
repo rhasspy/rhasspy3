@@ -49,6 +49,8 @@ async def main() -> None:
         help="Enable noise suppression with speexdsp",
     )
     #
+    parser.add_argument("--output-dir", help="Path to save audio and detections")
+    #
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     parser.add_argument(
         "--debug-probability",
@@ -59,6 +61,13 @@ async def main() -> None:
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     _LOGGER.debug(args)
 
+    if args.output_dir:
+        # Directory to save audio clips and chunk probabilities
+        args.output_dir = Path(args.output_dir)
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        _LOGGER.info("Audio and detections will be saved to %s", args.output_dir)
+
+    # Resolve wake word model paths
     models_dir = Path(args.models_dir)
     model_paths: List[Path] = []
     for model in args.model:
@@ -102,7 +111,11 @@ async def main() -> None:
         ],
     )
 
-    state = State(models_dir=models_dir, debug_probability=args.debug_probability)
+    state = State(
+        models_dir=models_dir,
+        debug_probability=args.debug_probability,
+        output_dir=args.output_dir,
+    )
     loop = asyncio.get_running_loop()
 
     # Start server first to handle info requests

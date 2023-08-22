@@ -2,8 +2,9 @@
 import argparse
 import logging
 import time
+import wave
+from pathlib import Path
 from typing import Final, Optional
-from uuid import uuid4
 
 import numpy as np
 
@@ -36,13 +37,17 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
 
         self.cli_args = cli_args
         self.wyoming_info_event = wyoming_info.event()
-        self.client_id = str(uuid4())
+        self.client_id = str(time.monotonic_ns())
         self.state = state
         self.data: Optional[ClientData] = None
         self.is_detected = False
         self.converter = AudioChunkConverter(rate=16000, width=2, channels=1)
         self.audio_buffer = bytes()
 
+        # Only used when output_dir is set
+        self.audio_writer: Optional[wave.Wave_write] = None
+
+        # Noise suppression using speexdsp
         self.noise_supression: "Optional[NoiseSuppression]" = None
         if self.cli_args.noise_suppression:
             _LOGGER.debug("Noise suppression enabled")
@@ -76,13 +81,24 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
                 self.data.reset()
 
             _LOGGER.debug("Receiving audio from client: %s", self.client_id)
+
+            if self.cli_args.output_dir is not None:
+                audio_start = AudioStart.from_event(event)
+                audio_path = Path(self.cli_args.output_dir) / f"{self.client_id}.wav"
+                self.audio_writer = wave.open(str(audio_path), "wb")
+                self.audio_writer.setframerate(audio_start.rate)
+                self.audio_writer.setsampwidth(audio_start.width)
+                self.audio_writer.setnchannels(audio_start.channels)
+                _LOGGER.debug("Saving audio to %s", audio_path)
+
         elif AudioChunk.is_type(event.type):
             # Add to audio buffer and signal mels thread
             chunk = self.converter.convert(AudioChunk.from_event(event))
 
             if self.noise_supression is None:
                 # No noise suppression
-                chunk_array = np.frombuffer(chunk.audio, dtype=np.int16).astype(
+                clean_audio = chunk.audio
+                chunk_array = np.frombuffer(clean_audio, dtype=np.int16).astype(
                     np.float32
                 )
             else:
@@ -110,6 +126,9 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
                     np.float32
                 )
 
+            if self.audio_writer is not None:
+                self.audio_writer.writeframes(clean_audio)
+
             with self.state.audio_lock:
                 # Shift samples left
                 self.data.audio[: -len(chunk_array)] = self.data.audio[
@@ -133,9 +152,13 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
                 # No wake word detections
                 await self.write_event(NotDetected().event())
 
-            _LOGGER.debug(
-                "Audio stopped without detection from client: %s", self.client_id
-            )
+                _LOGGER.debug(
+                    "Audio stopped without detection from client: %s", self.client_id
+                )
+
+            if self.audio_writer is not None:
+                self.audio_writer.close()
+                self.audio_writer = None
 
             return False
         else:
@@ -145,6 +168,10 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
 
     async def disconnect(self) -> None:
         _LOGGER.debug("Client disconnected: %s", self.client_id)
+
+        if self.audio_writer is not None:
+            self.audio_writer.close()
+            self.audio_writer = None
 
         if self.data is None:
             return

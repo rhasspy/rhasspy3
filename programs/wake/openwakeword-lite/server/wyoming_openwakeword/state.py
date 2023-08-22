@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Lock, Semaphore
-from typing import Dict
+from typing import Dict, Optional
 
 from .const import ClientData
 
@@ -29,3 +29,4 @@ class State:
     wake_words: Dict[str, WakeWordState] = field(default_factory=dict)
 
     debug_probability: bool = False
+    output_dir: Optional[Path] = None

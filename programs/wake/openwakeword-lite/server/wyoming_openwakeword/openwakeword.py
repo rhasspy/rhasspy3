@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import List
+from datetime import datetime
+from typing import List, Optional, TextIO
 
 import numpy as np
 import tflite_runtime.interpreter as tflite
@@ -300,9 +301,25 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
 
                         if state.debug_probability:
                             _LOGGER.debug(
-                                "client=%s, probability=%s",
+                                "client=%s, wake_word=%s, probability=%s",
                                 client_id,
+                                ww_model_path,
                                 probability.item(),
+                            )
+
+                        prob_file: Optional[TextIO] = None
+                        if state.output_dir is not None:
+                            # Output chunk probabilities and detections for debugging
+                            prob_file = open(
+                                state.output_dir / f"{client_id}.txt",
+                                "a",
+                                encoding="utf-8",
+                            )
+                            print(
+                                _timestamp(),
+                                ww_model_path,
+                                probability.item(),
+                                file=prob_file,
                             )
 
                         client_data = client.wake_words[ww_model_path]
@@ -323,11 +340,24 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                                 _LOGGER.debug(
                                     "Triggered %s (client=%s)", ww_model_path, client_id
                                 )
+
+                                if prob_file is not None:
+                                    print(
+                                        _timestamp(),
+                                        ww_model_path,
+                                        "detected",
+                                        file=prob_file,
+                                    )
                         else:
                             # Down towards 0
                             client_data.activations = max(
                                 0, client_data.activations - 1
                             )
+
+                        # Clean up
+                        if prob_file is not None:
+                            prob_file.close()
+                            prob_file = None
 
                 # Run outside lock just to be safe
                 for coro in coros:
@@ -428,3 +458,7 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
 
 #     except Exception:
 #         _LOGGER.exception("Unexpected error in wake word thread")
+
+
+def _timestamp() -> str:
+    return datetime.now().strftime("%H:%M:%S.%f")
