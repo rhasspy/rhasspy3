@@ -39,12 +39,15 @@ def main() -> None:
 
     def activation():
         nonlocal is_detected, timestamp, name
-        write_event(
-            Detection(
-                name=name, timestamp=timestamp
-            ).event()
-        )
-        is_detected = True
+        try:
+            write_event(
+                Detection(
+                    name=name, timestamp=timestamp
+                ).event()
+            )
+            is_detected = True
+        except Exception:
+            pass
         
 
     runner = PreciseRunner(engine, trigger_level=args.trigger_level, sensitivity=args.sensitivity, stream=stream, on_activation=activation)

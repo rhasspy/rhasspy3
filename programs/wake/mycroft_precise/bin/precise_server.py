@@ -63,14 +63,17 @@ def main() -> None:
             if conn_file_s is None:
                 return
 
-            write_event(
-                Detection(
-                    name=name, timestamp=timestamp
-                ).event(),
-                conn_file_s,
-            )  # type: ignore
+            try:
+                write_event(
+                    Detection(
+                        name=name, timestamp=timestamp
+                    ).event(),
+                    conn_file_s,
+                )  # type: ignore
 
-            is_detected = True
+                is_detected = True
+            except Exception:
+                pass
 
         def prediction(prob):
             nonlocal is_detected, conn_file_s
@@ -82,7 +85,10 @@ def main() -> None:
             if prob >= sensitivity:
                 return
 
-            write_event(NotDetected().event(), conn_file_s)  # type: ignore
+            try:
+                write_event(NotDetected().event(), conn_file_s)  # type: ignore
+            except Exception:
+                pass
 
             is_detected = False
 
