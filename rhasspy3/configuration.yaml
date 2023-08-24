@@ -78,6 +78,19 @@ programs:
       template_args:
         model: "share/hey_mycroft.tflite"
 
+    # https://github.com/mycroftAI/mycroft-precise
+    # Model included in data/
+    # Download community models with script/download.py
+    mycroft_precise:
+      command: |
+        .venv/bin/python3 bin/precise_stream.py "${model}"
+      template_args:
+        model: "${data_dir}/hey-mycroft.pb"
+
+    mycroft_precise.client:
+      command: |
+        client_unix_socket.py var/run/precise.socket
+
     # TODO: snowman
     # https://github.com/Thalhammer/snowman/
 
@@ -450,6 +463,12 @@ programs:
 # -----------------------------------------------------------------------------
 
 servers:
+  wake:
+    mycroft_precise:
+      command: |
+        script/server "${model}"
+      template_args:
+        model: "${data_dir}/hey-mycroft.pb"
   asr:
     vosk:
       command: |

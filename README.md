@@ -94,6 +94,7 @@ See `servers` section of `configuration.yaml` file.
 * wake 
     * [porcupine1](https://github.com/Picovoice/porcupine)
     * [precise-lite](https://github.com/mycroftAI/mycroft-precise)
+    * [mycroft-precise](https://github.com/mycroftAI/mycroft-precise)
     * [snowboy](https://github.com/Kitt-AI/snowboy)
 * vad
     * [silero](https://github.com/snakers4/silero-vad)
