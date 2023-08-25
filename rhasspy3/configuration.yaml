@@ -14,6 +14,13 @@ programs:
       template_args:
         device: "default"
 
+    # apt-get install pulseaudio-utils
+    parecord:
+      command: |
+        parecord --client-name=rhasspy_mic --rate=16000 --channels=1 --format=s16le --raw --property=media.software=Rhasspy
+      adapter: |
+        mic_adapter_raw.py --rate 16000 --width 2 --channels 1
+
     # https://people.csail.mit.edu/hubert/pyaudio/docs/
     pyaudio:
       command: |
@@ -426,6 +433,13 @@ programs:
         snd_adapter_raw.py --rate 22050 --width 2 --channels 1
       template_args:
         device: "default"
+
+    # apt-get install pulseaudio-utils
+    paplay:
+      command: |
+        paplay --rate=22050 --format=s16le --channels=1 --raw --property=media.software=Rhasspy
+      adapter: |
+        snd_adapter_raw.py --rate 22050 --width 2 --channels 1
 
     udp_raw:
       command: |

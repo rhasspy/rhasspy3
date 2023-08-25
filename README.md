@@ -88,6 +88,7 @@ See `servers` section of `configuration.yaml` file.
 
 * mic
     * [arecord](https://alsa-project.org/wiki/Main_Page)
+    * [parecord](https://www.freedesktop.org/wiki/Software/PulseAudio/)
     * [gstreamer_udp](https://gstreamer.freedesktop.org/)
     * [sounddevice](https://python-sounddevice.readthedocs.io)
     * [pyaudio](https://people.csail.mit.edu/hubert/pyaudio/docs/)
@@ -118,6 +119,7 @@ See `servers` section of `configuration.yaml` file.
     * [espeak-ng](https://github.com/espeak-ng/espeak-ng/)
 * snd
     * [aplay](https://alsa-project.org/wiki/Main_Page)
+    * [paplay](https://www.freedesktop.org/wiki/Software/PulseAudio/)
     * [gstreamer_udp](https://gstreamer.freedesktop.org/)
     
     
