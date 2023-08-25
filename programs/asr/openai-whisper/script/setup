@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+# Directory of *this* script
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+
+# Base directory of repo
+base_dir="$(realpath "${this_dir}/..")"
+
+# Path to virtual environment
+: "${venv:=${base_dir}/.venv}"
+
+# Python binary to use
+: "${PYTHON=python3}"
+
+python_version="$(${PYTHON} --version)"
+
+if [ ! -d "${venv}" ]; then
+    # Create virtual environment
+    echo "Creating virtual environment at ${venv} (${python_version})"
+    rm -rf "${venv}"
+    "${PYTHON}" -m venv "${venv}"
+    source "${venv}/bin/activate"
+
+    pip3 install --upgrade pip
+    pip3 install --upgrade wheel setuptools
+else
+    source "${venv}/bin/activate"
+fi
+
+
+# Install Python dependencies
+echo 'Installing Python dependencies'
+pip3 install -r "${base_dir}/requirements.txt"
+
+# Generate dummy wav file for openai API format check
+DUMMY_RAW=$(mktemp)
+mkdir -p "${base_dir}/share"
+dd if=/dev/zero bs=2048 count=1 of="$DUMMY_RAW"
+ffmpeg -f s16le -ar 16000 -ac 1 -i "$DUMMY_RAW" "${base_dir}/share/dummy.wav"
+rm -f "$DUMMY_RAW"
+
+# Create directory for api key storage
+mkdir -p"$this_dir/../../../../data/asr/openai_whisper"
+
+# -----------------------------------------------------------------------------
+
+echo "OK"
