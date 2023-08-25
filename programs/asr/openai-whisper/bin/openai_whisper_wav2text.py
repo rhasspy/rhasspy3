@@ -15,6 +15,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("api_key_path", help="Path to OpenAI API key")
     parser.add_argument("wav_file", nargs="+", help="Path to WAV file(s) to transcribe")
+    parser.add_argument("--model", default="whisper-1", help="Model name to use")
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
 
@@ -27,7 +28,7 @@ def main() -> None:
         _LOGGER.debug("Processing %s", wav_path)
         start_time = time.monotonic_ns()
         audio_file = open(wav_path, "rb")
-        text = openai.Audio.transcribe("whisper-1", audio_file).text
+        text = openai.Audio.transcribe(args.model, audio_file).text
         audio_file.close()
         end_time = time.monotonic_ns()
         _LOGGER.debug(

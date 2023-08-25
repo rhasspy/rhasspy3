@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(_FILE.stem)
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("api_key_path", help="Path to OpenAI API key")
+    parser.add_argument("--model", default="whisper-1", help="Model name to use")
     parser.add_argument(
         "--socketfile", required=True, help="Path to Unix domain socket file"
     )
@@ -79,7 +80,7 @@ def main() -> None:
 
                     wav_io.seek(0)
                     wav_io.name = _DIR.parent.as_posix()+"/share/dummy.wav"
-                    text = openai.Audio.transcribe("whisper-1", wav_io).text
+                    text = openai.Audio.transcribe(args.model, wav_io).text
                     _LOGGER.info(text)
 
                     write_event(Transcript(text=text).event(), conn_file)  # type: ignore

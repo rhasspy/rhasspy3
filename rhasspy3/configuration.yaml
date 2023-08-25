@@ -223,11 +223,12 @@ programs:
     # Note this is a cloud service, it is less secure, paid service, and requires internet connection
     openai-whisper:
       command: |
-        script/wav2text "${api_key_path}" "{wav_file}"
+        script/wav2text "${api_key_path}" "{wav_file} --model ${model}"
       adapter: |
         asr_adapter_wav2text.py
       template_args:
         api_key_path: "${data_dir}/api_key"
+        model: "whisper-1"
 
     # Run server: asr openai-whisper
     openai-whisper.client:
@@ -509,9 +510,10 @@ servers:
 
     openai-whisper:
       command: |
-        script/server "${api_key_path}"
+        script/server "${api_key_path} --model ${model}"
       template_args:
         api_key_path: "${data_dir}/api_key"
+        model: "whisper-1"
 
   tts:
     mimic3:
