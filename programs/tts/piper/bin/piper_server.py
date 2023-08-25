@@ -23,6 +23,13 @@ def main() -> None:
     parser.add_argument(
         "--auto-punctuation", default=".?!", help="Automatically add punctuation"
     )
+    parser.add_argument("--config", help="Path to model config file (default: model path + .json)")
+    parser.add_argument("--speaker", type=int, help="ID of speaker (default: 0)")
+    parser.add_argument("--noise_scale", type=float, help="Generator noise (default: 0.667)")
+    parser.add_argument("--length_scale", type=float, help="Phoneme length (default: 1.0)")
+    parser.add_argument("--noise_w", type=float, help="Phoneme width noise (default: 0.8)")
+    parser.add_argument("--sentence_silence", type=float, help="Seconds of silence after each sentence (default: 0.2)")
+    parser.add_argument("--tashkeel_model", help="Path to libtashkeel onnx model (arabic)")
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
 
@@ -48,6 +55,21 @@ def main() -> None:
                 "--output_dir",
                 temp_dir,
             ]
+            if args.config is not None:
+                command.append(["--config", args.config])
+            if args.speaker is not None:
+                command.append(["--speaker", args.speaker])
+            if args.noise_scale is not None:
+                command.append(["--noise_scale", args.noise_scale])
+            if args.length_scale is not None:
+                command.append(["--length_scale", args.length_scale])
+            if args.noise_w is not None:
+                command.append(["--noise_w", args.noise_w])
+            if args.sentence_silence is not None:
+                command.append(["--sentence_silence", args.sentence_silence])
+            if args.tashkeel_model is not None:
+                command.append(["--tashkeel_model", args.tashkeel_model])
+
             with subprocess.Popen(
                 command,
                 stdin=subprocess.PIPE,
