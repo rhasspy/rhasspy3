@@ -102,6 +102,7 @@ See `servers` section of `configuration.yaml` file.
     * [whisper](https://github.com/openai/whisper)
     * [whisper-cpp](https://github.com/ggerganov/whisper.cpp/)
     * [faster-whisper](https://github.com/guillaumekln/faster-whisper/)
+    * [openai-whisper](https://platform.openai.com/docs/guides/speech-to-text) (cloud)
     * [vosk](https://alphacephei.com/vosk/)
     * [coqui-stt](https://stt.readthedocs.io)
     * [pocketsphinx](https://github.com/cmusphinx/pocketsphinx)

@@ -218,6 +218,22 @@ programs:
       command: |
         client_unix_socket.py var/run/faster-whisper.socket
 
+    # https://platform.openai.com/docs/guides/speech-to-text
+    # Get API key on https://platform.openai.com/account/api-keys and save it as ${data_dir}/api_key
+    # Note this is a cloud service, it is less secure, paid service, and requires internet connection
+    openai-whisper:
+      command: |
+        script/wav2text "${api_key_path}" "{wav_file}"
+      adapter: |
+        asr_adapter_wav2text.py
+      template_args:
+        api_key_path: "${data_dir}/api_key"
+
+    # Run server: asr openai-whisper
+    openai-whisper.client:
+      command: |
+        client_unix_socket.py var/run/openai-whisper.socket
+
 
   # --------------
   # Text to speech
@@ -490,6 +506,12 @@ servers:
         language: "en"
         model: "${data_dir}/tiny-int8"
         device: "cpu"  # or cuda
+
+    openai-whisper:
+      command: |
+        script/server "${api_key_path}"
+      template_args:
+        api_key_path: "${data_dir}/api_key"
 
   tts:
     mimic3:
