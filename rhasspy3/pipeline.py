@@ -8,15 +8,16 @@ from typing import IO, Any, Deque, Dict, Optional, Union
 
 from .asr import DOMAIN as ASR_DOMAIN
 from .asr import Transcript, transcribe
+from .audio import AudioChunk, AudioStop
 from .config import CommandConfig, PipelineConfig, PipelineProgramConfig
 from .core import Rhasspy
-from .event import Event, Eventable, async_read_event
+from .event import Event, Eventable, async_read_event, async_write_event
 from .handle import Handled, NotHandled, handle
 from .intent import Intent, NotRecognized, recognize
 from .mic import DOMAIN as MIC_DOMAIN
 from .program import create_process, run_command
-from .snd import play
-from .tts import synthesize
+from .snd import play, Played, DOMAIN as SND_DOMAIN
+from .tts import synthesize, Synthesize, DOMAIN as TTS_DOMAIN
 from .util.dataclasses_json import DataClassJsonMixin
 from .vad import segment
 from .wake import Detection, detect
@@ -192,24 +193,63 @@ async def run(
     if (stop_after == StopAfterDomain.HANDLE) or (tts_program is None):
         return pipeline_result
 
-    # Text to speech
     if handle_result is not None:
         pipeline_result.handle_result = handle_result
-        if handle_result.text:
-            assert tts_program is not None, "Pipeline is missing tts"
-            tts_wav_in = io.BytesIO()
-            await synthesize(rhasspy, tts_program, handle_result.text, tts_wav_in)
-        else:
+        if not handle_result.text:
             _LOGGER.debug("No text returned from handle")
 
     if (stop_after == StopAfterDomain.TTS) or (snd_program is None):
+        # Text to speech
+        if (handle_result is not None) and (handle_result.text):
+            assert tts_program is not None, "Pipeline is missing tts"
+            tts_wav_in = io.BytesIO()
+            await synthesize(rhasspy, tts_program, handle_result.text, tts_wav_in)
+
         return pipeline_result
 
-    # Audio output
-    if tts_wav_in is not None:
-        tts_wav_in.seek(0)
-        assert snd_program is not None, "Pipeline is missing snd"
-        await play(rhasspy, snd_program, tts_wav_in, samples_per_chunk)
+    if (handle_result is None) or (not handle_result.text):
+        # Audio output
+        if tts_wav_in is not None:
+            tts_wav_in.seek(0)
+            assert snd_program is not None, "Pipeline is missing snd"
+            await play(rhasspy, snd_program, tts_wav_in, samples_per_chunk)
+
+        return pipeline_result
+
+    # Both Text to speech and Audio output
+    assert tts_program is not None, "Pipeline is missing tts"
+    assert snd_program is not None, "Pipeline is missing snd"
+
+    async with (await create_process(rhasspy, TTS_DOMAIN, tts_program)) as tts_proc, (
+        await create_process(rhasspy, SND_DOMAIN, snd_program)
+    ) as snd_proc:
+        assert tts_proc.stdin is not None
+        assert tts_proc.stdout is not None
+        assert snd_proc.stdin is not None
+        assert snd_proc.stdout is not None
+
+        await async_write_event(Synthesize(text=handle_result.text).event(), tts_proc.stdin)
+
+        while True:
+            event = await async_read_event(tts_proc.stdout)
+            if event is None:
+                break
+
+            if AudioChunk.is_type(event.type):
+                await async_write_event(event, snd_proc.stdin)
+
+            elif AudioStop.is_type(event.type):
+                await async_write_event(event, snd_proc.stdin)
+                break
+
+        # Wait for confimation
+        while True:
+            event = await async_read_event(snd_proc.stdout)
+            if event is None:
+                break
+
+            if Played.is_type(event.type):
+                break
 
     return pipeline_result
 
