@@ -11,21 +11,21 @@ from urllib.request import urlopen
 _DIR = Path(__file__).parent
 _LOGGER = logging.getLogger("setup")
 
-PLATFORMS = {"x86_64": "amd64", "aarch64": "arm64"}
+PLATFORMS = {"x86_64": "amd64", "aarch64": "arm64", "armhf": "armv7"}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--platform",
-        help="CPU architecture to download (amd64, arm64)",
+        help="CPU architecture to download (amd64, arm64, armv7)",
     )
     parser.add_argument(
         "--destination", help="Path to destination directory (default: bin)"
     )
     parser.add_argument(
         "--link-format",
-        default="https://github.com/rhasspy/piper/releases/download/v0.0.2/piper_{platform}.tar.gz",
+        default="https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_{platform}.tar.gz",
         help="Format string for download URLs",
     )
     args = parser.parse_args()
