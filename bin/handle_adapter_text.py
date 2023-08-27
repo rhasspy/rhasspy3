@@ -54,12 +54,19 @@ def main() -> None:
                 handled = False
                 for line in stdout.splitlines():
                     line = line.strip()
-                    if line:
-                        write_event(Handled(text=line).event())
+                    if not line:
+                        continue
+                    if not line.endswith(('.', ',', ':', '?', ';')):
+                        line = line + "."
+                    if not handled:
+                        text = line
                         handled = True
-                        break
+                    else:
+                        text = text + " " + line
 
-                if not handled:
+                if handled:
+                    write_event(Handled(text=text).event())
+                else:
                     write_event(NotHandled().event())
 
                 break
