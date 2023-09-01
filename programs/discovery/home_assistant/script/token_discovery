@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+import os
+import sys
+import venv
+from pathlib import Path
+
+_DIR = Path(__file__).parent
+_PROGRAM_DIR = _DIR.parent
+_BIN_DIR = _PROGRAM_DIR / "bin"
+_VENV_DIR = _PROGRAM_DIR / ".venv"
+
+
+builder = venv.EnvBuilder()
+context = builder.ensure_directories(_VENV_DIR)
+
+os.execv(
+    context.env_exe,
+    [context.env_exe, str(_BIN_DIR / "token_discovery.py")] + sys.argv[1:],
+)

@@ -69,6 +69,7 @@ async def main() -> None:
     parser.add_argument("--save-audio-dir", help="Directory to save wake/asr/tts audio")
     #
     parser.add_argument("--loop", action="store_true", help="Keep satellite running")
+    #
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)

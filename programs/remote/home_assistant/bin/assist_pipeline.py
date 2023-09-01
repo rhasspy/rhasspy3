@@ -8,6 +8,7 @@ import tempfile
 import wave
 from collections import deque
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Deque, Optional
 
 import aiohttp
@@ -35,8 +36,9 @@ _LOGGER = logging.getLogger(__name__)
 async def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser()
+    parser.add_argument("--token", help="Home Assistant authorization token")
     parser.add_argument(
-        "--token", required=True, help="Home Assistant authorization token"
+        "--token-path", help="Path to file with Home Assistant authorization token"
     )
     parser.add_argument(
         "--pipeline", help="Name of assist pipeline to use (default: preferred)"
@@ -64,6 +66,12 @@ async def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     _LOGGER.debug(args)
+
+    if args.token_path:
+        _LOGGER.debug("Loading token from %s", args.token_path)
+        args.token = Path(args.token_path).read_text(encoding="utf-8")
+    else:
+        assert args.token, "--token or --token-path is required"
 
     try:
         while True:
@@ -255,6 +263,7 @@ async def run_pipeline(args: argparse.Namespace):
 
 
 # -----------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     asyncio.run(main())
