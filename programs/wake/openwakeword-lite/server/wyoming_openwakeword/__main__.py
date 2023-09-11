@@ -39,7 +39,7 @@ async def main() -> None:
     parser.add_argument(
         "--trigger-level",
         type=int,
-        default=4,
+        default=1,
         help="Number of activations before detection (default: 4)",
     )
     #
@@ -47,6 +47,18 @@ async def main() -> None:
         "--noise-suppression",
         action="store_true",
         help="Enable noise suppression with speexdsp",
+    )
+    #
+    parser.add_argument(
+        "--audio-processing",
+        action="store_true",
+        help="Enable auto gain and noise suppression with webrtc",
+    )
+    parser.add_argument(
+        "--webrtc-gain-dbfs", type=int, default=3, choices=list(range(32))
+    )
+    parser.add_argument(
+        "--webrtc-noise-suppression-level", type=int, default=2, choices=(0, 1, 2, 3, 4)
     )
     #
     parser.add_argument("--output-dir", help="Path to save audio and detections")
@@ -118,13 +130,6 @@ async def main() -> None:
     )
     loop = asyncio.get_running_loop()
 
-    # Start server first to handle info requests
-    server = AsyncServer.from_uri(args.uri)
-    server_task = loop.create_task(
-        server.run(partial(OpenWakeWordEventHandler, wyoming_info, args, state))
-    )
-    _LOGGER.debug("Server started")
-
     # One thread per wake word model
     ww_threads: Dict[str, Thread] = {}
     for model_path in model_paths:
@@ -151,8 +156,11 @@ async def main() -> None:
     embeddings_thread.start()
     _LOGGER.info("Ready")
 
+    # Start server
+    server = AsyncServer.from_uri(args.uri)
+
     try:
-        await server_task
+        await server.run(partial(OpenWakeWordEventHandler, wyoming_info, args, state))
     except KeyboardInterrupt:
         pass
     finally:

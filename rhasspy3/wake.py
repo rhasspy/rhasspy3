@@ -61,13 +61,14 @@ async def detect(
                             is_first_chunk = False
                             _LOGGER.debug("detect: processing audio")
 
-                        await async_write_event(mic_event, wake_proc.stdin)
                         if chunk_buffer is not None:
                             # Buffer chunks for asr
                             chunk_buffer.append(mic_event)
 
                         if save_wav_writer is not None:
                             saved_chunks.append(mic_event)
+
+                    await async_write_event(mic_event, wake_proc.stdin)
 
                     # Next chunk
                     mic_task = asyncio.create_task(async_read_event(mic_in))
