@@ -44,21 +44,10 @@ async def main() -> None:
     )
     #
     parser.add_argument(
-        "--noise-suppression",
-        action="store_true",
-        help="Enable noise suppression with speexdsp",
-    )
-    #
-    parser.add_argument(
-        "--audio-processing",
-        action="store_true",
-        help="Enable auto gain and noise suppression with webrtc",
+        "--noise-suppression", type=int, default=0, choices=(0, 1, 2, 3, 4)
     )
     parser.add_argument(
-        "--webrtc-gain-dbfs", type=int, default=3, choices=list(range(32))
-    )
-    parser.add_argument(
-        "--webrtc-noise-suppression-level", type=int, default=2, choices=(0, 1, 2, 3, 4)
+        "--auto-gain", type=int, default=0, choices=list(range(32))
     )
     #
     parser.add_argument("--output-dir", help="Path to save audio and detections")
@@ -77,7 +66,7 @@ async def main() -> None:
         # Directory to save audio clips and chunk probabilities
         args.output_dir = Path(args.output_dir)
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        _LOGGER.info("Audio and detections will be saved to %s", args.output_dir)
+        _LOGGER.info("Audio will be saved to %s", args.output_dir)
 
     # Resolve wake word model paths
     models_dir = Path(args.models_dir)

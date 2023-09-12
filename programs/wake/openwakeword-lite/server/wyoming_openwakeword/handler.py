@@ -19,10 +19,6 @@ from .state import State
 
 _LOGGER = logging.getLogger(__name__)
 
-# speexdsp
-_NS_SAMPLES: Final = 320
-_NS_BYTES: Final = _NS_SAMPLES * 2
-
 # webrtc
 _AP_SAMPLES: Final = 160
 _AP_BYTES: Final = _AP_SAMPLES * 2
@@ -52,22 +48,17 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
         # Only used when output_dir is set
         self.audio_writer: Optional[wave.Wave_write] = None
 
-        # Noise suppression using speexdsp
-        self.noise_supression: "Optional[NoiseSuppression]" = None
-        if self.cli_args.noise_suppression:
-            _LOGGER.debug("Noise suppression enabled (speexdsp)")
-            from speexdsp_ns import NoiseSuppression
-
-            self.noise_supression = NoiseSuppression.create(_NS_SAMPLES, 16000)
-
+        # Noise suppression and auto gain with webrtc
         self.audio_processor: "Optional[AudioProcessor]" = None
-        if self.cli_args.audio_processing:
+        self._clean_10ms_array = np.zeros(shape=(_AP_SAMPLES,), dtype=np.int16)
+
+        if (self.cli_args.noise_suppression > 0) or (self.cli_args.auto_gain > 0):
             _LOGGER.debug("Audio processing enabled (webrtc)")
-            from webrtc_audio_processing import AudioProcessor
+            from webrtc_noise_gain import AudioProcessor
 
             self.audio_processor = AudioProcessor(
-                self.cli_args.webrtc_gain_dbfs,
-                self.cli_args.webrtc_noise_suppression_level,
+                self.cli_args.auto_gain,
+                self.cli_args.noise_suppression,
             )
 
         _LOGGER.debug("Client connected: %s", self.client_id)
@@ -112,31 +103,7 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
             # Add to audio buffer and signal mels thread
             chunk = self.converter.convert(AudioChunk.from_event(event))
 
-            if self.noise_supression is not None:
-                # Noise suppression (speexdsp)
-                self.audio_buffer += chunk.audio
-                num_ns_chunks = len(self.audio_buffer) // _NS_BYTES
-                if num_ns_chunks <= 0:
-                    # No enough audio for noise suppression
-                    return True
-
-                clean_audio = bytes()
-                for ns_chunk_idx in range(num_ns_chunks):
-                    ns_chunk_offset = ns_chunk_idx * _NS_BYTES
-                    clean_audio += self.noise_supression.process(
-                        self.audio_buffer[
-                            ns_chunk_offset : (ns_chunk_offset + _NS_BYTES)
-                        ]
-                    )
-
-                # Remove processed audio
-                self.audio_buffer = self.audio_buffer[num_ns_chunks * _NS_BYTES :]
-
-                # Use clean audio
-                chunk_array = np.frombuffer(clean_audio, dtype=np.int16).astype(
-                    np.float32
-                )
-            elif self.audio_processor is not None:
+            if self.audio_processor is not None:
                 # Audio processing (webrtc)
                 self.audio_buffer += chunk.audio
                 num_ap_chunks = len(self.audio_buffer) // _AP_BYTES
@@ -150,18 +117,17 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
 
                 # Process in 10ms chunks
                 dirty_array = np.frombuffer(self.audio_buffer, dtype=np.int16)
-                clean_10ms_array = np.zeros(shape=(_AP_SAMPLES,), dtype=np.int16)
                 for ap_chunk_idx in range(num_ap_chunks):
                     ap_chunk_offset = ap_chunk_idx * _AP_SAMPLES
                     self.audio_processor.Process10ms(
                         dirty_array[ap_chunk_offset : (ap_chunk_offset + _AP_SAMPLES)],
-                        clean_10ms_array,
+                        self._clean_10ms_array,
                     )
 
                     # Add 10ms chunk to clean chunk
                     chunk_array[
                         ap_chunk_offset : (ap_chunk_offset + _AP_SAMPLES)
-                    ] = clean_10ms_array
+                    ] = self._clean_10ms_array
 
                 # Remove processed audio
                 self.audio_buffer = self.audio_buffer[num_ap_chunks * _AP_BYTES :]

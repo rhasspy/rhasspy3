@@ -308,7 +308,7 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                             )
 
                         prob_file: Optional[TextIO] = None
-                        if state.output_dir is not None:
+                        if (state.output_dir is not None) and state.debug_probability:
                             # Output chunk probabilities and detections for debugging
                             prob_file = open(
                                 state.output_dir / f"{client_id}.txt",
