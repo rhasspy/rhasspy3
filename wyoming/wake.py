@@ -1,11 +1,12 @@
 """Wake word detection"""
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 from .event import Event, Eventable
 
 DOMAIN = "wake"
 _DETECTION_TYPE = "detection"
+_DETECT_TYPE = "detect"
 _NOT_DETECTED_TYPE = "not-detected"
 
 
@@ -30,10 +31,31 @@ class Detection(Eventable):
 
     @staticmethod
     def from_event(event: Event) -> "Detection":
-        assert event.data is not None
-        return Detection(
-            name=event.data.get("name"), timestamp=event.data.get("timestamp")
-        )
+        data = event.data or {}
+        return Detection(name=data.get("name"), timestamp=data.get("timestamp"))
+
+
+@dataclass
+class Detect(Eventable):
+    """Wake word detection request.
+
+    Followed by AudioStart, AudioChunk+, AudioStop
+    """
+
+    names: Optional[List[str]] = None
+    """Names of models to detect (None = any)."""
+
+    @staticmethod
+    def is_type(event_type: str) -> bool:
+        return event_type == _DETECT_TYPE
+
+    def event(self) -> Event:
+        return Event(type=_DETECT_TYPE, data={"names": self.names})
+
+    @staticmethod
+    def from_event(event: Event) -> "Detect":
+        data = event.data or {}
+        return Detect(names=data.get("names"))
 
 
 @dataclass
