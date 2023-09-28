@@ -224,10 +224,15 @@ def embeddings_proc(state: State):
 # -----------------------------------------------------------------------------
 
 
-def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
+def ww_proc(
+    state: State,
+    ww_model_key: str,
+    ww_model_path: str,
+    loop: asyncio.AbstractEventLoop,
+):
     """Transform embedding features to wake word probabilities (with batching)."""
     try:
-        _LOGGER.debug("Loading %s", ww_model_path)
+        _LOGGER.debug("Loading %s from %s", ww_model_key, ww_model_path)
         ww_model = tflite.Interpreter(model_path=str(ww_model_path), num_threads=1)
         ww_input = ww_model.get_input_details()[0]
         ww_input_shape = ww_input["shape"]
@@ -237,7 +242,7 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
 
         # ww = [batch x window x features (96)] => [batch x probability]
 
-        ww_state = state.wake_words[ww_model_path]
+        ww_state = state.wake_words[ww_model_key]
         while state.is_running:
             ww_state.embeddings_ready.acquire()
             if not state.is_running:
@@ -249,7 +254,7 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                     todo_ids = [
                         client_id
                         for client_id, client in state.clients.items()
-                        if client.wake_words[ww_model_path].new_embeddings >= ww_windows
+                        if client.wake_words[ww_model_key].new_embeddings >= ww_windows
                     ]
                     batch_size = len(todo_ids)
                     if batch_size < 1:
@@ -264,7 +269,7 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                     todo_timestamps: List[int] = []
                     for i, client_id in enumerate(todo_ids):
                         client = state.clients[client_id]
-                        client_data = client.wake_words[ww_model_path]
+                        client_data = client.wake_words[ww_model_key]
                         embeddings_tensor[i, :] = client_data.embeddings[
                             -client_data.new_embeddings : len(client_data.embeddings)
                             - client_data.new_embeddings
@@ -303,7 +308,7 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                             _LOGGER.debug(
                                 "client=%s, wake_word=%s, probability=%s",
                                 client_id,
-                                ww_model_path,
+                                ww_model_key,
                                 probability.item(),
                             )
 
@@ -317,12 +322,12 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                             )
                             print(
                                 _timestamp(),
-                                ww_model_path,
+                                ww_model_key,
                                 probability.item(),
                                 file=prob_file,
                             )
 
-                        client_data = client.wake_words[ww_model_path]
+                        client_data = client.wake_words[ww_model_key]
                         if probability.item() >= client_data.threshold:
                             # Increase activation
                             client_data.activations += 1
@@ -333,19 +338,19 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
                                 coros.append(
                                     client.event_handler.write_event(
                                         Detection(
-                                            name=ww_model_path,
+                                            name=ww_model_key,
                                             timestamp=todo_timestamps[i],
                                         ).event()
                                     ),
                                 )
                                 _LOGGER.debug(
-                                    "Triggered %s (client=%s)", ww_model_path, client_id
+                                    "Triggered %s (client=%s)", ww_model_key, client_id
                                 )
 
                                 if prob_file is not None:
                                     print(
                                         _timestamp(),
-                                        ww_model_path,
+                                        ww_model_key,
                                         "detected",
                                         file=prob_file,
                                     )
@@ -366,99 +371,6 @@ def ww_proc(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
 
     except Exception:
         _LOGGER.exception("Unexpected error in wake word thread")
-
-
-# def ww_proc_no_batch(state: State, ww_model_path: str, loop: asyncio.AbstractEventLoop):
-#     """Transform embedding features to wake word probabilities (no batching)."""
-#     try:
-#         _LOGGER.debug("Loading %s", ww_model_path)
-#         ww_model = tflite.Interpreter(model_path=str(ww_model_path), num_threads=1)
-#         ww_input = ww_model.get_input_details()[0]
-#         ww_input_shape = ww_input["shape"]
-#         ww_windows = ww_input_shape[1]
-#         ww_input_index = ww_input["index"]
-#         ww_output_index = ww_model.get_output_details()[0]["index"]
-
-#         # ww = [batch x window x features (96)] => [batch x probability]
-
-#         ww_state = state.wake_words[ww_model_path]
-#         while state.is_running:
-#             ww_state.embeddings_ready.acquire()
-#             if not state.is_running:
-#                 break
-
-#             while True:
-#                 todo_embeddings: Dict[str, np.ndarray] = {}
-#                 with ww_state.embeddings_lock, state.clients_lock:
-#                     for client_id, client in state.clients.items():
-#                         if client.wake_words[ww_model_path].new_embeddings < ww_windows:
-#                             continue
-
-#                         embeddings_tensor = np.zeros(
-#                             shape=(1, ww_windows, WW_FEATURES),
-#                             dtype=np.float32,
-#                         )
-
-#                         client_data = client.wake_words[ww_model_path]
-#                         embeddings_tensor[0, :] = client_data.embeddings[
-#                             -client_data.new_embeddings : len(client_data.embeddings)
-#                             - client_data.new_embeddings
-#                             + ww_windows
-#                         ]
-#                         client_data.new_embeddings = max(0, client.new_embeddings - 1)
-
-#                         todo_embeddings[client_id] = embeddings_tensor
-
-#                 if not todo_embeddings:
-#                     break
-
-#                 for client_id, embeddings_tensor in todo_embeddings.items():
-#                     ww_model.resize_tensor_input(
-#                         ww_input_index,
-#                         embeddings_tensor.shape,
-#                         strict=True,
-#                     )
-#                     ww_model.allocate_tensors()
-
-#                     # Generate probabilities
-#                     ww_model.set_tensor(ww_input_index, embeddings_tensor)
-#                     ww_model.invoke()
-#                     probabilities = ww_model.get_tensor(ww_output_index)
-#                     probability = probabilities[0]
-
-#                     with state.clients_lock:
-#                         client = state.clients.get(client_id)
-#                         if client is None:
-#                             # Client disconnected
-#                             continue
-
-#                         client_data = client.wake_words[ww_model_path]
-#                         if probability.item() >= client_data.threshold:
-#                             # Increase activation
-#                             client_data.activations += 1
-
-#                             if client_data.activations >= client_data.trigger_level:
-#                                 client_data.is_detected = True
-#                                 asyncio.run_coroutine_threadsafe(
-#                                     client.event_handler.write_event(
-#                                         Detection(name=ww_model_path).event()
-#                                     ),
-#                                     loop,
-#                                 )
-#                                 _LOGGER.debug(
-#                                     "Triggered %s (client=%s)", ww_model_path, client_id
-#                                 )
-#                                 client_data.activations = (
-#                                     -client_data.refractory_activations
-#                                 )
-#                         else:
-#                             # Back towards 0
-#                             client_data.activations = max(
-#                                 0, client_data.activations - 1
-#                             )
-
-#     except Exception:
-#         _LOGGER.exception("Unexpected error in wake word thread")
 
 
 def _timestamp() -> str:

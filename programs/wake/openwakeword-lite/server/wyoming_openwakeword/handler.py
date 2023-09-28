@@ -1,10 +1,12 @@
 """Event handler for clients of the server."""
+import asyncio
 import argparse
 import logging
 import time
 import wave
 from pathlib import Path
-from typing import Final, Optional
+from threading import Thread
+from typing import Final, List, Optional
 
 import numpy as np
 
@@ -12,16 +14,13 @@ from wyoming.audio import AudioChunk, AudioChunkConverter, AudioStart, AudioStop
 from wyoming.event import Event
 from wyoming.info import Describe, Info
 from wyoming.server import AsyncEventHandler
-from wyoming.wake import NotDetected
+from wyoming.wake import Detect, NotDetected
 
 from .const import ClientData, WakeWordData
-from .state import State
+from .state import State, WakeWordState
+from .openwakeword import ww_proc
 
 _LOGGER = logging.getLogger(__name__)
-
-# webrtc
-_AP_SAMPLES: Final = 160
-_AP_BYTES: Final = _AP_SAMPLES * 2
 
 
 class OpenWakeWordEventHandler(AsyncEventHandler):
@@ -48,19 +47,6 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
         # Only used when output_dir is set
         self.audio_writer: Optional[wave.Wave_write] = None
 
-        # Noise suppression and auto gain with webrtc
-        self.audio_processor: "Optional[AudioProcessor]" = None
-        self._clean_10ms_array = np.zeros(shape=(_AP_SAMPLES,), dtype=np.int16)
-
-        if (self.cli_args.noise_suppression > 0) or (self.cli_args.auto_gain > 0):
-            _LOGGER.debug("Audio processing enabled (webrtc)")
-            from webrtc_noise_gain import AudioProcessor
-
-            self.audio_processor = AudioProcessor(
-                self.cli_args.auto_gain,
-                self.cli_args.noise_suppression,
-            )
-
         _LOGGER.debug("Client connected: %s", self.client_id)
 
     async def handle_event(self, event: Event) -> bool:
@@ -80,7 +66,11 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
                         trigger_level=self.cli_args.trigger_level,
                     )
 
-        if AudioStart.is_type(event.type):
+        if Detect.is_type(event.type):
+            detect = Detect.from_event(event)
+            if detect.names:
+                _ensure_loaded(self.state, detect.names, self.cli_args)
+        elif AudioStart.is_type(event.type):
             # Reset
             for ww_data in self.data.wake_words.values():
                 ww_data.is_detected = False
@@ -103,47 +93,10 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
             # Add to audio buffer and signal mels thread
             chunk = self.converter.convert(AudioChunk.from_event(event))
 
-            if self.audio_processor is not None:
-                # Audio processing (webrtc)
-                self.audio_buffer += chunk.audio
-                num_ap_chunks = len(self.audio_buffer) // _AP_BYTES
-                if num_ap_chunks <= 0:
-                    # No enough audio for audio processing
-                    return True
-
-                chunk_array = np.zeros(
-                    shape=(num_ap_chunks * _AP_SAMPLES), dtype=np.int16
-                )
-
-                # Process in 10ms chunks
-                dirty_array = np.frombuffer(self.audio_buffer, dtype=np.int16)
-                for ap_chunk_idx in range(num_ap_chunks):
-                    ap_chunk_offset = ap_chunk_idx * _AP_SAMPLES
-                    self.audio_processor.Process10ms(
-                        dirty_array[ap_chunk_offset : (ap_chunk_offset + _AP_SAMPLES)],
-                        self._clean_10ms_array,
-                    )
-
-                    # Add 10ms chunk to clean chunk
-                    chunk_array[
-                        ap_chunk_offset : (ap_chunk_offset + _AP_SAMPLES)
-                    ] = self._clean_10ms_array
-
-                # Remove processed audio
-                self.audio_buffer = self.audio_buffer[num_ap_chunks * _AP_BYTES :]
-
-                # Use clean audio
-                clean_audio = chunk_array.tobytes()
-                chunk_array = chunk_array.astype(np.float32)
-            else:
-                # No noise suppression
-                clean_audio = chunk.audio
-                chunk_array = np.frombuffer(clean_audio, dtype=np.int16).astype(
-                    np.float32
-                )
-
             if self.audio_writer is not None:
-                self.audio_writer.writeframes(clean_audio)
+                self.audio_writer.writeframes(chunk.audio)
+
+            chunk_array = np.frombuffer(chunk.audio, dtype=np.int16).astype(np.float32)
 
             with self.state.audio_lock:
                 # Shift samples left
@@ -196,3 +149,35 @@ class OpenWakeWordEventHandler(AsyncEventHandler):
 
         with self.state.clients_lock:
             self.state.clients.pop(self.client_id, None)
+
+
+def _ensure_loaded(state: State, names: List[str], cli_args: argparse.Namespace):
+    with state.ww_threads_lock, state.clients_lock:
+        for model_key in names:
+            ww_state = state.wake_words.get(model_key)
+            if ww_state is not None:
+                # Already loaded
+                continue
+
+            if model_key not in state.model_paths:
+                _LOGGER.error("Unknown wake word model: %s", model_key)
+                continue
+
+            state.wake_words[model_key] = WakeWordState()
+            state.ww_threads[model_key] = Thread(
+                target=ww_proc,
+                daemon=True,
+                args=(
+                    state,
+                    model_key,
+                    state.model_paths[model_key],
+                    asyncio.get_running_loop(),
+                ),
+            )
+            state.ww_threads[model_key].start()
+
+            for client_data in state.clients.values():
+                client_data.wake_words[model_key] = WakeWordData(
+                    threshold=cli_args.threshold,
+                    trigger_level=cli_args.trigger_level,
+                )

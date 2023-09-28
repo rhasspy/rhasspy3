@@ -42,7 +42,7 @@ class WakeWordData:
     is_detected: bool = False
     activations: int = 0
     threshold: float = 0.5
-    trigger_level: int = 4
+    trigger_level: int = 1
 
     def reset(self) -> None:
         self.new_embeddings = 0

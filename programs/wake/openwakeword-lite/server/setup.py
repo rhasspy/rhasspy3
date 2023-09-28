@@ -20,7 +20,7 @@ model_files = [str(f.relative_to(module_dir)) for f in models_dir.glob("*.tflite
 
 setup(
     name="wyoming_openwakeword",
-    version="1.4.0",
+    version="1.5.1",
     description="Wyoming server for openWakeWord",
     url="http://github.com/rhasspy/rhasspy3",
     author="Michael Hansen",
@@ -28,7 +28,6 @@ setup(
     packages=setuptools.find_packages(),
     package_data={"wyoming_openwakeword": model_files},
     install_requires=requirements,
-    extras_require={"webrtc": ["webrtc-noise-gain==0.0.1"]},
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

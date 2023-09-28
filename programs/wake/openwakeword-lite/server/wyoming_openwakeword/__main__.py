@@ -25,10 +25,16 @@ async def main() -> None:
         "--model",
         required=True,
         action="append",
-        help="Path to wake word model (.tflite)",
+        help="Name or path to wake word model (.tflite)",
     )
     parser.add_argument(
         "--models-dir", default=_DIR / "models", help="Path to directory with models"
+    )
+    parser.add_argument(
+        "--preload-model",
+        action="append",
+        default=[],
+        help="Name or path of wake word model(s) to pre-load",
     )
     parser.add_argument(
         "--threshold",
@@ -41,13 +47,6 @@ async def main() -> None:
         type=int,
         default=1,
         help="Number of activations before detection (default: 4)",
-    )
-    #
-    parser.add_argument(
-        "--noise-suppression", type=int, default=0, choices=(0, 1, 2, 3, 4)
-    )
-    parser.add_argument(
-        "--auto-gain", type=int, default=0, choices=list(range(32))
     )
     #
     parser.add_argument("--output-dir", help="Path to save audio and detections")
@@ -70,7 +69,12 @@ async def main() -> None:
 
     # Resolve wake word model paths
     models_dir = Path(args.models_dir)
-    model_paths: List[Path] = []
+    state = State(
+        models_dir=models_dir,
+        debug_probability=args.debug_probability,
+        output_dir=args.output_dir,
+    )
+
     for model in args.model:
         model_path = Path(model)
         if not model_path.exists():
@@ -84,7 +88,7 @@ async def main() -> None:
                     model_path.exists()
                 ), f"Missing model: {model} (looked in: {models_dir.absolute()})"
 
-        model_paths.append(model_path)
+        state.model_paths[model] = model_path
 
     wyoming_info = Info(
         wake=[
@@ -97,8 +101,9 @@ async def main() -> None:
                 installed=True,
                 models=[
                     WakeModel(
-                        name=str(model_path),
-                        description=model_path.stem,
+                        name=model_key,
+                        # hey_jarvis_v0.1 => hey jarvis
+                        description=" ".join(model_path.stem.split("_")[:-1]),
                         attribution=Attribution(
                             name="dscripka",
                             url="https://github.com/dscripka/openWakeWord",
@@ -106,35 +111,32 @@ async def main() -> None:
                         installed=True,
                         languages=[],
                     )
-                    for model_path in model_paths
+                    for model_key, model_path in state.model_paths.items()
                 ],
             )
         ],
     )
 
-    state = State(
-        models_dir=models_dir,
-        debug_probability=args.debug_probability,
-        output_dir=args.output_dir,
-    )
     loop = asyncio.get_running_loop()
 
     # One thread per wake word model
-    ww_threads: Dict[str, Thread] = {}
-    for model_path in model_paths:
-        model_key = str(model_path)
+    for model_key in args.preload_model:
+        model_path = state.model_paths.get(model_key)
+        if model_path is None:
+            raise ValueError(f"Cannot preload model: {model_key}")
+
         state.wake_words[model_key] = WakeWordState()
-        ww_threads[model_key] = Thread(
-            # target=ww_proc_no_batch,
+        state.ww_threads[model_key] = Thread(
             target=ww_proc,
             daemon=True,
             args=(
                 state,
                 model_key,
+                model_path,
                 loop,
             ),
         )
-        ww_threads[model_key].start()
+        state.ww_threads[model_key].start()
 
     # audio -> mels
     mels_thread = Thread(target=mels_proc, daemon=True, args=(state,))
@@ -164,7 +166,7 @@ async def main() -> None:
 
         for ww_name, ww_state in state.wake_words.items():
             ww_state.embeddings_ready.release()
-            ww_threads[ww_name].join()
+            state.ww_threads[ww_name].join()
 
 
 # -----------------------------------------------------------------------------

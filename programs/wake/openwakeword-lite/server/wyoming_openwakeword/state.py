@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import Lock, Semaphore
+from threading import Lock, Semaphore, Thread
 from typing import Dict, Optional
 
 from .const import ClientData
@@ -15,6 +15,9 @@ class WakeWordState:
 @dataclass
 class State:
     models_dir: Path
+    model_paths: Dict[str, Path] = field(default_factory=dict)
+    ww_threads: Dict[str, Thread] = field(default_factory=dict)
+    ww_threads_lock: Lock = field(default_factory=Lock)
 
     is_running: bool = True
     clients: Dict[str, ClientData] = field(default_factory=dict)
