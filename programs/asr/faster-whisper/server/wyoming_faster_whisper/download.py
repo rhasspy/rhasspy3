@@ -86,7 +86,7 @@ def download_model(model: FasterWhisperModel, dest_dir: Union[str, Path]) -> Pat
 
     dest_dir.mkdir(parents=True, exist_ok=True)
 
-    model_url = URL_FORMAT.format(model=model)
+    model_url = URL_FORMAT.format(model=model.value)
     with urlopen(model_url) as response:
         with tarfile.open(mode="r|*", fileobj=response) as tar_gz:
             tar_gz.extractall(dest_dir)
