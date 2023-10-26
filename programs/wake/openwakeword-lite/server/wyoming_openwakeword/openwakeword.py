@@ -4,7 +4,10 @@ from datetime import datetime
 from typing import List, Optional, TextIO
 
 import numpy as np
-import tflite_runtime.interpreter as tflite
+try:
+    import tflite_runtime.interpreter as tflite
+except ModuleNotFoundError:
+    import tensorflow.lite as tflite
 
 from wyoming.wake import Detection
 
