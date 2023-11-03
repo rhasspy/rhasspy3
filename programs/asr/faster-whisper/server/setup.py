@@ -35,4 +35,9 @@ setup(
         "Programming Language :: Python :: 3.10",
     ],
     keywords="rhasspy wyoming whisper",
+    entry_points={
+        'console_scripts': [
+            'wyoming-faster-whisper = wyoming_faster_whisper:__main__.run'
+        ]
+    },
 )

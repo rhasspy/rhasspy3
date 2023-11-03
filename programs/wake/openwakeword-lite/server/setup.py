@@ -39,4 +39,9 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
     keywords="rhasspy wyoming openwakeword",
+    entry_points={
+        'console_scripts': [
+            'wyoming-openwakeword = wyoming_openwakeword:__main__.run'
+        ]
+    },
 )

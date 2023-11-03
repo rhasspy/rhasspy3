@@ -188,8 +188,13 @@ def get_description(voice_info: Dict[str, Any]):
 
 # -----------------------------------------------------------------------------
 
+
+def run():
+    asyncio.run(main())
+
+
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        run()
     except KeyboardInterrupt:
         pass
