@@ -4,7 +4,18 @@ import logging
 from functools import partial
 from pathlib import Path
 
-from wyoming.info import Attribution, Info, TtsProgram, TtsVoice, AsrProgram, AsrModel
+from wyoming.info import (
+    Attribution,
+    Info,
+    TtsProgram,
+    TtsVoice,
+    AsrProgram,
+    AsrModel,
+    WakeProgram,
+    WakeModel,
+    HandleProgram,
+    HandleModel,
+)
 from wyoming.server import AsyncServer
 
 from rhasspy3.core import Rhasspy
@@ -73,6 +84,50 @@ async def main():
                 installed=True,
                 models=[
                     AsrModel(
+                        name="default",
+                        description="Pipeline-defined model",
+                        attribution=Attribution(
+                            name="rhasspy",
+                            url="https://github.com/rhasspy/",
+                        ),
+                        installed=True,
+                        languages=args.language,
+                    )
+                ],
+            )
+        ],
+        wake=[
+            WakeProgram(
+                name=pipeline.wake.name,
+                description=f"Rhasspy3 {args.pipeline} pipeline wake program",
+                attribution=Attribution(
+                    name="rhasspy", url="https://github.com/rhasspy/"
+                ),
+                installed=True,
+                models=[
+                    WakeModel(
+                        name="default",
+                        description="Pipeline-defined model",
+                        attribution=Attribution(
+                            name="rhasspy",
+                            url="https://github.com/rhasspy/",
+                        ),
+                        installed=True,
+                        languages=args.language,
+                    )
+                ],
+            )
+        ],
+        handle=[
+            HandleProgram(
+                name=pipeline.handle.name,
+                description=f"Rhasspy3 {args.pipeline} pipeline handle program",
+                attribution=Attribution(
+                    name="rhasspy", url="https://github.com/rhasspy/"
+                ),
+                installed=True,
+                models=[
+                    HandleModel(
                         name="default",
                         description="Pipeline-defined model",
                         attribution=Attribution(
