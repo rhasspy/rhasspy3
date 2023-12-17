@@ -15,6 +15,8 @@ from wyoming.info import (
     WakeModel,
     HandleProgram,
     HandleModel,
+    IntentProgram,
+    IntentModel,
 )
 from wyoming.server import AsyncServer
 
@@ -53,7 +55,7 @@ async def main():
     pipeline = rhasspy.config.pipelines[args.pipeline]
 
     wyoming_info = Info(
-        tts=[
+        tts=[] if pipeline.tts is None else [
             TtsProgram(
                 name=pipeline.tts.name,
                 description=f"Rhasspy3 {args.pipeline} pipeline TTS program",
@@ -74,7 +76,7 @@ async def main():
                 ],
             )
         ],
-        asr=[
+        asr=[] if pipeline.asr is None else [
             AsrProgram(
                 name=pipeline.asr.name,
                 description=f"Rhasspy3 {args.pipeline} pipeline ASR program",
@@ -96,7 +98,7 @@ async def main():
                 ],
             )
         ],
-        wake=[
+        wake=[] if pipeline.wake is None else [
             WakeProgram(
                 name=pipeline.wake.name,
                 description=f"Rhasspy3 {args.pipeline} pipeline wake program",
@@ -118,7 +120,7 @@ async def main():
                 ],
             )
         ],
-        handle=[
+        handle=[] if pipeline.handle is None else [
             HandleProgram(
                 name=pipeline.handle.name,
                 description=f"Rhasspy3 {args.pipeline} pipeline handle program",
@@ -128,6 +130,28 @@ async def main():
                 installed=True,
                 models=[
                     HandleModel(
+                        name="default",
+                        description="Pipeline-defined model",
+                        attribution=Attribution(
+                            name="rhasspy",
+                            url="https://github.com/rhasspy/",
+                        ),
+                        installed=True,
+                        languages=args.language,
+                    )
+                ],
+            )
+        ],
+        intent=[] if pipeline.intent is None else [
+            IntentProgram(
+                name=pipeline.intent.name,
+                description=f"Rhasspy3 {args.pipeline} pipeline intent program",
+                attribution=Attribution(
+                    name="rhasspy", url="https://github.com/rhasspy/"
+                ),
+                installed=True,
+                models=[
+                    IntentModel(
                         name="default",
                         description="Pipeline-defined model",
                         attribution=Attribution(
