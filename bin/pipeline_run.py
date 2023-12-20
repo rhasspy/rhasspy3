@@ -104,89 +104,64 @@ async def main() -> None:
 
     rhasspy = Rhasspy.load(args.config)
 
-    if not args.loop or args.stop_after in ("wake", "asr"):
-        while True:
-            pipeline_result = await run_pipeline(
-                rhasspy,
-                args.pipeline,
-                samples_per_chunk=args.samples_per_chunk,
-                asr_chunks_to_buffer=args.asr_chunks_to_buffer,
-                wake_detection=wake_detection,
-                asr_wav_in=asr_wav_in,
-                asr_transcript=asr_transcript,
-                intent_result=intent_result,
-                handle_result=handle_result,
-                tts_wav_in=tts_wav_in,
-                stop_after=args.stop_after,
-            )
+    loop = asyncio.get_running_loop()
 
-            json.dump(pipeline_result.to_dict(), sys.stdout, ensure_ascii=False)
-            print("")
+    old_task = None
 
-            if not args.loop:
-                break
-
-    response_task = None
     while True:
-        request_task = asyncio.create_task(
+        wake_future = loop.create_future()
+        vad_future = loop.create_future()
+        new_task = asyncio.create_task(
             run_pipeline(
                 rhasspy,
                 args.pipeline,
                 samples_per_chunk=args.samples_per_chunk,
                 asr_chunks_to_buffer=args.asr_chunks_to_buffer,
                 wake_detection=wake_detection,
+                wake_future=wake_future,
+                vad_future=vad_future,
                 asr_wav_in=asr_wav_in,
                 asr_transcript=asr_transcript,
-                stop_after="asr",
-            )
-        )
-
-        aws = [request_task]
-        if response_task is not None and not response_task.done():
-            aws.append(response_task)
-
-        while True:
-            done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
-
-            if response_task is not None and response_task in done:
-                if not response_task.cancelled():
-                    pipeline_result = response_task.result()
-                json.dump(pipeline_result.to_dict(), sys.stdout, ensure_ascii=False)
-                print("")
-                response_task = None
-
-            if (
-                request_task in done
-                and response_task is not None
-                and response_task in pending
-            ):
-                response_task.cancel()
-
-            aws = pending
-            if not len(aws):
-                break
-
-        pipeline_result = request_task.result()
-
-        if pipeline_result.asr_transcript is None:
-            json.dump(pipeline_result.to_dict(), sys.stdout, ensure_ascii=False)
-            print("")
-            continue
-
-        response_task = asyncio.create_task(
-            run_pipeline(
-                rhasspy,
-                args.pipeline,
-                samples_per_chunk=args.samples_per_chunk,
-                asr_chunks_to_buffer=args.asr_chunks_to_buffer,
-                wake_detection=pipeline_result.wake_detection,
-                asr_transcript=pipeline_result.asr_transcript,
                 intent_result=intent_result,
                 handle_result=handle_result,
                 tts_wav_in=tts_wav_in,
                 stop_after=args.stop_after,
             )
         )
+
+        pending = {new_task, wake_future, vad_future}
+        if old_task is not None and not old_task.done():
+            pending.add(old_task)
+
+        while len(pending):
+            done, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_COMPLETED
+            )
+
+            if old_task in done:
+                if not old_task.cancelled():
+                    pipeline_result = old_task.result()
+                    json.dump(pipeline_result.to_dict(), sys.stdout, ensure_ascii=False)
+                    print("")
+                old_task = None
+
+            if wake_future in done and old_task in pending:
+                old_task.cancel()
+
+            if vad_future in done and wake_future.done():
+                old_task = new_task
+                break
+
+            if new_task in done:
+                break
+
+        if not args.loop:
+            if not new_task.done():
+                await asyncio.wait({new_task})
+            pipeline_result = new_task.result()
+            json.dump(pipeline_result.to_dict(), sys.stdout, ensure_ascii=False)
+            print("")
+            break
 
 
 if __name__ == "__main__":
