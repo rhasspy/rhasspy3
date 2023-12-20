@@ -82,6 +82,7 @@ async def run(
         pipeline = rhasspy.config.pipelines[pipeline]
 
     mic_program = mic_program or pipeline.mic
+    mic_after = pipeline.mic.after if pipeline.mic else None
 
     wake_program = wake_program or pipeline.wake
     wake_after = pipeline.wake.after if pipeline.wake else None
@@ -90,10 +91,19 @@ async def run(
     asr_after = pipeline.asr.after if pipeline.asr else None
 
     vad_program = vad_program or pipeline.vad
+    vad_after = pipeline.vad.after if pipeline.vad else None
+
     intent_program = intent_program or pipeline.intent
+    intent_after = pipeline.intent.after if pipeline.intent else None
+
     handle_program = handle_program or pipeline.handle
+    handle_after = pipeline.handle.after if pipeline.handle else None
+
     tts_program = tts_program or pipeline.tts
+    tts_after = pipeline.tts.after if pipeline.tts else None
+
     snd_program = snd_program or pipeline.snd
+    snd_after = pipeline.snd.after if pipeline.snd else None
 
     skip_asr = (
         (intent_result is not None)
@@ -118,15 +128,17 @@ async def run(
                 await run_command(rhasspy, asr_after)
         elif asr_transcript is None:
             # Mic input
-            assert mic_program is not None, "No asr program"
+            assert mic_program is not None, "No mic program"
 
             if wake_program is None:
                 # No wake
                 assert asr_program is not None, "No asr program"
                 assert vad_program is not None, "No vad program"
                 await _mic_asr(
-                    rhasspy, mic_program, asr_program, vad_program, pipeline_result
+                    rhasspy, mic_program, asr_program, vad_program, pipeline_result, vad_after
                 )
+                if mic_after is not None:
+                    await run_command(rhasspy, mic_after)
             elif stop_after == StopAfterDomain.WAKE:
                 # Audio input, wake word detection, segmentation, speech to text
                 assert wake_program is not None, "No vad program"
@@ -136,7 +148,10 @@ async def run(
                     wake_program,
                     pipeline_result,
                     wake_detection=wake_detection,
+                    wake_after=wake_after,
                 )
+                if mic_after is not None:
+                    await run_command(rhasspy, mic_after)
                 return pipeline_result
             else:
                 assert wake_program is not None, "No vad program"
@@ -152,7 +167,10 @@ async def run(
                     asr_chunks_to_buffer=asr_chunks_to_buffer,
                     wake_detection=wake_detection,
                     wake_after=wake_after,
+                    vad_after=vad_after,
                 )
+                if mic_after is not None:
+                    await run_command(rhasspy, mic_after)
 
             if asr_after is not None:
                 await run_command(rhasspy, asr_after)
@@ -173,6 +191,9 @@ async def run(
         )
         pipeline_result.intent_result = intent_result
 
+        if intent_after is not None:
+            await run_command(rhasspy, intent_after)
+
     # Handle intent
     handle_input: Optional[Union[Intent, NotRecognized, Transcript]] = None
     if intent_result is not None:
@@ -189,6 +210,9 @@ async def run(
         handle_result = await handle(rhasspy, handle_program, handle_input)
         pipeline_result.handle_result = handle_result
 
+        if handle_after is not None:
+            await run_command(rhasspy, handle_after)
+
     if (stop_after == StopAfterDomain.HANDLE) or (tts_program is None):
         return pipeline_result
 
@@ -199,6 +223,9 @@ async def run(
             assert tts_program is not None, "Pipeline is missing tts"
             tts_wav_in = io.BytesIO()
             await synthesize(rhasspy, tts_program, handle_result.text, tts_wav_in)
+
+            if tts_after is not None:
+                await run_command(rhasspy, tts_after)
         else:
             _LOGGER.debug("No text returned from handle")
 
@@ -211,6 +238,9 @@ async def run(
         assert snd_program is not None, "Pipeline is missing snd"
         await play(rhasspy, snd_program, tts_wav_in, samples_per_chunk)
 
+        if snd_after is not None:
+            await run_command(rhasspy, snd_after)
+
     return pipeline_result
 
 
@@ -220,6 +250,7 @@ async def _mic_wake(
     wake_program: Union[str, PipelineProgramConfig],
     pipeline_result: PipelineResult,
     wake_detection: Optional[Detection] = None,
+    wake_after: Optional[CommandConfig] = None,
 ):
     """Just wake word detection."""
     async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
@@ -232,6 +263,8 @@ async def _mic_wake(
             )
 
         if wake_detection is not None:
+            if wake_after is not None:
+                await run_command(rhasspy, wake_after)
             pipeline_result.wake_detection = wake_detection
         else:
             _LOGGER.debug("run: no wake word detected")
@@ -244,6 +277,7 @@ async def _mic_asr(
     vad_program: Union[str, PipelineProgramConfig],
     pipeline_result: PipelineResult,
     asr_chunks_to_buffer: int = 0,
+    vad_after: Optional[CommandConfig] = None,
 ):
     """Just asr transcription (+ silence detection)."""
     async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc, (
@@ -259,6 +293,9 @@ async def _mic_asr(
             mic_proc.stdout,
             asr_proc.stdin,
         )
+        if vad_after is not None:
+            await run_command(rhasspy, vad_after)
+
         while True:
             asr_event = await async_read_event(asr_proc.stdout)
             if asr_event is None:
@@ -279,6 +316,7 @@ async def _mic_wake_asr(
     asr_chunks_to_buffer: int = 0,
     wake_detection: Optional[Detection] = None,
     wake_after: Optional[CommandConfig] = None,
+    vad_after: Optional[CommandConfig] = None,
 ):
     """Wake word detect + asr transcription (+ silence detection)."""
     chunk_buffer: Optional[Deque[Event]] = (
@@ -309,6 +347,9 @@ async def _mic_wake_asr(
                 asr_proc.stdin,
                 chunk_buffer,
             )
+            if vad_after is not None:
+                await run_command(rhasspy, vad_after)
+
             while True:
                 asr_event = await async_read_event(asr_proc.stdout)
                 if asr_event is None:
