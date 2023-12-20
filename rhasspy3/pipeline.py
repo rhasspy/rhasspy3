@@ -158,7 +158,9 @@ async def run(
                 await run_command(rhasspy, asr_after)
 
             asr_transcript = pipeline_result.asr_transcript
-            pipeline_result.asr_transcript = asr_transcript
+            wake_detection = pipeline_result.wake_detection
+        pipeline_result.asr_transcript = asr_transcript
+        pipeline_result.wake_detection = wake_detection
 
     if (stop_after == StopAfterDomain.ASR) or (
         (intent_program is None) and (handle_program is None)
