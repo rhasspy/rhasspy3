@@ -148,6 +148,7 @@ async def run(
                     wake_program,
                     pipeline_result,
                     wake_detection=wake_detection,
+                    wake_after=wake_after,
                 )
                 if mic_after is not None:
                     await run_command(rhasspy, mic_after)
@@ -249,6 +250,7 @@ async def _mic_wake(
     wake_program: Union[str, PipelineProgramConfig],
     pipeline_result: PipelineResult,
     wake_detection: Optional[Detection] = None,
+    wake_after: Optional[CommandConfig] = None,
 ):
     """Just wake word detection."""
     async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
@@ -261,6 +263,8 @@ async def _mic_wake(
             )
 
         if wake_detection is not None:
+            if wake_after is not None:
+                await run_command(rhasspy, wake_after)
             pipeline_result.wake_detection = wake_detection
         else:
             _LOGGER.debug("run: no wake word detected")
