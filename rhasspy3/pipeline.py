@@ -1,6 +1,7 @@
 """Full voice loop (pipeline)."""
 import io
 import logging
+from asyncio import Future
 from collections import deque
 from dataclasses import dataclass, fields
 from enum import Enum
@@ -62,10 +63,12 @@ async def run(
     mic_program: Optional[Union[str, PipelineProgramConfig]] = None,
     wake_program: Optional[Union[str, PipelineProgramConfig]] = None,
     wake_detection: Optional[Detection] = None,
+    wake_future: Optional[Future] = None,
     asr_program: Optional[Union[str, PipelineProgramConfig]] = None,
     asr_wav_in: Optional[IO[bytes]] = None,
     asr_transcript: Optional[Transcript] = None,
     vad_program: Optional[Union[str, PipelineProgramConfig]] = None,
+    vad_future: Optional[Future] = None,
     intent_result: Optional[Union[Intent, NotRecognized]] = None,
     intent_program: Optional[Union[str, PipelineProgramConfig]] = None,
     handle_result: Optional[Union[Handled, NotHandled]] = None,
@@ -125,21 +128,22 @@ async def run(
                 assert asr_program is not None, "No asr program"
                 assert vad_program is not None, "No vad program"
                 await _mic_asr(
-                    rhasspy, mic_program, asr_program, vad_program, pipeline_result
+                    rhasspy, mic_program, asr_program, vad_program, pipeline_result, vad_future
                 )
             elif stop_after == StopAfterDomain.WAKE:
                 # Audio input, wake word detection, segmentation, speech to text
-                assert wake_program is not None, "No vad program"
+                assert wake_program is not None, "No wake program"
                 await _mic_wake(
                     rhasspy,
                     mic_program,
                     wake_program,
                     pipeline_result,
                     wake_detection=wake_detection,
+                    wake_future=wake_future,
                 )
                 return pipeline_result
             else:
-                assert wake_program is not None, "No vad program"
+                assert wake_program is not None, "No wake program"
                 assert asr_program is not None, "No asr program"
                 assert vad_program is not None, "No vad program"
                 await _mic_wake_asr(
@@ -152,13 +156,17 @@ async def run(
                     asr_chunks_to_buffer=asr_chunks_to_buffer,
                     wake_detection=wake_detection,
                     wake_after=wake_after,
+                    wake_future=wake_future,
+                    vad_future=vad_future,
                 )
 
             if asr_after is not None:
                 await run_command(rhasspy, asr_after)
 
             asr_transcript = pipeline_result.asr_transcript
-            pipeline_result.asr_transcript = asr_transcript
+            wake_detection = pipeline_result.wake_detection
+        pipeline_result.asr_transcript = asr_transcript
+        pipeline_result.wake_detection = wake_detection
 
     if (stop_after == StopAfterDomain.ASR) or (
         (intent_program is None) and (handle_program is None)
@@ -220,6 +228,7 @@ async def _mic_wake(
     wake_program: Union[str, PipelineProgramConfig],
     pipeline_result: PipelineResult,
     wake_detection: Optional[Detection] = None,
+    wake_future: Optional[Future] = None,
 ):
     """Just wake word detection."""
     async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc:
@@ -232,6 +241,7 @@ async def _mic_wake(
             )
 
         if wake_detection is not None:
+            wake_future.set_result(wake_detection)
             pipeline_result.wake_detection = wake_detection
         else:
             _LOGGER.debug("run: no wake word detected")
@@ -244,6 +254,7 @@ async def _mic_asr(
     vad_program: Union[str, PipelineProgramConfig],
     pipeline_result: PipelineResult,
     asr_chunks_to_buffer: int = 0,
+    vad_future: Optional[Future] = None,
 ):
     """Just asr transcription (+ silence detection)."""
     async with (await create_process(rhasspy, MIC_DOMAIN, mic_program)) as mic_proc, (
@@ -259,6 +270,7 @@ async def _mic_asr(
             mic_proc.stdout,
             asr_proc.stdin,
         )
+        vad_future.set_result(True)
         while True:
             asr_event = await async_read_event(asr_proc.stdout)
             if asr_event is None:
@@ -279,6 +291,8 @@ async def _mic_wake_asr(
     asr_chunks_to_buffer: int = 0,
     wake_detection: Optional[Detection] = None,
     wake_after: Optional[CommandConfig] = None,
+    wake_future: Optional[Future] = None,
+    vad_future: Optional[Future] = None,
 ):
     """Wake word detect + asr transcription (+ silence detection)."""
     chunk_buffer: Optional[Deque[Event]] = (
@@ -298,6 +312,7 @@ async def _mic_wake_asr(
             )
 
         if wake_detection is not None:
+            wake_future.set_result(wake_detection)
             if wake_after is not None:
                 await run_command(rhasspy, wake_after)
 
@@ -309,6 +324,7 @@ async def _mic_wake_asr(
                 asr_proc.stdin,
                 chunk_buffer,
             )
+            vad_future.set_result(True)
             while True:
                 asr_event = await async_read_event(asr_proc.stdout)
                 if asr_event is None:
