@@ -20,7 +20,7 @@ def main():
     )
     parser.add_argument("token_file", help="Path to file with authorization token")
     parser.add_argument("--language", help="Language code to use")
-    parser.add_argument("--conversation_id_timeout", type=int, default=300, help="Invalidate conversation_id and start a new conversation if this number of seconds has passed since the last interaction")
+    parser.add_argument("--conversation_id_timeout", type=int, default=20, help="Invalidate conversation_id and start a new conversation if this number of seconds has passed since the last interaction")
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG messages to console"
     )
