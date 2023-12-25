@@ -389,12 +389,13 @@ programs:
     # 2. Put long-lived access token in etc/token
     home_assistant:
       command: |
-        bin/converse.py --language "${language}" "${url}" "${token_file}"
+        bin/converse.py --language "${language}" --conversation_id_timeout "${conversation_id_timeout}" "${url}" "${token_file}"
       adapter: |
         handle_adapter_text.py
       template_args:
         url: "http://localhost:8123/api/conversation/process"
         token_file: "${data_dir}/token"
+        conversation_id_timeout: 300
         language: ""
 
     # Intent only: answer English date/time requests
