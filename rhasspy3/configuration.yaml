@@ -395,7 +395,7 @@ programs:
       template_args:
         url: "http://localhost:8123/api/conversation/process"
         token_file: "${data_dir}/token"
-        conversation_id_timeout: 20
+        conversation_id_timeout: 30
         language: ""
 
     # Intent only: answer English date/time requests
